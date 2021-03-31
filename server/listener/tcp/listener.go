@@ -6,16 +6,29 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-gost/gost/logger"
 	"github.com/go-gost/gost/server/listener"
+	"github.com/go-gost/gost/utils"
+)
+
+var (
+	_ listener.Listener = (*Listener)(nil)
 )
 
 type Listener struct {
 	md metadata
 	net.Listener
+	logger logger.Logger
 }
 
-func NewTCPListener() *Listener {
-	return &Listener{}
+func NewListener(opts ...listener.Option) *Listener {
+	options := &listener.Options{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	return &Listener{
+		logger: options.Logger,
+	}
 }
 
 func (l *Listener) Init(md listener.Metadata) (err error) {
@@ -34,9 +47,9 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 	}
 
 	if l.md.keepAlive {
-		l.Listener = &keepAliveListener{
+		l.Listener = &utils.TCPKeepAliveListener{
 			TCPListener:     ln,
-			keepAlivePeriod: l.md.keepAlivePeriod,
+			KeepAlivePeriod: l.md.keepAlivePeriod,
 		}
 		return
 	}
@@ -49,7 +62,7 @@ func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
 	if val, ok := md[addr]; ok {
 		m.addr = val
 	} else {
-		err = errors.New("tcp listener: missing address")
+		err = errors.New("missing address")
 		return
 	}
 
@@ -61,26 +74,6 @@ func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
 	if val, ok := md[keepAlivePeriod]; ok {
 		m.keepAlivePeriod, _ = time.ParseDuration(val)
 	}
-	if m.keepAlivePeriod <= 0 {
-		m.keepAlivePeriod = defaultKeepAlivePeriod
-	}
 
 	return
-}
-
-type keepAliveListener struct {
-	keepAlivePeriod time.Duration
-	*net.TCPListener
-}
-
-func (l *keepAliveListener) Accept() (c net.Conn, err error) {
-	tc, err := l.AcceptTCP()
-	if err != nil {
-		return
-	}
-
-	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(l.keepAlivePeriod)
-
-	return tc, nil
 }

@@ -93,9 +93,13 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 }
 
 func (l *Listener) Accept() (conn net.Conn, err error) {
+	var ok bool
 	select {
 	case conn = <-l.connChan:
-	case err = <-l.errChan:
+	case err, ok = <-l.errChan:
+		if !ok {
+			err = listener.ErrClosed
+		}
 	}
 	return
 }

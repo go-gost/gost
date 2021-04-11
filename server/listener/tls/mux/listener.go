@@ -117,7 +117,7 @@ func (l *Listener) Accept() (conn net.Conn, err error) {
 	case conn = <-l.connChan:
 	case err, ok = <-l.errChan:
 		if !ok {
-			err = errors.New("accpet on closed listener")
+			err = listener.ErrClosed
 		}
 	}
 	return

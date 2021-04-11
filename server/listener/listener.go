@@ -1,6 +1,13 @@
 package listener
 
-import "net"
+import (
+	"errors"
+	"net"
+)
+
+var (
+	ErrClosed = errors.New("accpet on closed listener")
+)
 
 // Listener is a server listener, just like a net.Listener.
 type Listener interface {

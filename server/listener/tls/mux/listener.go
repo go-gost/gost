@@ -104,6 +104,7 @@ func (l *Listener) mux(conn net.Conn) {
 		select {
 		case l.connChan <- stream:
 		case <-stream.GetDieCh():
+			stream.Close()
 		default:
 			stream.Close()
 			l.logger.Error("connection queue is full")

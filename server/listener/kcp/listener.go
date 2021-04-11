@@ -47,16 +47,18 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 	}
 	config.Init()
 
+	var ln *kcp.Listener
+
 	if config.TCP {
 		var conn net.PacketConn
 		conn, err = tcpraw.Listen("tcp", addr)
 		if err != nil {
 			return
 		}
-		l.ln, err = kcp.ServeConn(
+		ln, err = kcp.ServeConn(
 			blockCrypt(config.Key, config.Crypt, Salt), config.DataShard, config.ParityShard, conn)
 	} else {
-		l.ln, err = kcp.ListenWithOptions(addr,
+		ln, err = kcp.ListenWithOptions(addr,
 			blockCrypt(config.Key, config.Crypt, Salt), config.DataShard, config.ParityShard)
 	}
 	if err != nil {
@@ -64,22 +66,19 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 	}
 
 	if config.DSCP > 0 {
-		if err = l.ln.SetDSCP(config.DSCP); err != nil {
+		if err = ln.SetDSCP(config.DSCP); err != nil {
 			l.logger.Warn(err)
 		}
 	}
-	if err = l.ln.SetReadBuffer(config.SockBuf); err != nil {
+	if err = ln.SetReadBuffer(config.SockBuf); err != nil {
 		l.logger.Warn(err)
 	}
-	if err = l.ln.SetWriteBuffer(config.SockBuf); err != nil {
+	if err = ln.SetWriteBuffer(config.SockBuf); err != nil {
 		l.logger.Warn(err)
 	}
 
-	queueSize := l.md.connQueueSize
-	if queueSize <= 0 {
-		queueSize = defaultQueueSize
-	}
-	l.connChan = make(chan net.Conn, queueSize)
+	l.ln = ln
+	l.connChan = make(chan net.Conn, l.md.connQueueSize)
 	l.errChan = make(chan error, 1)
 
 	go l.listenLoop()
@@ -133,6 +132,8 @@ func (l *Listener) listenLoop() {
 }
 
 func (l *Listener) mux(conn net.Conn) {
+	defer conn.Close()
+
 	smuxConfig := smux.DefaultConfig()
 	smuxConfig.MaxReceiveBuffer = l.md.config.SockBuf
 	smuxConfig.KeepAliveInterval = time.Duration(l.md.config.KeepAlive) * time.Second
@@ -158,6 +159,7 @@ func (l *Listener) mux(conn net.Conn) {
 		select {
 		case l.connChan <- stream:
 		case <-stream.GetDieCh():
+			stream.Close()
 		default:
 			stream.Close()
 			l.logger.Error("connection queue is full")

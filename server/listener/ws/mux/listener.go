@@ -64,11 +64,7 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 		ReadHeaderTimeout: l.md.readHeaderTimeout,
 	}
 
-	queueSize := l.md.connQueueSize
-	if queueSize <= 0 {
-		queueSize = defaultQueueSize
-	}
-	l.connChan = make(chan net.Conn, queueSize)
+	l.connChan = make(chan net.Conn, l.md.connQueueSize)
 	l.errChan = make(chan error, 1)
 
 	ln, err := net.Listen("tcp", l.md.addr)
@@ -173,6 +169,7 @@ func (l *Listener) mux(conn net.Conn) {
 		select {
 		case l.connChan <- stream:
 		case <-stream.GetDieCh():
+			stream.Close()
 		default:
 			stream.Close()
 			l.logger.Error("connection queue is full")

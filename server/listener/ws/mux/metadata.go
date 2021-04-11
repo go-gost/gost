@@ -1,4 +1,4 @@
-package ws
+package mux
 
 import (
 	"crypto/tls"
@@ -19,6 +19,13 @@ const (
 	enableCompression = "enableCompression"
 	responseHeader    = "responseHeader"
 	connQueueSize     = "connQueueSize"
+
+	muxKeepAliveDisabled = "muxKeepAliveDisabled"
+	muxKeepAlivePeriod   = "muxKeepAlivePeriod"
+	muxKeepAliveTimeout  = "muxKeepAliveTimeout"
+	muxMaxFrameSize      = "muxMaxFrameSize"
+	muxMaxReceiveBuffer  = "muxMaxReceiveBuffer"
+	muxMaxStreamBuffer   = "muxMaxStreamBuffer"
 )
 
 const (
@@ -36,5 +43,12 @@ type metadata struct {
 	writeBufferSize   int
 	enableCompression bool
 	responseHeader    http.Header
-	connQueueSize     int
+
+	muxKeepAliveDisabled bool
+	muxKeepAlivePeriod   time.Duration
+	muxKeepAliveTimeout  time.Duration
+	muxMaxFrameSize      int
+	muxMaxReceiveBuffer  int
+	muxMaxStreamBuffer   int
+	connQueueSize        int
 }

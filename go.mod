@@ -9,4 +9,5 @@ require (
 	github.com/shadowsocks/go-shadowsocks2 v0.1.4
 	github.com/shadowsocks/shadowsocks-go v0.0.0-20200409064450-3e585ff90601
 	github.com/sirupsen/logrus v1.8.1
+	github.com/xtaci/smux v1.5.15
 )

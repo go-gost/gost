@@ -1,4 +1,4 @@
-package udp
+package ftcp
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-gost/gost/logger"
 	"github.com/go-gost/gost/server/listener"
+	"github.com/xtaci/tcpraw"
 )
 
 var (
@@ -39,18 +40,11 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveUDPAddr("udp", l.md.addr)
+	l.conn, err = tcpraw.Listen("tcp", addr)
 	if err != nil {
 		return
 	}
 
-	var conn net.PacketConn
-	conn, err = net.ListenUDP("udp", laddr)
-	if err != nil {
-		return
-	}
-
-	l.conn = conn
 	l.connChan = make(chan net.Conn, l.md.connQueueSize)
 	l.errChan = make(chan error, 1)
 

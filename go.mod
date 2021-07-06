@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/coreos/go-iptables v0.5.0 // indirect
+	github.com/ginuerzh/tls-dissector v0.0.2-0.20201202075250-98fa925912da
 	github.com/go-gost/gosocks5 v0.3.0
 	github.com/golang/snappy v0.0.3
 	github.com/google/gopacket v1.1.19 // indirect
@@ -17,4 +18,5 @@ require (
 	github.com/xtaci/smux v1.5.15
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 )

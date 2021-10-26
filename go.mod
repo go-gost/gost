@@ -10,7 +10,7 @@ require (
 	github.com/golang/snappy v0.0.3
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/gorilla/websocket v1.4.2
-	github.com/lucas-clemente/quic-go v0.20.1
+	github.com/lucas-clemente/quic-go v0.24.0
 	github.com/shadowsocks/go-shadowsocks2 v0.1.4
 	github.com/shadowsocks/shadowsocks-go v0.0.0-20200409064450-3e585ff90601
 	github.com/sirupsen/logrus v1.8.1
@@ -18,5 +18,5 @@ require (
 	github.com/xtaci/smux v1.5.15
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381
+	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
 )

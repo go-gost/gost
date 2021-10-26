@@ -1,0 +1,93 @@
+package chain
+
+import (
+	"context"
+	"errors"
+	"net"
+)
+
+type Route struct {
+	nodes []*Node
+}
+
+func (r *Route) AddNode(node *Node) {
+	r.nodes = append(r.nodes, node)
+}
+
+func (r *Route) Connect(ctx context.Context) (conn net.Conn, err error) {
+	if r.IsEmpty() {
+		return nil, errors.New("empty route")
+	}
+
+	node := r.nodes[0]
+	cc, err := node.Transport().Dial(ctx, r.nodes[0].Addr())
+	if err != nil {
+		return
+	}
+
+	cn, err := node.Transport().Handshake(ctx, cc)
+	if err != nil {
+		cc.Close()
+		return
+	}
+
+	preNode := node
+	for _, node := range r.nodes[1:] {
+		cc, err = preNode.Transport().Connect(ctx, cn, "tcp", node.Addr())
+		if err != nil {
+			cn.Close()
+			return
+		}
+		cc, err = node.transport.Handshake(ctx, cc)
+		if err != nil {
+			cn.Close()
+		}
+		cn = cc
+		preNode = node
+	}
+
+	conn = cn
+	return
+}
+
+func (r *Route) Dial(ctx context.Context, network, address string) (net.Conn, error) {
+	if r.IsEmpty() {
+		return r.dialDirect(ctx, network, address)
+	}
+
+	conn, err := r.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cc, err := r.Last().Transport().Connect(ctx, conn, network, address)
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+	return cc, nil
+}
+
+func (r *Route) dialDirect(ctx context.Context, network, address string) (net.Conn, error) {
+	switch network {
+	case "udp", "udp4", "udp6":
+		if address == "" {
+			return net.ListenUDP(network, nil)
+		}
+	default:
+	}
+
+	d := &net.Dialer{}
+	return d.DialContext(ctx, network, address)
+}
+
+func (r *Route) IsEmpty() bool {
+	return r == nil || len(r.nodes) == 0
+}
+
+func (r Route) Last() *Node {
+	if r.IsEmpty() {
+		return nil
+	}
+	return r.nodes[len(r.nodes)-1]
+}

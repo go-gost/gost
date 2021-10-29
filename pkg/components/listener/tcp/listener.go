@@ -2,11 +2,10 @@ package tcp
 
 import (
 	"net"
-	"strconv"
-	"time"
 
 	"github.com/go-gost/gost/pkg/components/internal/utils"
 	"github.com/go-gost/gost/pkg/components/listener"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -33,9 +32,8 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func (l *Listener) Init(md listener.Metadata) (err error) {
-	l.md, err = l.parseMetadata(md)
-	if err != nil {
+func (l *Listener) Init(md md.Metadata) (err error) {
+	if err = l.parseMetadata(md); err != nil {
 		return
 	}
 
@@ -57,18 +55,13 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 	}
 
 	l.Listener = ln
+	l.logger.Info("listening on:", l.Listener.Addr())
 	return
 }
 
-func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
-	m.keepAlive = true
-	if val, ok := md[keepAlive]; ok {
-		m.keepAlive, _ = strconv.ParseBool(val)
-	}
-
-	if val, ok := md[keepAlivePeriod]; ok {
-		m.keepAlivePeriod, _ = time.ParseDuration(val)
-	}
+func (l *Listener) parseMetadata(md md.Metadata) (err error) {
+	l.md.keepAlive = md.GetBool(keepAlive)
+	l.md.keepAlivePeriod = md.GetDuration(keepAlivePeriod)
 
 	return
 }

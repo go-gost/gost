@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/components/dialer"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -29,12 +30,8 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *Dialer) Init(md dialer.Metadata) (err error) {
-	d.md, err = d.parseMetadata(md)
-	if err != nil {
-		return
-	}
-	return nil
+func (d *Dialer) Init(md md.Metadata) (err error) {
+	return d.parseMetadata(md)
 }
 
 func (d *Dialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (net.Conn, error) {
@@ -52,6 +49,6 @@ func (d *Dialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOptio
 	return netd.DialContext(ctx, "tcp", addr)
 }
 
-func (d *Dialer) parseMetadata(md dialer.Metadata) (m metadata, err error) {
+func (d *Dialer) parseMetadata(md md.Metadata) (err error) {
 	return
 }

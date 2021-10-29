@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"net"
+
+	"github.com/go-gost/gost/pkg/components/metadata"
 )
 
 type Handler interface {
-	Init(Metadata) error
+	Init(metadata.Metadata) error
 	Handle(context.Context, net.Conn)
 }

@@ -2,11 +2,11 @@ package quic
 
 import (
 	"context"
-	"errors"
 	"net"
 
 	"github.com/go-gost/gost/pkg/components/internal/utils"
 	"github.com/go-gost/gost/pkg/components/listener"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/lucas-clemente/quic-go"
@@ -17,6 +17,7 @@ func init() {
 }
 
 type Listener struct {
+	addr     string
 	md       metadata
 	ln       quic.Listener
 	connChan chan net.Conn
@@ -30,17 +31,17 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(options)
 	}
 	return &Listener{
+		addr:   options.Addr,
 		logger: options.Logger,
 	}
 }
 
-func (l *Listener) Init(md listener.Metadata) (err error) {
-	l.md, err = l.parseMetadata(md)
-	if err != nil {
+func (l *Listener) Init(md md.Metadata) (err error) {
+	if err = l.parseMetadata(md); err != nil {
 		return
 	}
 
-	laddr, err := net.ResolveUDPAddr("udp", l.md.addr)
+	laddr, err := net.ResolveUDPAddr("udp", l.addr)
 	if err != nil {
 		return
 	}
@@ -131,13 +132,7 @@ func (l *Listener) mux(ctx context.Context, session quic.Session) {
 	}
 }
 
-func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
-	if val, ok := md[addr]; ok {
-		m.addr = val
-	} else {
-		err = errors.New("missing address")
-		return
-	}
+func (l *Listener) parseMetadata(md md.Metadata) (err error) {
 
 	return
 }

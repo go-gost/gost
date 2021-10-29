@@ -9,13 +9,8 @@ const (
 	defaultConnQueueSize  = 128
 )
 
-const (
-	addr = "addr"
-)
-
 type metadata struct {
-	addr string
-	ttl  time.Duration
+	ttl time.Duration
 
 	readBufferSize int
 	readQueueSize  int

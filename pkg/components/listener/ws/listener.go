@@ -2,12 +2,12 @@ package ws
 
 import (
 	"crypto/tls"
-	"errors"
 	"net"
 	"net/http"
 
 	"github.com/go-gost/gost/pkg/components/internal/utils"
 	"github.com/go-gost/gost/pkg/components/listener"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/gorilla/websocket"
@@ -19,6 +19,7 @@ func init() {
 }
 
 type Listener struct {
+	saddr    string
 	md       metadata
 	addr     net.Addr
 	upgrader *websocket.Upgrader
@@ -34,13 +35,13 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(options)
 	}
 	return &Listener{
+		saddr:  options.Addr,
 		logger: options.Logger,
 	}
 }
 
-func (l *Listener) Init(md listener.Metadata) (err error) {
-	l.md, err = l.parseMetadata(md)
-	if err != nil {
+func (l *Listener) Init(md md.Metadata) (err error) {
+	if err = l.parseMetadata(md); err != nil {
 		return
 	}
 
@@ -59,7 +60,7 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 	mux := http.NewServeMux()
 	mux.Handle(path, http.HandlerFunc(l.upgrade))
 	l.srv = &http.Server{
-		Addr:              l.md.addr,
+		Addr:              l.saddr,
 		TLSConfig:         l.md.tlsConfig,
 		Handler:           mux,
 		ReadHeaderTimeout: l.md.readHeaderTimeout,
@@ -72,7 +73,7 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 	l.connChan = make(chan net.Conn, queueSize)
 	l.errChan = make(chan error, 1)
 
-	ln, err := net.Listen("tcp", l.md.addr)
+	ln, err := net.Listen("tcp", l.saddr)
 	if err != nil {
 		return
 	}
@@ -113,15 +114,12 @@ func (l *Listener) Addr() net.Addr {
 	return l.addr
 }
 
-func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
-	if val, ok := md[addr]; ok {
-		m.addr = val
-	} else {
-		err = errors.New("missing address")
-		return
-	}
-
-	m.tlsConfig, err = utils.LoadTLSConfig(md[certFile], md[keyFile], md[caFile])
+func (l *Listener) parseMetadata(md md.Metadata) (err error) {
+	l.md.tlsConfig, err = utils.LoadTLSConfig(
+		md.GetString(certFile),
+		md.GetString(keyFile),
+		md.GetString(caFile),
+	)
 	if err != nil {
 		return
 	}

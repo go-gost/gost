@@ -18,6 +18,7 @@ func init() {
 }
 
 type LogConfig struct {
+	Output string
 	Level  string
 	Format string
 }
@@ -29,22 +30,22 @@ type LoadbalancingConfig struct {
 
 type ListenerConfig struct {
 	Type     string
-	Metadata map[string]string
+	Metadata map[string]interface{}
 }
 
 type HandlerConfig struct {
 	Type     string
-	Metadata map[string]string
+	Metadata map[string]interface{}
 }
 
 type DialerConfig struct {
 	Type     string
-	Metadata map[string]string
+	Metadata map[string]interface{}
 }
 
 type ConnectorConfig struct {
 	Type     string
-	Metadata map[string]string
+	Metadata map[string]interface{}
 }
 
 type ServiceConfig struct {

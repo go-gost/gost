@@ -1,12 +1,12 @@
 package ftcp
 
 import (
-	"errors"
 	"net"
 	"sync"
 	"sync/atomic"
 
 	"github.com/go-gost/gost/pkg/components/listener"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/xtaci/tcpraw"
@@ -17,6 +17,7 @@ func init() {
 }
 
 type Listener struct {
+	addr     string
 	md       metadata
 	conn     net.PacketConn
 	connChan chan net.Conn
@@ -31,13 +32,13 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(options)
 	}
 	return &Listener{
+		addr:   options.Addr,
 		logger: options.Logger,
 	}
 }
 
-func (l *Listener) Init(md listener.Metadata) (err error) {
-	l.md, err = l.parseMetadata(md)
-	if err != nil {
+func (l *Listener) Init(md md.Metadata) (err error) {
+	if err = l.parseMetadata(md); err != nil {
 		return
 	}
 
@@ -118,14 +119,7 @@ func (l *Listener) listenLoop() {
 	}
 }
 
-func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
-	if val, ok := md[addr]; ok {
-		m.addr = val
-	} else {
-		err = errors.New("missing address")
-		return
-	}
-
+func (l *Listener) parseMetadata(md md.Metadata) (err error) {
 	return
 }
 

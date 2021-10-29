@@ -1,9 +1,17 @@
 package logger
 
-import "sync"
+import (
+	"io"
+
+	"github.com/sirupsen/logrus"
+)
+
+// LogFormat is format type
+type LogFormat string
 
 const (
-	logFieldScope = "scope"
+	TextFormat LogFormat = "text"
+	JSONFormat LogFormat = "json"
 )
 
 // LogLevel is Logger Level type
@@ -22,14 +30,7 @@ const (
 	FatalLevel LogLevel = "fatal"
 )
 
-var (
-	globalLoggers     = make(map[string]Logger)
-	globalLoggersLock sync.RWMutex
-)
-
 type Logger interface {
-	EnableJSONOutput(enabled bool)
-	SetLevel(level LogLevel)
 	WithFields(map[string]interface{}) Logger
 	Debug(args ...interface{})
 	Debugf(format string, args ...interface{})
@@ -41,17 +42,65 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 	Fatal(args ...interface{})
 	Fatalf(format string, args ...interface{})
+	GetLevel() LogLevel
+	IsLevelEnabled(level LogLevel) bool
 }
 
-func NewLogger(name string) Logger {
-	globalLoggersLock.Lock()
-	defer globalLoggersLock.Unlock()
+type LoggerOptions struct {
+	Output io.Writer
+	Format LogFormat
+	Level  LogLevel
+}
 
-	logger, ok := globalLoggers[name]
-	if !ok {
-		logger = newLogger(name)
-		globalLoggers[name] = logger
+type LoggerOption func(opts *LoggerOptions)
+
+func OutputLoggerOption(out io.Writer) LoggerOption {
+	return func(opts *LoggerOptions) {
+		opts.Output = out
+	}
+}
+
+func FormatLoggerOption(format LogFormat) LoggerOption {
+	return func(opts *LoggerOptions) {
+		opts.Format = format
+	}
+}
+
+func LevelLoggerOption(level LogLevel) LoggerOption {
+	return func(opts *LoggerOptions) {
+		opts.Level = level
+	}
+}
+
+func NewLogger(opts ...LoggerOption) Logger {
+	var options LoggerOptions
+	for _, opt := range opts {
+		opt(&options)
 	}
 
-	return logger
+	log := logrus.New()
+	if options.Output != nil {
+		log.SetOutput(options.Output)
+	}
+
+	switch options.Format {
+	case JSONFormat:
+		log.SetFormatter(&logrus.JSONFormatter{})
+	default:
+		log.SetFormatter(&logrus.TextFormatter{
+			FullTimestamp: true,
+		})
+	}
+
+	switch options.Level {
+	case DebugLevel, InfoLevel, WarnLevel, ErrorLevel, FatalLevel:
+		lvl, _ := logrus.ParseLevel(string(options.Level))
+		log.SetLevel(lvl)
+	default:
+		log.SetLevel(logrus.InfoLevel)
+	}
+
+	return &logger{
+		logger: logrus.NewEntry(log),
+	}
 }

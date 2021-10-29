@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/components/handler"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/shadowsocks/go-shadowsocks2/core"
@@ -34,12 +35,8 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *Handler) Init(md handler.Metadata) (err error) {
-	h.md, err = h.parseMetadata(md)
-	if err != nil {
-		return
-	}
-	return nil
+func (h *Handler) Init(md md.Metadata) (err error) {
+	return h.parseMetadata(md)
 }
 
 func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
@@ -74,14 +71,17 @@ func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
 	handler.Transport(conn, cc)
 }
 
-func (h *Handler) parseMetadata(md handler.Metadata) (m metadata, err error) {
-	m.cipher, err = h.initCipher(md[method], md[password], md[key])
+func (h *Handler) parseMetadata(md md.Metadata) (err error) {
+	h.md.cipher, err = h.initCipher(
+		md.GetString(method),
+		md.GetString(password),
+		md.GetString(key),
+	)
 	if err != nil {
 		return
 	}
-	if v, ok := md[readTimeout]; ok {
-		m.readTimeout, _ = time.ParseDuration(v)
-	}
+
+	h.md.readTimeout = md.GetDuration(readTimeout)
 	return
 }
 

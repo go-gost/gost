@@ -4,8 +4,7 @@ import "net/url"
 
 const (
 	userAgent = "userAgent"
-	username  = "username"
-	password  = "password"
+	auth      = "auth"
 )
 
 const (

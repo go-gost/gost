@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	addr            = "addr"
 	certFile        = "certFile"
 	keyFile         = "keyFile"
 	caFile          = "caFile"
@@ -14,7 +13,6 @@ const (
 )
 
 type metadata struct {
-	addr            string
 	tlsConfig       *tls.Config
 	keepAlivePeriod time.Duration
 }

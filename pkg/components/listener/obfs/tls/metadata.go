@@ -3,7 +3,6 @@ package tls
 import "time"
 
 const (
-	addr            = "addr"
 	keepAlive       = "keepAlive"
 	keepAlivePeriod = "keepAlivePeriod"
 )
@@ -13,7 +12,6 @@ const (
 )
 
 type metadata struct {
-	addr            string
 	keepAlive       bool
 	keepAlivePeriod time.Duration
 }

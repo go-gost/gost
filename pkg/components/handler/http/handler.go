@@ -5,9 +5,13 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"strings"
 
+	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/components/handler"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -34,19 +38,41 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *Handler) Init(md handler.Metadata) error {
+func (h *Handler) Init(md md.Metadata) error {
+	return h.parseMetadata(md)
+}
+
+func (h *Handler) parseMetadata(md md.Metadata) error {
+	h.md.proxyAgent = md.GetString(proxyAgent)
+
+	if v, _ := md.Get(auths).([]interface{}); len(v) > 0 {
+		authenticator := auth.NewLocalAuthenticator(nil)
+		for _, auth := range v {
+			if s, _ := auth.(string); s != "" {
+				ss := strings.SplitN(s, ":", 2)
+				if len(ss) == 1 {
+					authenticator.Add(ss[0], "")
+				} else {
+					authenticator.Add(ss[0], ss[1])
+				}
+			}
+		}
+		h.md.authenticator = authenticator
+	}
 	return nil
 }
 
 func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
+	h.logger = h.logger.WithFields(map[string]interface{}{
+		"src":   conn.RemoteAddr(),
+		"local": conn.LocalAddr(),
+	})
+
 	req, err := http.ReadRequest(bufio.NewReader(conn))
 	if err != nil {
-		h.logger.WithFields(map[string]interface{}{
-			"src":   conn.RemoteAddr(),
-			"local": conn.LocalAddr(),
-		}).Error(err)
+		h.logger.Error(err)
 		return
 	}
 	defer req.Body.Close()
@@ -73,6 +99,14 @@ func (h *Handler) handleRequest(ctx context.Context, conn net.Conn, req *http.Re
 		host = net.JoinHostPort(host, "80")
 	}
 
+	h.logger = h.logger.WithFields(map[string]interface{}{
+		"dst": host,
+	})
+
+	if h.logger.IsLevelEnabled(logger.DebugLevel) {
+		dump, _ := httputil.DumpRequest(req, false)
+		h.logger.Debug(string(dump))
+	}
 	/*
 		u, _, _ := basicProxyAuth(req.Header.Get("Proxy-Authorization"))
 		if u != "" {

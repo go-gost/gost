@@ -1,12 +1,12 @@
 package kcp
 
 import (
-	"errors"
 	"net"
 	"time"
 
 	"github.com/go-gost/gost/pkg/components/internal/utils"
 	"github.com/go-gost/gost/pkg/components/listener"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/xtaci/kcp-go/v5"
@@ -19,6 +19,7 @@ func init() {
 }
 
 type Listener struct {
+	addr     string
 	md       metadata
 	ln       *kcp.Listener
 	connChan chan net.Conn
@@ -32,13 +33,13 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(options)
 	}
 	return &Listener{
+		addr:   options.Addr,
 		logger: options.Logger,
 	}
 }
 
-func (l *Listener) Init(md listener.Metadata) (err error) {
-	l.md, err = l.parseMetadata(md)
-	if err != nil {
+func (l *Listener) Init(md md.Metadata) (err error) {
+	if err = l.parseMetadata(md); err != nil {
 		return
 	}
 
@@ -52,14 +53,14 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 
 	if config.TCP {
 		var conn net.PacketConn
-		conn, err = tcpraw.Listen("tcp", addr)
+		conn, err = tcpraw.Listen("tcp", l.addr)
 		if err != nil {
 			return
 		}
 		ln, err = kcp.ServeConn(
 			blockCrypt(config.Key, config.Crypt, Salt), config.DataShard, config.ParityShard, conn)
 	} else {
-		ln, err = kcp.ListenWithOptions(addr,
+		ln, err = kcp.ListenWithOptions(l.addr,
 			blockCrypt(config.Key, config.Crypt, Salt), config.DataShard, config.ParityShard)
 	}
 	if err != nil {
@@ -168,13 +169,6 @@ func (l *Listener) mux(conn net.Conn) {
 	}
 }
 
-func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
-	if val, ok := md[addr]; ok {
-		m.addr = val
-	} else {
-		err = errors.New("missing address")
-		return
-	}
-
+func (l *Listener) parseMetadata(md md.Metadata) (err error) {
 	return
 }

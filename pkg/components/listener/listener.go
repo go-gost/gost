@@ -3,6 +3,8 @@ package listener
 import (
 	"errors"
 	"net"
+
+	"github.com/go-gost/gost/pkg/components/metadata"
 )
 
 var (
@@ -11,7 +13,7 @@ var (
 
 // Listener is a server listener, just like a net.Listener.
 type Listener interface {
-	Init(Metadata) error
+	Init(metadata.Metadata) error
 	net.Listener
 }
 

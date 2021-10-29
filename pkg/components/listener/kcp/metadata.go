@@ -1,8 +1,6 @@
 package kcp
 
 const (
-	addr = "addr"
-
 	connQueueSize = "connQueueSize"
 )
 
@@ -11,7 +9,6 @@ const (
 )
 
 type metadata struct {
-	addr   string
 	config *Config
 
 	connQueueSize int

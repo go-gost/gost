@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/components/connector"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -29,13 +30,8 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 }
 
-func (c *Connector) Init(md connector.Metadata) (err error) {
-	c.md, err = c.parseMetadata(md)
-	if err != nil {
-		return
-	}
-
-	return nil
+func (c *Connector) Init(md md.Metadata) (err error) {
+	return c.parseMetadata(md)
 }
 
 func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
@@ -43,13 +39,9 @@ func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address
 	return conn, nil
 }
 
-func (c *Connector) parseMetadata(md connector.Metadata) (m metadata, err error) {
-	if md == nil {
-		md = connector.Metadata{}
-	}
-
-	m.method = md[method]
-	m.password = md[password]
+func (c *Connector) parseMetadata(md md.Metadata) (err error) {
+	c.md.method = md.GetString(method)
+	c.md.password = md.GetString(password)
 
 	return
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-gost/gost/pkg/components/internal/utils"
 	"github.com/go-gost/gost/pkg/components/listener"
+	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
 	"golang.org/x/net/http2"
@@ -19,6 +20,7 @@ func init() {
 }
 
 type Listener struct {
+	addr string
 	net.Listener
 	md       metadata
 	server   *http2.Server
@@ -33,17 +35,17 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(options)
 	}
 	return &Listener{
+		addr:   options.Addr,
 		logger: options.Logger,
 	}
 }
 
-func (l *Listener) Init(md listener.Metadata) (err error) {
-	l.md, err = l.parseMetadata(md)
-	if err != nil {
+func (l *Listener) Init(md md.Metadata) (err error) {
+	if err = l.parseMetadata(md); err != nil {
 		return
 	}
 
-	ln, err := net.Listen("tcp", l.md.addr)
+	ln, err := net.Listen("tcp", l.addr)
 	if err != nil {
 		return
 	}
@@ -170,15 +172,12 @@ func (l *Listener) upgrade(w http.ResponseWriter, r *http.Request) (*conn, error
 	}, nil
 }
 
-func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
-	if val, ok := md[addr]; ok {
-		m.addr = val
-	} else {
-		err = errors.New("missing address")
-		return
-	}
-
-	m.tlsConfig, err = utils.LoadTLSConfig(md[certFile], md[keyFile], md[caFile])
+func (l *Listener) parseMetadata(md md.Metadata) (err error) {
+	l.md.tlsConfig, err = utils.LoadTLSConfig(
+		md.GetString(certFile),
+		md.GetString(keyFile),
+		md.GetString(caFile),
+	)
 	if err != nil {
 		return
 	}

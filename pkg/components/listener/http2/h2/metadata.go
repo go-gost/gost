@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	addr              = "addr"
 	path              = "path"
 	certFile          = "certFile"
 	keyFile           = "keyFile"
@@ -24,7 +23,6 @@ const (
 )
 
 type metadata struct {
-	addr              string
 	path              string
 	tlsConfig         *tls.Config
 	handshakeTimeout  time.Duration

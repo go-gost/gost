@@ -9,6 +9,7 @@ import (
 	"github.com/go-gost/gost/pkg/components/dialer"
 	"github.com/go-gost/gost/pkg/components/handler"
 	"github.com/go-gost/gost/pkg/components/listener"
+	"github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/registry"
@@ -59,7 +60,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 				}),
 			),
 		)
-		ln.Init(listener.Metadata(svc.Listener.Metadata))
+		ln.Init(metadata.MapMetadata(svc.Listener.Metadata))
 		s.WithListener(ln)
 
 		var chain *chain.Chain
@@ -78,7 +79,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 				}),
 			),
 		)
-		h.Init(handler.Metadata(svc.Handler.Metadata))
+		h.Init(metadata.MapMetadata(svc.Handler.Metadata))
 		s.WithHandler(h)
 
 		services = append(services, s)
@@ -111,7 +112,7 @@ func buildChain(cfg *config.Config) (chains []*chain.Chain) {
 						}),
 					),
 				)
-				cr.Init(connector.Metadata(v.Connector.Metadata))
+				cr.Init(metadata.MapMetadata(v.Connector.Metadata))
 				tr.WithConnector(cr)
 
 				d := registry.GetDialer(v.Dialer.Type)(
@@ -122,7 +123,7 @@ func buildChain(cfg *config.Config) (chains []*chain.Chain) {
 						}),
 					),
 				)
-				d.Init(dialer.Metadata(v.Dialer.Metadata))
+				d.Init(metadata.MapMetadata(v.Dialer.Metadata))
 				tr.WithDialer(d)
 
 				node.WithTransport(tr)

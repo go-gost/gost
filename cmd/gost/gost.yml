@@ -10,12 +10,13 @@ services:
     type: http
     metadata:
       proxyAgent: "gost/3.0"
+      auths:
+      - user1:pass1
+      - user2:pass2
   listener:
     type: tcp
     metadata:
       keepAlive: 15s
-      username: gost
-      password: gost
   # chain: chain01
 
 chains:
@@ -40,8 +41,7 @@ chains:
         type: http
         metadata:
           userAgent: "gost/3.0"
-          username: gost
-          password: gost
+          auth: username:password
       dialer:
         type: tcp
         metadata: {}

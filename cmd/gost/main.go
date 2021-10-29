@@ -5,14 +5,17 @@ import (
 	"github.com/go-gost/gost/pkg/logger"
 )
 
-func main() {
-	log := logger.NewLogger("main")
-	log.EnableJSONOutput(true)
+var (
+	log = logger.NewLogger()
+)
 
+func main() {
 	cfg := &config.Config{}
 	if err := cfg.Load(); err != nil {
 		log.Fatal(err)
 	}
+	log = logFromConfig(cfg.Log)
+
 	services := buildService(cfg)
 	for _, svc := range services {
 		go svc.Run()

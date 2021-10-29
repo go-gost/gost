@@ -1,6 +1,7 @@
 log:
-  level: info # debug, info, warn, error, fatal
-  format: text # text, json
+  output: stderr # stderr, stdout, /path/to/file
+  level: debug # debug, info, warn, error, fatal
+  format: json # text, json
 
 services:
 - url: "http://gost:gost@:8000"
@@ -15,7 +16,7 @@ services:
       keepAlive: 15s
       username: gost
       password: gost
-  chain: chain01
+  # chain: chain01
 
 chains:
 - name: chain01

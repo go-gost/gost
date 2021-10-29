@@ -8,12 +8,13 @@ import (
 
 	"github.com/go-gost/gost/pkg/components/listener"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/registry"
 	"github.com/xtaci/tcpraw"
 )
 
-var (
-	_ listener.Listener = (*Listener)(nil)
-)
+func init() {
+	registry.RegisterListener("ftcp", NewListener)
+}
 
 type Listener struct {
 	md       metadata
@@ -24,7 +25,7 @@ type Listener struct {
 	logger   logger.Logger
 }
 
-func NewListener(opts ...listener.Option) *Listener {
+func NewListener(opts ...listener.Option) listener.Listener {
 	options := &listener.Options{}
 	for _, opt := range opts {
 		opt(options)

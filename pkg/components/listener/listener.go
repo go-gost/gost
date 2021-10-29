@@ -11,6 +11,7 @@ var (
 
 // Listener is a server listener, just like a net.Listener.
 type Listener interface {
+	Init(Metadata) error
 	net.Listener
 }
 

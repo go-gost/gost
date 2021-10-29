@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"errors"
 	"net"
 	"strconv"
 	"time"
@@ -9,24 +8,27 @@ import (
 	"github.com/go-gost/gost/pkg/components/internal/utils"
 	"github.com/go-gost/gost/pkg/components/listener"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/registry"
 )
 
-var (
-	_ listener.Listener = (*Listener)(nil)
-)
+func init() {
+	registry.RegisterListener("tcp", NewListener)
+}
 
 type Listener struct {
-	md metadata
+	addr string
+	md   metadata
 	net.Listener
 	logger logger.Logger
 }
 
-func NewListener(opts ...listener.Option) *Listener {
+func NewListener(opts ...listener.Option) listener.Listener {
 	options := &listener.Options{}
 	for _, opt := range opts {
 		opt(options)
 	}
 	return &Listener{
+		addr:   options.Addr,
 		logger: options.Logger,
 	}
 }
@@ -37,7 +39,7 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveTCPAddr("tcp", l.md.addr)
+	laddr, err := net.ResolveTCPAddr("tcp", l.addr)
 	if err != nil {
 		return
 	}
@@ -59,13 +61,6 @@ func (l *Listener) Init(md listener.Metadata) (err error) {
 }
 
 func (l *Listener) parseMetadata(md listener.Metadata) (m metadata, err error) {
-	if val, ok := md[addr]; ok {
-		m.addr = val
-	} else {
-		err = errors.New("missing address")
-		return
-	}
-
 	m.keepAlive = true
 	if val, ok := md[keepAlive]; ok {
 		m.keepAlive, _ = strconv.ParseBool(val)

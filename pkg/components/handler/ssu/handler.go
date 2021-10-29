@@ -7,20 +7,21 @@ import (
 
 	"github.com/go-gost/gost/pkg/components/handler"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/registry"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 )
 
-var (
-	_ handler.Handler = (*Handler)(nil)
-)
+func init() {
+	registry.RegisterHandler("ssu", NewHandler)
+}
 
 type Handler struct {
 	logger logger.Logger
 	md     metadata
 }
 
-func NewHandler(opts ...handler.Option) *Handler {
+func NewHandler(opts ...handler.Option) handler.Handler {
 	options := &handler.Options{}
 	for _, opt := range opts {
 		opt(options)

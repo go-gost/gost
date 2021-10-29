@@ -1,6 +1,7 @@
 package chain
 
 type Chain struct {
+	Name   string
 	groups []*NodeGroup
 }
 

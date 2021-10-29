@@ -12,18 +12,19 @@ import (
 
 	"github.com/go-gost/gost/pkg/components/connector"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/registry"
 )
 
-var (
-	_ connector.Connector = (*Connector)(nil)
-)
+func init() {
+	registry.RegiserConnector("http", NewConnector)
+}
 
 type Connector struct {
 	md     metadata
 	logger logger.Logger
 }
 
-func NewConnector(opts ...connector.Option) *Connector {
+func NewConnector(opts ...connector.Option) connector.Connector {
 	options := &connector.Options{}
 	for _, opt := range opts {
 		opt(options)

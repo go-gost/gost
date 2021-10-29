@@ -9,11 +9,12 @@ import (
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/components/handler"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/registry"
 )
 
-var (
-	_ handler.Handler = (*Handler)(nil)
-)
+func init() {
+	registry.RegisterHandler("http", NewHandler)
+}
 
 type Handler struct {
 	chain  *chain.Chain
@@ -21,7 +22,7 @@ type Handler struct {
 	md     metadata
 }
 
-func NewHandler(opts ...handler.Option) *Handler {
+func NewHandler(opts ...handler.Option) handler.Handler {
 	options := &handler.Options{}
 	for _, opt := range opts {
 		opt(options)

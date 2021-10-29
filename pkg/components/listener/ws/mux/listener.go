@@ -9,13 +9,15 @@ import (
 	"github.com/go-gost/gost/pkg/components/internal/utils"
 	"github.com/go-gost/gost/pkg/components/listener"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/registry"
 	"github.com/gorilla/websocket"
 	"github.com/xtaci/smux"
 )
 
-var (
-	_ listener.Listener = (*Listener)(nil)
-)
+func init() {
+	registry.RegisterListener("mws", NewListener)
+	registry.RegisterListener("mwss", NewListener)
+}
 
 type Listener struct {
 	md       metadata
@@ -27,7 +29,7 @@ type Listener struct {
 	logger   logger.Logger
 }
 
-func NewListener(opts ...listener.Option) *Listener {
+func NewListener(opts ...listener.Option) listener.Listener {
 	options := &listener.Options{}
 	for _, opt := range opts {
 		opt(options)

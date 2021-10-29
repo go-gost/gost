@@ -6,18 +6,19 @@ import (
 
 	"github.com/go-gost/gost/pkg/components/dialer"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/registry"
 )
 
-var (
-	_ dialer.Dialer = (*Dialer)(nil)
-)
+func init() {
+	registry.RegisterDialer("tcp", NewDialer)
+}
 
 type Dialer struct {
 	md     metadata
 	logger logger.Logger
 }
 
-func NewDialer(opts ...dialer.Option) *Dialer {
+func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	options := &dialer.Options{}
 	for _, opt := range opts {
 		opt(options)

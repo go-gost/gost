@@ -6,5 +6,6 @@ import (
 )
 
 type Handler interface {
+	Init(Metadata) error
 	Handle(context.Context, net.Conn)
 }

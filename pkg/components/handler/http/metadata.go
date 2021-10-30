@@ -3,9 +3,11 @@ package http
 import "github.com/go-gost/gost/pkg/auth"
 
 const (
-	addr       = "addr"
-	proxyAgent = "proxyAgent"
-	auths      = "auths"
+	addrKey        = "addr"
+	proxyAgentKey  = "proxyAgent"
+	authsKey       = "auths"
+	probeResistKey = "probeResist"
+	knockKey       = "knock"
 )
 
 type metadata struct {
@@ -13,4 +15,11 @@ type metadata struct {
 	authenticator auth.Authenticator
 	proxyAgent    string
 	retryCount    int
+	probeResist   *probeResist
+}
+
+type probeResist struct {
+	Type  string
+	Value string
+	Knock string
 }

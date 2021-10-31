@@ -2,6 +2,7 @@ package config
 
 import (
 	"io"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -24,8 +25,9 @@ type LogConfig struct {
 }
 
 type LoadbalancingConfig struct {
-	Strategy string
-	Filters  []string
+	Strategy    string
+	MaxFails    int
+	FailTimeout time.Duration
 }
 
 type ListenerConfig struct {
@@ -49,6 +51,7 @@ type ConnectorConfig struct {
 }
 
 type ServiceConfig struct {
+	Name     string
 	URL      string
 	Addr     string
 	Listener *ListenerConfig

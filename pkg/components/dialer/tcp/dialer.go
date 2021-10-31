@@ -42,11 +42,33 @@ func (d *Dialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOptio
 
 	dial := options.DialFunc
 	if dial != nil {
-		return dial(ctx, addr)
+		conn, err := dial(ctx, addr)
+		if err != nil {
+			d.logger.Error(err)
+		} else {
+			if d.logger.IsLevelEnabled(logger.DebugLevel) {
+				d.logger.WithFields(map[string]interface{}{
+					"src": conn.LocalAddr().String(),
+					"dst": addr,
+				}).Debug("dial with dial func")
+			}
+		}
+		return conn, err
 	}
 
 	var netd net.Dialer
-	return netd.DialContext(ctx, "tcp", addr)
+	conn, err := netd.DialContext(ctx, "tcp", addr)
+	if err != nil {
+		d.logger.Error(err)
+	} else {
+		if d.logger.IsLevelEnabled(logger.DebugLevel) {
+			d.logger.WithFields(map[string]interface{}{
+				"src": conn.LocalAddr().String(),
+				"dst": addr,
+			}).Debug("dial direct")
+		}
+	}
+	return conn, err
 }
 
 func (d *Dialer) parseMetadata(md md.Metadata) (err error) {

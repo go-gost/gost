@@ -1,15 +1,22 @@
 package chain
 
+import (
+	"sync"
+	"time"
+)
+
 type Node struct {
 	name      string
 	addr      string
 	transport *Transport
+	marker    *failMarker
 }
 
 func NewNode(name, addr string) *Node {
 	return &Node{
-		name: name,
-		addr: addr,
+		name:   name,
+		addr:   addr,
+		marker: &failMarker{},
 	}
 }
 
@@ -45,15 +52,72 @@ func (g *NodeGroup) AddNode(node *Node) {
 	g.nodes = append(g.nodes, node)
 }
 
-func (g *NodeGroup) WithSelector(selector Selector) {
+func (g *NodeGroup) WithSelector(selector Selector) *NodeGroup {
 	g.selector = selector
+	return g
 }
 
 func (g *NodeGroup) Next() *Node {
+	if g == nil || len(g.nodes) == 0 {
+		return nil
+	}
+
 	selector := g.selector
 	if selector == nil {
-		// selector = defaultSelector
 		return g.nodes[0]
 	}
+
 	return selector.Select(g.nodes...)
+}
+
+type failMarker struct {
+	failTime  int64
+	failCount uint32
+	mux       sync.RWMutex
+}
+
+func (m *failMarker) FailTime() int64 {
+	if m == nil {
+		return 0
+	}
+
+	m.mux.RLock()
+	defer m.mux.RUnlock()
+
+	return m.failTime
+}
+
+func (m *failMarker) FailCount() uint32 {
+	if m == nil {
+		return 0
+	}
+
+	m.mux.RLock()
+	defer m.mux.RUnlock()
+
+	return m.failCount
+}
+
+func (m *failMarker) Mark() {
+	if m == nil {
+		return
+	}
+
+	m.mux.Lock()
+	defer m.mux.Unlock()
+
+	m.failTime = time.Now().Unix()
+	m.failCount++
+}
+
+func (m *failMarker) Reset() {
+	if m == nil {
+		return
+	}
+
+	m.mux.Lock()
+	defer m.mux.Unlock()
+
+	m.failTime = 0
+	m.failCount = 0
 }

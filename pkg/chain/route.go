@@ -22,26 +22,34 @@ func (r *Route) Connect(ctx context.Context) (conn net.Conn, err error) {
 	node := r.nodes[0]
 	cc, err := node.Transport().Dial(ctx, r.nodes[0].Addr())
 	if err != nil {
+		node.marker.Mark()
 		return
 	}
 
 	cn, err := node.Transport().Handshake(ctx, cc)
 	if err != nil {
 		cc.Close()
+		node.marker.Mark()
 		return
 	}
+	node.marker.Reset()
 
 	preNode := node
 	for _, node := range r.nodes[1:] {
 		cc, err = preNode.Transport().Connect(ctx, cn, "tcp", node.Addr())
 		if err != nil {
 			cn.Close()
+			node.marker.Mark()
 			return
 		}
 		cc, err = node.transport.Handshake(ctx, cc)
 		if err != nil {
 			cn.Close()
+			node.marker.Mark()
+			return
 		}
+		node.marker.Reset()
+
 		cn = cc
 		preNode = node
 	}

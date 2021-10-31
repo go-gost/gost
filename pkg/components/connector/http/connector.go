@@ -5,9 +5,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 
@@ -51,16 +51,25 @@ func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address
 		Header:     make(http.Header),
 	}
 	if c.md.UserAgent != "" {
-		log.Println(c.md.UserAgent)
 		req.Header.Set("User-Agent", c.md.UserAgent)
 	}
 	req.Header.Set("Proxy-Connection", "keep-alive")
+
+	c.logger = c.logger.WithFields(map[string]interface{}{
+		"src": conn.LocalAddr().String(),
+		"dst": conn.RemoteAddr().String(),
+	})
 
 	if user := c.md.User; user != nil {
 		u := user.Username()
 		p, _ := user.Password()
 		req.Header.Set("Proxy-Authorization",
 			"Basic "+base64.StdEncoding.EncodeToString([]byte(u+":"+p)))
+	}
+
+	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+		dump, _ := httputil.DumpRequest(req, false)
+		c.logger.Debug(string(dump))
 	}
 
 	req = req.WithContext(ctx)
@@ -73,6 +82,11 @@ func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+		dump, _ := httputil.DumpResponse(resp, false)
+		c.logger.Debug(string(dump))
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s", resp.Status)

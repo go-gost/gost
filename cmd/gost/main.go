@@ -1,6 +1,8 @@
 package main
 
 import (
+	stdlog "log"
+
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/logger"
 )
@@ -10,6 +12,7 @@ var (
 )
 
 func main() {
+	stdlog.SetFlags(stdlog.LstdFlags | stdlog.Lshortfile)
 	cfg := &config.Config{}
 	if err := cfg.Load(); err != nil {
 		log.Fatal(err)

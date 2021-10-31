@@ -76,6 +76,7 @@ func (h *Handler) parseMetadata(md md.Metadata) error {
 			}
 		}
 	}
+	h.md.retryCount = md.GetInt(retryCount)
 
 	return nil
 }
@@ -260,10 +261,10 @@ func (h *Handler) dial(ctx context.Context, addr string) (conn net.Conn, err err
 		*/
 
 		conn, err = route.Dial(ctx, "tcp", addr)
-		if err != nil {
-			h.logger.Warn("retry:", err)
-			continue
+		if err == nil {
+			break
 		}
+		h.logger.Errorf("route(retry=%d): %s", i, err)
 	}
 
 	return

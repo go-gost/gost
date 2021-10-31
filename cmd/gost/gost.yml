@@ -4,46 +4,77 @@ log:
   format: json # text, json
 
 services:
-- url: "http://gost:gost@:8000"
+- name: http+tcp
+  url: "http://gost:gost@:8000"
   addr: ":8000"
   handler:
     type: http
     metadata:
       proxyAgent: "gost/3.0"
+      retry: 3
       auths:
       - user1:pass1
       - user2:pass2
+      # probeResist: code:404 # code, web, host, file
+      # knock: example.com
   listener:
     type: tcp
     metadata:
       keepAlive: 15s
-  # chain: chain01
+  chain: chain01
 
 chains:
 - name: chain01
   # chain level load balancing
   lb:
     strategy: round
-    filters:
-    - filter1   
+    maxFails: 1
+    failTimeout: 30s
   hops:
-  - name: level01
+  - name: hop01
     # hop level load balancing
     lb:
-      strategy: rand
-      filters:
-      - filter1   
+      strategy: round
+      maxFails: 1
+      failTimeout: 30s
     nodes:
     - name: node01
-      addr: ":8080"
-      url: "http://gost:gost@:8080"
+      addr: ":8081"
+      url: "http://gost:gost@:8081"
       connector:
         type: http
         metadata:
           userAgent: "gost/3.0"
-          auth: username:password
+          auth: user1:pass1
       dialer:
         type: tcp
         metadata: {}
-
-
+    - name: node02
+      addr: ":8082"
+      url: "http://gost:gost@:8082"
+      connector:
+        type: http
+        metadata:
+          userAgent: "gost/3.0"
+          auth: user1:pass1
+      dialer:
+        type: tcp
+        metadata: {}
+  - name: hop02
+    # hop level load balancing
+    lb:
+      strategy: round
+      maxFails: 1
+      failTimeout: 30s
+    nodes:
+    - name: node03
+      addr: ":8083"
+      url: "http://gost:gost@:8083"
+      connector:
+        type: http
+        metadata:
+          userAgent: "gost/3.0"
+          auth: user1:pass1
+      dialer:
+        type: tcp
+        metadata: {}

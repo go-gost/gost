@@ -16,6 +16,121 @@ import (
 	"github.com/go-gost/gost/pkg/service"
 )
 
+func buildService(cfg *config.Config) (services []*service.Service) {
+	if cfg == nil || len(cfg.Services) == 0 {
+		return
+	}
+
+	chains := buildChain(cfg)
+
+	for _, svc := range cfg.Services {
+		listenerLogger := log.WithFields(map[string]interface{}{
+			"kind":    "listener",
+			"type":    svc.Listener.Type,
+			"service": svc.Name,
+		})
+		ln := registry.GetListener(svc.Listener.Type)(
+			listener.AddrOption(svc.Addr),
+			listener.LoggerOption(listenerLogger),
+		)
+		if err := ln.Init(metadata.MapMetadata(svc.Listener.Metadata)); err != nil {
+			listenerLogger.Fatal("init:", err)
+		}
+
+		var chain *chain.Chain
+		for _, ch := range chains {
+			if svc.Chain == ch.Name {
+				chain = ch
+				break
+			}
+		}
+
+		handlerLogger := log.WithFields(map[string]interface{}{
+			"kind":    "handler",
+			"type":    svc.Handler.Type,
+			"service": svc.Name,
+		})
+		h := registry.GetHandler(svc.Handler.Type)(
+			handler.ChainOption(chain),
+			handler.LoggerOption(handlerLogger),
+		)
+		if err := h.Init(metadata.MapMetadata(svc.Handler.Metadata)); err != nil {
+			handlerLogger.Fatal("init:", err)
+		}
+
+		s := (&service.Service{}).
+			WithListener(ln).
+			WithHandler(h)
+		services = append(services, s)
+	}
+
+	return
+}
+
+func buildChain(cfg *config.Config) (chains []*chain.Chain) {
+	if cfg == nil || len(cfg.Chains) == 0 {
+		return nil
+	}
+
+	for _, ch := range cfg.Chains {
+		c := &chain.Chain{
+			Name: ch.Name,
+		}
+
+		selector := selectorFromConfig(ch.LB)
+		for _, hop := range ch.Hops {
+			group := &chain.NodeGroup{}
+			for _, v := range hop.Nodes {
+				node := chain.NewNode(v.Name, v.Addr)
+
+				connectorLogger := log.WithFields(map[string]interface{}{
+					"kind": "connector",
+					"type": v.Connector.Type,
+					"hop":  hop.Name,
+					"node": node.Name(),
+				})
+				cr := registry.GetConnector(v.Connector.Type)(
+					connector.LoggerOption(connectorLogger),
+				)
+				if err := cr.Init(metadata.MapMetadata(v.Connector.Metadata)); err != nil {
+					connectorLogger.Fatal("init:", err)
+				}
+
+				dialerLogger := log.WithFields(map[string]interface{}{
+					"kind": "dialer",
+					"type": v.Dialer.Type,
+					"hop":  hop.Name,
+					"node": node.Name(),
+				})
+				d := registry.GetDialer(v.Dialer.Type)(
+					dialer.LoggerOption(dialerLogger),
+				)
+				if err := d.Init(metadata.MapMetadata(v.Dialer.Metadata)); err != nil {
+					dialerLogger.Fatal("init:", err)
+				}
+
+				tr := (&chain.Transport{}).
+					WithConnector(cr).
+					WithDialer(d)
+
+				node.WithTransport(tr)
+				group.AddNode(node)
+			}
+
+			sel := selector
+			if s := selectorFromConfig(hop.LB); s != nil {
+				sel = s
+			}
+			group.WithSelector(sel)
+			c.AddNodeGroup(group)
+		}
+
+		chains = append(chains, c)
+	}
+
+	return
+}
+
 func logFromConfig(cfg *config.LogConfig) logger.Logger {
 	opts := []logger.LoggerOption{
 		logger.FormatLoggerOption(logger.LogFormat(cfg.Format)),
@@ -41,100 +156,29 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 	return logger.NewLogger(opts...)
 }
 
-func buildService(cfg *config.Config) (services []*service.Service) {
-	if cfg == nil || len(cfg.Services) == 0 {
-		return
-	}
-
-	chains := buildChain(cfg)
-
-	for _, svc := range cfg.Services {
-		s := &service.Service{}
-
-		ln := registry.GetListener(svc.Listener.Type)(
-			listener.AddrOption(svc.Addr),
-			listener.LoggerOption(
-				log.WithFields(map[string]interface{}{
-					"kind": "listener",
-					"type": svc.Listener.Type,
-				}),
-			),
-		)
-		ln.Init(metadata.MapMetadata(svc.Listener.Metadata))
-		s.WithListener(ln)
-
-		var chain *chain.Chain
-		for _, ch := range chains {
-			if svc.Chain == ch.Name {
-				chain = ch
-				break
-			}
-		}
-		h := registry.GetHandler(svc.Handler.Type)(
-			handler.ChainOption(chain),
-			handler.LoggerOption(
-				log.WithFields(map[string]interface{}{
-					"kind": "handler",
-					"type": svc.Handler.Type,
-				}),
-			),
-		)
-		h.Init(metadata.MapMetadata(svc.Handler.Metadata))
-		s.WithHandler(h)
-
-		services = append(services, s)
-	}
-
-	return
-}
-
-func buildChain(cfg *config.Config) (chains []*chain.Chain) {
-	if cfg == nil || len(cfg.Chains) == 0 {
+func selectorFromConfig(cfg *config.LoadbalancingConfig) chain.Selector {
+	if cfg == nil {
 		return nil
 	}
 
-	for _, ch := range cfg.Chains {
-		c := &chain.Chain{
-			Name: ch.Name,
-		}
-		for _, hop := range ch.Hops {
-			group := &chain.NodeGroup{}
-			for _, v := range hop.Nodes {
-				node := chain.NewNode(v.Name, v.Addr)
-
-				tr := &chain.Transport{}
-
-				cr := registry.GetConnector(v.Connector.Type)(
-					connector.LoggerOption(
-						log.WithFields(map[string]interface{}{
-							"kind": "connector",
-							"type": v.Connector.Type,
-						}),
-					),
-				)
-				cr.Init(metadata.MapMetadata(v.Connector.Metadata))
-				tr.WithConnector(cr)
-
-				d := registry.GetDialer(v.Dialer.Type)(
-					dialer.LoggerOption(
-						log.WithFields(map[string]interface{}{
-							"kind": "dialer",
-							"type": v.Dialer.Type,
-						}),
-					),
-				)
-				d.Init(metadata.MapMetadata(v.Dialer.Metadata))
-				tr.WithDialer(d)
-
-				node.WithTransport(tr)
-
-				group.AddNode(node)
-			}
-			c.AddNodeGroup(group)
-		}
-
-		chains = append(chains, c)
+	var strategy chain.Strategy
+	switch cfg.Strategy {
+	case "round":
+		strategy = &chain.RoundRobinStrategy{}
+	case "random":
+		strategy = &chain.RandomStrategy{}
+	case "fifio":
+		strategy = &chain.FIFOStrategy{}
+	default:
+		strategy = &chain.RoundRobinStrategy{}
 	}
 
-	return
+	return chain.NewSelector(
+		strategy,
+		&chain.InvalidFilter{},
+		&chain.FailFilter{
+			MaxFails:    cfg.MaxFails,
+			FailTimeout: cfg.FailTimeout,
+		},
+	)
 }

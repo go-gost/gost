@@ -8,6 +8,7 @@ const (
 	authsKey       = "auths"
 	probeResistKey = "probeResist"
 	knockKey       = "knock"
+	retryCount     = "retry"
 )
 
 type metadata struct {

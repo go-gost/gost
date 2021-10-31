@@ -21,7 +21,7 @@ func init() {
 	registry.RegiserConnector("http", NewConnector)
 }
 
-type Connector struct {
+type httpConnector struct {
 	md     metadata
 	logger logger.Logger
 }
@@ -32,16 +32,16 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 		opt(options)
 	}
 
-	return &Connector{
+	return &httpConnector{
 		logger: options.Logger,
 	}
 }
 
-func (c *Connector) Init(md md.Metadata) (err error) {
+func (c *httpConnector) Init(md md.Metadata) (err error) {
 	return c.parseMetadata(md)
 }
 
-func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
+func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
 	req := &http.Request{
 		Method:     http.MethodConnect,
 		URL:        &url.URL{Host: address},
@@ -95,7 +95,7 @@ func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address
 	return conn, nil
 }
 
-func (c *Connector) parseMetadata(md md.Metadata) (err error) {
+func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
 	c.md.UserAgent, _ = md.Get(userAgent).(string)
 	if c.md.UserAgent == "" {
 		c.md.UserAgent = defaultUserAgent

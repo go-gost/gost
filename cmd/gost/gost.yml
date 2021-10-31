@@ -22,6 +22,7 @@ services:
     metadata:
       keepAlive: 15s
   chain: chain01
+  # bypass: bypass01
 
 chains:
 - name: chain01
@@ -41,6 +42,7 @@ chains:
     - name: node01
       addr: ":8081"
       url: "http://gost:gost@:8081"
+      # bypass: bypass01
       connector:
         type: http
         metadata:
@@ -52,11 +54,12 @@ chains:
     - name: node02
       addr: ":8082"
       url: "http://gost:gost@:8082"
+      # bypass: bypass01
       connector:
         type: http
         metadata:
           userAgent: "gost/3.0"
-          auth: user1:pass1
+          auth: user2:pass2
       dialer:
         type: tcp
         metadata: {}
@@ -70,11 +73,42 @@ chains:
     - name: node03
       addr: ":8083"
       url: "http://gost:gost@:8083"
+      # bypass: bypass01
       connector:
         type: http
         metadata:
           userAgent: "gost/3.0"
-          auth: user1:pass1
+          auth: user3:pass3
       dialer:
         type: tcp
         metadata: {}
+
+bypasses:
+- name: bypass01
+  reverse: false
+  matchers:
+  - .baidu.com
+  - "*.example.com"       # domain wildcard
+  - .example.org        # will match example.org and *.example.org
+
+  # From IANA IPv4 Special-Purpose Address Registry
+  # http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
+  - 0.0.0.0/8           # RFC1122: "This host on this network"
+  - 10.0.0.0/8          # RFC1918: Private-Use
+  - 100.64.0.0/10       # RFC6598: Shared Address Space
+  - 127.0.0.0/8         # RFC1122: Loopback
+  - 169.254.0.0/16      # RFC3927: Link Local
+  - 172.16.0.0/12       # RFC1918: Private-Use
+  - 192.0.0.0/24        # RFC6890: IETF Protocol Assignments
+  - 192.0.2.0/24        # RFC5737: Documentation (TEST-NET-1)
+  - 192.88.99.0/24      # RFC3068: 6to4 Relay Anycast
+  - 192.168.0.0/16      # RFC1918: Private-Use
+  - 198.18.0.0/15       # RFC2544: Benchmarking
+  - 198.51.100.0/24     # RFC5737: Documentation (TEST-NET-2)
+  - 203.0.113.0/24      # RFC5737: Documentation (TEST-NET-3)
+  - 240.0.0.0/4         # RFC1112: Reserved
+  - 255.255.255.255/32  # RFC0919: Limited Broadcast
+
+  # From IANA Multicast Address Space Registry
+  # http://www.iana.org/assignments/multicast-addresses/multicast-addresses.xhtml
+  - 224.0.0.0/4         # RFC5771: Multicast/Reserved

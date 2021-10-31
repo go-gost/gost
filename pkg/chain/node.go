@@ -3,12 +3,15 @@ package chain
 import (
 	"sync"
 	"time"
+
+	"github.com/go-gost/gost/pkg/bypass"
 )
 
 type Node struct {
 	name      string
 	addr      string
 	transport *Transport
+	bypass    bypass.Bypass
 	marker    *failMarker
 }
 
@@ -28,13 +31,20 @@ func (node *Node) Addr() string {
 	return node.addr
 }
 
-func (node *Node) Transport() *Transport {
-	return node.transport
-}
-
 func (node *Node) WithTransport(tr *Transport) *Node {
 	node.transport = tr
 	return node
+}
+
+func (node *Node) WithBypass(bp bypass.Bypass) *Node {
+	node.bypass = bp
+	return node
+}
+
+func (node *Node) Copy() *Node {
+	n := &Node{}
+	*n = *node
+	return n
 }
 
 type NodeGroup struct {

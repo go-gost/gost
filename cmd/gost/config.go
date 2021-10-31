@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/components/connector"
 	"github.com/go-gost/gost/pkg/components/dialer"
@@ -16,12 +17,23 @@ import (
 	"github.com/go-gost/gost/pkg/service"
 )
 
+var (
+	chains   = make(map[string]*chain.Chain)
+	bypasses = make(map[string]bypass.Bypass)
+)
+
 func buildService(cfg *config.Config) (services []*service.Service) {
 	if cfg == nil || len(cfg.Services) == 0 {
 		return
 	}
 
-	chains := buildChain(cfg)
+	for _, bypassCfg := range cfg.Bypasses {
+		bypasses[bypassCfg.Name] = bypassFromConfig(&bypassCfg)
+	}
+
+	for _, chainCfg := range cfg.Chains {
+		chains[chainCfg.Name] = chainFromConfig(&chainCfg)
+	}
 
 	for _, svc := range cfg.Services {
 		listenerLogger := log.WithFields(map[string]interface{}{
@@ -37,21 +49,15 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			listenerLogger.Fatal("init:", err)
 		}
 
-		var chain *chain.Chain
-		for _, ch := range chains {
-			if svc.Chain == ch.Name {
-				chain = ch
-				break
-			}
-		}
-
 		handlerLogger := log.WithFields(map[string]interface{}{
 			"kind":    "handler",
 			"type":    svc.Handler.Type,
 			"service": svc.Name,
 		})
+
 		h := registry.GetHandler(svc.Handler.Type)(
-			handler.ChainOption(chain),
+			handler.ChainOption(chains[svc.Chain]),
+			handler.BypassOption(bypasses[svc.Bypass]),
 			handler.LoggerOption(handlerLogger),
 		)
 		if err := h.Init(metadata.MapMetadata(svc.Handler.Metadata)); err != nil {
@@ -67,68 +73,63 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 	return
 }
 
-func buildChain(cfg *config.Config) (chains []*chain.Chain) {
-	if cfg == nil || len(cfg.Chains) == 0 {
+func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
+	if cfg == nil {
 		return nil
 	}
 
-	for _, ch := range cfg.Chains {
-		c := &chain.Chain{
-			Name: ch.Name,
-		}
+	c := &chain.Chain{}
 
-		selector := selectorFromConfig(ch.LB)
-		for _, hop := range ch.Hops {
-			group := &chain.NodeGroup{}
-			for _, v := range hop.Nodes {
-				node := chain.NewNode(v.Name, v.Addr)
+	selector := selectorFromConfig(cfg.LB)
+	for _, hop := range cfg.Hops {
+		group := &chain.NodeGroup{}
+		for _, v := range hop.Nodes {
 
-				connectorLogger := log.WithFields(map[string]interface{}{
-					"kind": "connector",
-					"type": v.Connector.Type,
-					"hop":  hop.Name,
-					"node": node.Name(),
-				})
-				cr := registry.GetConnector(v.Connector.Type)(
-					connector.LoggerOption(connectorLogger),
-				)
-				if err := cr.Init(metadata.MapMetadata(v.Connector.Metadata)); err != nil {
-					connectorLogger.Fatal("init:", err)
-				}
-
-				dialerLogger := log.WithFields(map[string]interface{}{
-					"kind": "dialer",
-					"type": v.Dialer.Type,
-					"hop":  hop.Name,
-					"node": node.Name(),
-				})
-				d := registry.GetDialer(v.Dialer.Type)(
-					dialer.LoggerOption(dialerLogger),
-				)
-				if err := d.Init(metadata.MapMetadata(v.Dialer.Metadata)); err != nil {
-					dialerLogger.Fatal("init:", err)
-				}
-
-				tr := (&chain.Transport{}).
-					WithConnector(cr).
-					WithDialer(d)
-
-				node.WithTransport(tr)
-				group.AddNode(node)
+			connectorLogger := log.WithFields(map[string]interface{}{
+				"kind": "connector",
+				"type": v.Connector.Type,
+				"hop":  hop.Name,
+				"node": v.Name,
+			})
+			cr := registry.GetConnector(v.Connector.Type)(
+				connector.LoggerOption(connectorLogger),
+			)
+			if err := cr.Init(metadata.MapMetadata(v.Connector.Metadata)); err != nil {
+				connectorLogger.Fatal("init:", err)
 			}
 
-			sel := selector
-			if s := selectorFromConfig(hop.LB); s != nil {
-				sel = s
+			dialerLogger := log.WithFields(map[string]interface{}{
+				"kind": "dialer",
+				"type": v.Dialer.Type,
+				"hop":  hop.Name,
+				"node": v.Name,
+			})
+			d := registry.GetDialer(v.Dialer.Type)(
+				dialer.LoggerOption(dialerLogger),
+			)
+			if err := d.Init(metadata.MapMetadata(v.Dialer.Metadata)); err != nil {
+				dialerLogger.Fatal("init:", err)
 			}
-			group.WithSelector(sel)
-			c.AddNodeGroup(group)
+
+			tr := (&chain.Transport{}).
+				WithConnector(cr).
+				WithDialer(d)
+
+			node := chain.NewNode(v.Name, v.Addr).
+				WithTransport(tr).
+				WithBypass(bypasses[v.Bypass])
+			group.AddNode(node)
 		}
 
-		chains = append(chains, c)
+		sel := selector
+		if s := selectorFromConfig(hop.LB); s != nil {
+			sel = s
+		}
+		group.WithSelector(sel)
+		c.AddNodeGroup(group)
 	}
 
-	return
+	return c
 }
 
 func logFromConfig(cfg *config.LogConfig) logger.Logger {
@@ -181,4 +182,12 @@ func selectorFromConfig(cfg *config.LoadbalancingConfig) chain.Selector {
 			FailTimeout: cfg.FailTimeout,
 		},
 	)
+}
+
+func bypassFromConfig(cfg *config.BypassConfig) bypass.Bypass {
+	if cfg == nil {
+		return nil
+	}
+
+	return bypass.NewBypassPatterns(cfg.Reverse, cfg.Matchers...)
 }

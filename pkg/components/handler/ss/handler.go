@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
+	"github.com/go-gost/gost/pkg/bypass"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/components/handler"
 	md "github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/logger"
@@ -19,7 +21,9 @@ func init() {
 	registry.RegisterHandler("ss", NewHandler)
 }
 
-type Handler struct {
+type ssHandler struct {
+	chain  *chain.Chain
+	bypass bypass.Bypass
 	logger logger.Logger
 	md     metadata
 }
@@ -30,17 +34,24 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 		opt(options)
 	}
 
-	return &Handler{
+	return &ssHandler{
+		chain:  options.Chain,
+		bypass: options.Bypass,
 		logger: options.Logger,
 	}
 }
 
-func (h *Handler) Init(md md.Metadata) (err error) {
+func (h *ssHandler) Init(md md.Metadata) (err error) {
 	return h.parseMetadata(md)
 }
 
-func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
+func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
+
+	h.logger = h.logger.WithFields(map[string]interface{}{
+		"src":   conn.RemoteAddr().String(),
+		"local": conn.LocalAddr().String(),
+	})
 
 	if h.md.cipher != nil {
 		conn = &shadowConn{
@@ -61,9 +72,18 @@ func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	conn.SetReadDeadline(time.Time{})
 
-	host := addr.String()
-	cc, err := net.Dial("tcp", host)
+	h.logger = h.logger.WithFields(map[string]interface{}{
+		"dst": addr.String(),
+	})
+
+	if h.bypass != nil && h.bypass.Contains(addr.String()) {
+		h.logger.Info("bypass: ", addr.String())
+		return
+	}
+
+	cc, err := h.dial(ctx, addr.String())
 	if err != nil {
+		h.logger.Error(err)
 		return
 	}
 	defer cc.Close()
@@ -71,7 +91,7 @@ func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
 	handler.Transport(conn, cc)
 }
 
-func (h *Handler) parseMetadata(md md.Metadata) (err error) {
+func (h *ssHandler) parseMetadata(md md.Metadata) (err error) {
 	h.md.cipher, err = h.initCipher(
 		md.GetString(method),
 		md.GetString(password),
@@ -82,10 +102,41 @@ func (h *Handler) parseMetadata(md md.Metadata) (err error) {
 	}
 
 	h.md.readTimeout = md.GetDuration(readTimeout)
+	h.md.retryCount = md.GetInt(retryCount)
 	return
 }
 
-func (h *Handler) initCipher(method, password string, key string) (core.Cipher, error) {
+func (h *ssHandler) dial(ctx context.Context, addr string) (conn net.Conn, err error) {
+	count := h.md.retryCount + 1
+	if count <= 0 {
+		count = 1
+	}
+
+	for i := 0; i < count; i++ {
+		route := h.chain.GetRouteFor(addr)
+
+		/*
+			buf := bytes.Buffer{}
+			fmt.Fprintf(&buf, "%s -> %s -> ",
+				conn.RemoteAddr(), h.options.Node.String())
+			for _, nd := range route.route {
+				fmt.Fprintf(&buf, "%d@%s -> ", nd.ID, nd.String())
+			}
+			fmt.Fprintf(&buf, "%s", host)
+			log.Log("[route]", buf.String())
+		*/
+
+		conn, err = route.Dial(ctx, "tcp", addr)
+		if err == nil {
+			break
+		}
+		h.logger.Errorf("route(retry=%d): %s", i, err)
+	}
+
+	return
+}
+
+func (h *ssHandler) initCipher(method, password string, key string) (core.Cipher, error) {
 	if method == "" && password == "" {
 		return nil, nil
 	}

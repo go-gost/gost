@@ -14,7 +14,7 @@ func init() {
 	registry.RegisterDialer("tcp", NewDialer)
 }
 
-type Dialer struct {
+type tcpDialer struct {
 	md     metadata
 	logger logger.Logger
 }
@@ -25,16 +25,16 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 		opt(options)
 	}
 
-	return &Dialer{
+	return &tcpDialer{
 		logger: options.Logger,
 	}
 }
 
-func (d *Dialer) Init(md md.Metadata) (err error) {
+func (d *tcpDialer) Init(md md.Metadata) (err error) {
 	return d.parseMetadata(md)
 }
 
-func (d *Dialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (net.Conn, error) {
+func (d *tcpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (net.Conn, error) {
 	var options dialer.DialOptions
 	for _, opt := range opts {
 		opt(&options)
@@ -71,6 +71,6 @@ func (d *Dialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOptio
 	return conn, err
 }
 
-func (d *Dialer) parseMetadata(md md.Metadata) (err error) {
+func (d *tcpDialer) parseMetadata(md md.Metadata) (err error) {
 	return
 }

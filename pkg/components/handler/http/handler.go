@@ -2,10 +2,12 @@ package http
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"hash/crc32"
 	"net"
 	"net/http"
@@ -16,6 +18,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/auth"
+	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/components/handler"
 	md "github.com/go-gost/gost/pkg/components/metadata"
@@ -27,8 +30,9 @@ func init() {
 	registry.RegisterHandler("http", NewHandler)
 }
 
-type Handler struct {
+type httpHandler struct {
 	chain  *chain.Chain
+	bypass bypass.Bypass
 	logger logger.Logger
 	md     metadata
 }
@@ -39,17 +43,18 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 		opt(options)
 	}
 
-	return &Handler{
+	return &httpHandler{
 		chain:  options.Chain,
+		bypass: options.Bypass,
 		logger: options.Logger,
 	}
 }
 
-func (h *Handler) Init(md md.Metadata) error {
+func (h *httpHandler) Init(md md.Metadata) error {
 	return h.parseMetadata(md)
 }
 
-func (h *Handler) parseMetadata(md md.Metadata) error {
+func (h *httpHandler) parseMetadata(md md.Metadata) error {
 	h.md.proxyAgent = md.GetString(proxyAgentKey)
 
 	if v, _ := md.Get(authsKey).([]interface{}); len(v) > 0 {
@@ -81,7 +86,7 @@ func (h *Handler) parseMetadata(md md.Metadata) error {
 	return nil
 }
 
-func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
+func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
@@ -99,7 +104,7 @@ func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
 	h.handleRequest(ctx, conn, req)
 }
 
-func (h *Handler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request) {
+func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request) {
 	if req == nil {
 		return
 	}
@@ -156,21 +161,18 @@ func (h *Handler) handleRequest(ctx context.Context, conn net.Conn, req *http.Re
 		}
 	*/
 
-	/*
-		if h.options.Bypass.Contains(host) {
-			resp.StatusCode = http.StatusForbidden
+	if h.bypass != nil && h.bypass.Contains(host) {
+		resp.StatusCode = http.StatusForbidden
 
-			log.Logf("[http] %s - %s bypass %s",
-				conn.RemoteAddr(), conn.LocalAddr(), host)
-			if Debug {
-				dump, _ := httputil.DumpResponse(resp, false)
-				log.Logf("[http] %s <- %s\n%s", conn.RemoteAddr(), conn.LocalAddr(), string(dump))
-			}
-
-			resp.Write(conn)
-			return
+		if h.logger.IsLevelEnabled(logger.DebugLevel) {
+			dump, _ := httputil.DumpResponse(resp, false)
+			h.logger.Debug(string(dump))
 		}
-	*/
+		h.logger.Info("bypass: ", host)
+
+		resp.Write(conn)
+		return
+	}
 
 	if !h.authenticate(conn, req, resp) {
 		return
@@ -200,6 +202,7 @@ func (h *Handler) handleRequest(ctx context.Context, conn net.Conn, req *http.Re
 			dump, _ := httputil.DumpResponse(resp, false)
 			h.logger.Debug(string(dump))
 		}
+		h.logger.Error(err)
 		return
 	}
 	defer cc.Close()
@@ -227,25 +230,21 @@ func (h *Handler) handleRequest(ctx context.Context, conn net.Conn, req *http.Re
 	handler.Transport(conn, cc)
 }
 
-func (h *Handler) dial(ctx context.Context, addr string) (conn net.Conn, err error) {
+func (h *httpHandler) dial(ctx context.Context, addr string) (conn net.Conn, err error) {
 	count := h.md.retryCount + 1
 	if count <= 0 {
 		count = 1
 	}
 
 	for i := 0; i < count; i++ {
-		route := h.chain.GetRoute()
+		route := h.chain.GetRouteFor(addr)
 
-		/*
-			buf := bytes.Buffer{}
-			fmt.Fprintf(&buf, "%s -> %s -> ",
-				conn.RemoteAddr(), h.options.Node.String())
-			for _, nd := range route.route {
-				fmt.Fprintf(&buf, "%d@%s -> ", nd.ID, nd.String())
-			}
-			fmt.Fprintf(&buf, "%s", host)
-			log.Log("[route]", buf.String())
-		*/
+		buf := bytes.Buffer{}
+		for _, node := range route.Path() {
+			fmt.Fprintf(&buf, "%s@%s -> ", node.Name(), node.Addr())
+		}
+		fmt.Fprintf(&buf, "%s", addr)
+		h.logger.Infof("route(retry=%d): %s", i, buf.String())
 
 		/*
 			// forward http request
@@ -270,7 +269,7 @@ func (h *Handler) dial(ctx context.Context, addr string) (conn net.Conn, err err
 	return
 }
 
-func (h *Handler) decodeServerName(s string) (string, error) {
+func (h *httpHandler) decodeServerName(s string) (string, error) {
 	b, err := base64.RawURLEncoding.DecodeString(s)
 	if err != nil {
 		return "", err
@@ -288,7 +287,7 @@ func (h *Handler) decodeServerName(s string) (string, error) {
 	return string(v), nil
 }
 
-func (h *Handler) basicProxyAuth(proxyAuth string) (username, password string, ok bool) {
+func (h *httpHandler) basicProxyAuth(proxyAuth string) (username, password string, ok bool) {
 	if proxyAuth == "" {
 		return
 	}
@@ -309,7 +308,7 @@ func (h *Handler) basicProxyAuth(proxyAuth string) (username, password string, o
 	return cs[:s], cs[s+1:], true
 }
 
-func (h *Handler) authenticate(conn net.Conn, req *http.Request, resp *http.Response) (ok bool) {
+func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.Response) (ok bool) {
 	u, p, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"))
 	if h.md.authenticator == nil || h.md.authenticator.Authenticate(u, p) {
 		return true

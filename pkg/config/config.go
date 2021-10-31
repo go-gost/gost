@@ -30,6 +30,11 @@ type LoadbalancingConfig struct {
 	FailTimeout time.Duration
 }
 
+type BypassConfig struct {
+	Name     string
+	Reverse  bool
+	Matchers []string
+}
 type ListenerConfig struct {
 	Type     string
 	Metadata map[string]interface{}
@@ -57,6 +62,7 @@ type ServiceConfig struct {
 	Listener *ListenerConfig
 	Handler  *HandlerConfig
 	Chain    string
+	Bypass   string
 }
 
 type ChainConfig struct {
@@ -77,12 +83,14 @@ type NodeConfig struct {
 	Addr      string
 	Dialer    *DialerConfig
 	Connector *ConnectorConfig
+	Bypass    string
 }
 
 type Config struct {
 	Log      *LogConfig
 	Services []ServiceConfig
 	Chains   []ChainConfig
+	Bypasses []BypassConfig
 }
 
 func (c *Config) Load() error {

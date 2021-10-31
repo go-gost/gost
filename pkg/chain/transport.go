@@ -14,6 +14,12 @@ type Transport struct {
 	connector connector.Connector
 }
 
+func (tr *Transport) Copy() *Transport {
+	tr2 := &Transport{}
+	*tr2 = *tr
+	return tr
+}
+
 func (tr *Transport) WithDialer(dialer dialer.Dialer) *Transport {
 	tr.dialer = dialer
 	return tr

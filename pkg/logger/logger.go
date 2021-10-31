@@ -85,7 +85,10 @@ func NewLogger(opts ...LoggerOption) Logger {
 
 	switch options.Format {
 	case JSONFormat:
-		log.SetFormatter(&logrus.JSONFormatter{})
+		log.SetFormatter(&logrus.JSONFormatter{
+			DisableHTMLEscape: true,
+			// PrettyPrint:       true,
+		})
 	default:
 		log.SetFormatter(&logrus.TextFormatter{
 			FullTimestamp: true,

@@ -1,7 +1,6 @@
 package chain
 
 type Chain struct {
-	Name   string
 	groups []*NodeGroup
 }
 
@@ -9,7 +8,7 @@ func (c *Chain) AddNodeGroup(group *NodeGroup) {
 	c.groups = append(c.groups, group)
 }
 
-func (c *Chain) GetRoute() (r *Route) {
+func (c *Chain) GetRouteFor(addr string) (r *Route) {
 	if c == nil || len(c.groups) == 0 {
 		return
 	}
@@ -20,11 +19,13 @@ func (c *Chain) GetRoute() (r *Route) {
 		if node == nil {
 			return
 		}
-		// TODO: bypass
+		if node.bypass != nil && node.bypass.Contains(addr) {
+			break
+		}
 
-		if node.Transport().IsMultiplex() {
-			tr := node.Transport().WithRoute(r)
-			node = node.WithTransport(tr)
+		if node.transport.IsMultiplex() {
+			tr := node.transport.Copy().WithRoute(r)
+			node = node.Copy().WithTransport(tr)
 			r = &Route{}
 		}
 

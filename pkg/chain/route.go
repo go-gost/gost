@@ -101,6 +101,10 @@ func (r *Route) Last() *Node {
 }
 
 func (r *Route) Path() (path []*Node) {
+	if r == nil || len(r.nodes) == 0 {
+		return nil
+	}
+
 	for _, node := range r.nodes {
 		if node.transport != nil && node.transport.route != nil {
 			path = append(path, node.transport.route.Path()...)

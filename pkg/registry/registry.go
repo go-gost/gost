@@ -1,10 +1,10 @@
 package registry
 
 import (
-	"github.com/go-gost/gost/pkg/components/connector"
-	"github.com/go-gost/gost/pkg/components/dialer"
-	"github.com/go-gost/gost/pkg/components/handler"
-	"github.com/go-gost/gost/pkg/components/listener"
+	"github.com/go-gost/gost/pkg/connector"
+	"github.com/go-gost/gost/pkg/dialer"
+	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/listener"
 )
 
 type NewListener func(opts ...listener.Option) listener.Listener

@@ -6,13 +6,13 @@ import (
 
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/components/connector"
-	"github.com/go-gost/gost/pkg/components/dialer"
-	"github.com/go-gost/gost/pkg/components/handler"
-	"github.com/go-gost/gost/pkg/components/listener"
-	"github.com/go-gost/gost/pkg/components/metadata"
 	"github.com/go-gost/gost/pkg/config"
+	"github.com/go-gost/gost/pkg/connector"
+	"github.com/go-gost/gost/pkg/dialer"
+	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/go-gost/gost/pkg/service"
 )

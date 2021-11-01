@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/components/handler"
-	"github.com/go-gost/gost/pkg/components/listener"
+	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/listener"
 )
 
 type Service struct {

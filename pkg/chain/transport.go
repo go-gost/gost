@@ -4,8 +4,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/go-gost/gost/pkg/components/connector"
-	"github.com/go-gost/gost/pkg/components/dialer"
+	"github.com/go-gost/gost/pkg/connector"
+	"github.com/go-gost/gost/pkg/dialer"
 )
 
 type Transport struct {

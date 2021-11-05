@@ -31,7 +31,6 @@ services:
     metadata:
       method: AES-256-GCM
       password: gost
-      key: gost
       readTimeout: 5s
       retry: 3
   listener:
@@ -39,6 +38,23 @@ services:
     metadata:
       keepAlive: 15s
   chain: chain01
+  # bypass: bypass01
+- name: socks5+tcp
+  url: "socks5://gost:gost@:1080"
+  addr: ":1080"
+  handler:
+    type: socks5
+    metadata:
+      auths:
+       - gost:gost
+      readTimeout: 5s
+      retry: 3
+      notls: true
+  listener:
+    type: tcp
+    metadata:
+      keepAlive: 15s
+  chain: chain-socks4
   # bypass: bypass01
 
 chains:
@@ -96,6 +112,20 @@ chains:
         metadata:
           userAgent: "gost/3.0"
           auth: user3:pass3
+      dialer:
+        type: tcp
+        metadata: {}
+- name: chain-socks4
+  hops:
+  - name: hop01
+    nodes:
+    - name: node01
+      addr: ":8081"
+      url: "http://gost:gost@:8081"
+      # bypass: bypass01
+      connector:
+        type: socks4
+        metadata: {}
       dialer:
         type: tcp
         metadata: {}

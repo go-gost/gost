@@ -6,6 +6,10 @@ import (
 	"net"
 )
 
+var (
+	ErrEmptyRoute = errors.New("empty route")
+)
+
 type Route struct {
 	nodes []*Node
 }
@@ -16,7 +20,7 @@ func (r *Route) AddNode(node *Node) {
 
 func (r *Route) Connect(ctx context.Context) (conn net.Conn, err error) {
 	if r.IsEmpty() {
-		return nil, errors.New("empty route")
+		return nil, ErrEmptyRoute
 	}
 
 	node := r.nodes[0]

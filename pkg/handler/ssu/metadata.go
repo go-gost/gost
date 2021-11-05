@@ -1,4 +1,4 @@
-package ss
+package ssu
 
 import (
 	"time"
@@ -11,9 +11,11 @@ const (
 	password    = "password"
 	key         = "key"
 	readTimeout = "readTimeout"
+	retryCount  = "retry"
 )
 
 type metadata struct {
 	cipher      core.Cipher
 	readTimeout time.Duration
+	retryCount  int
 }

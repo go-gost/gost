@@ -2,12 +2,10 @@ package http
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"hash/crc32"
 	"net"
 	"net/http"
@@ -134,13 +132,13 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 	}
 	req.Header.Del("X-Gost-Target")
 
-	host := req.Host
-	if _, port, _ := net.SplitHostPort(host); port == "" {
-		host = net.JoinHostPort(host, "80")
+	addr := req.Host
+	if _, port, _ := net.SplitHostPort(addr); port == "" {
+		addr = net.JoinHostPort(addr, "80")
 	}
 
 	fields := map[string]interface{}{
-		"dst": host,
+		"dst": addr,
 	}
 	if u, _, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization")); u != "" {
 		fields["user"] = u
@@ -151,7 +149,7 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		dump, _ := httputil.DumpRequest(req, false)
 		h.logger.Debug(string(dump))
 	}
-	h.logger.Infof("%s > %s", conn.RemoteAddr(), host)
+	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
 	resp := &http.Response{
 		ProtoMajor: 1,
@@ -179,14 +177,14 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		}
 	*/
 
-	if h.bypass != nil && h.bypass.Contains(host) {
+	if h.bypass != nil && h.bypass.Contains(addr) {
 		resp.StatusCode = http.StatusForbidden
 
 		if h.logger.IsLevelEnabled(logger.DebugLevel) {
 			dump, _ := httputil.DumpResponse(resp, false)
 			h.logger.Debug(string(dump))
 		}
-		h.logger.Info("bypass: ", host)
+		h.logger.Info("bypass: ", addr)
 
 		resp.Write(conn)
 		return
@@ -211,7 +209,11 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 
 	req.Header.Del("Proxy-Authorization")
 
-	cc, err := h.dial(ctx, host)
+	r := (&handler.Router{}).
+		WithChain(h.chain).
+		WithRetry(h.md.retryCount).
+		WithLogger(h.logger)
+	cc, err := r.Dial(ctx, "tcp", addr)
 	if err != nil {
 		resp.StatusCode = http.StatusServiceUnavailable
 		resp.Write(conn)
@@ -244,50 +246,9 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		}
 	}
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), host)
+	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	h.logger.Infof("%s >< %s", conn.RemoteAddr(), host)
-}
-
-func (h *httpHandler) dial(ctx context.Context, addr string) (conn net.Conn, err error) {
-	count := h.md.retryCount + 1
-	if count <= 0 {
-		count = 1
-	}
-
-	for i := 0; i < count; i++ {
-		route := h.chain.GetRouteFor(addr)
-
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			buf := bytes.Buffer{}
-			for _, node := range route.Path() {
-				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
-			}
-			fmt.Fprintf(&buf, "%s", addr)
-			h.logger.Debugf("route(retry=%d): %s", i, buf.String())
-		}
-
-		/*
-			// forward http request
-			lastNode := route.LastNode()
-			if req.Method != http.MethodConnect && lastNode.Protocol == "http" {
-				err = h.forwardRequest(conn, req, route)
-				if err == nil {
-					return
-				}
-				log.Logf("[http] %s -> %s : %s", conn.RemoteAddr(), conn.LocalAddr(), err)
-				continue
-			}
-		*/
-
-		conn, err = route.Dial(ctx, "tcp", addr)
-		if err == nil {
-			break
-		}
-		h.logger.Errorf("route(retry=%d): %s", i, err)
-	}
-
-	return
+	h.logger.Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
 func (h *httpHandler) decodeServerName(s string) (string, error) {

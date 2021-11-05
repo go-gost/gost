@@ -1,9 +1,12 @@
-package ss
+package ssu
 
 import (
 	"context"
 	"net"
+	"time"
 
+	"github.com/go-gost/gost/pkg/bypass"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -17,6 +20,8 @@ func init() {
 }
 
 type ssuHandler struct {
+	chain  *chain.Chain
+	bypass bypass.Bypass
 	logger logger.Logger
 	md     metadata
 }
@@ -28,6 +33,8 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 
 	return &ssuHandler{
+		chain:  options.Chain,
+		bypass: options.Bypass,
 		logger: options.Logger,
 	}
 }
@@ -38,6 +45,21 @@ func (h *ssuHandler) Init(md md.Metadata) (err error) {
 
 func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
+
+	start := time.Now()
+
+	h.logger = h.logger.WithFields(map[string]interface{}{
+		"remote": conn.RemoteAddr().String(),
+		"local":  conn.LocalAddr().String(),
+	})
+
+	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	defer func() {
+		h.logger.WithFields(map[string]interface{}{
+			"duration": time.Since(start),
+		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
+	}()
+
 }
 
 func (h *ssuHandler) parseMetadata(md md.Metadata) (err error) {
@@ -51,6 +73,7 @@ func (h *ssuHandler) parseMetadata(md md.Metadata) (err error) {
 	}
 
 	h.md.readTimeout = md.GetDuration(readTimeout)
+	h.md.retryCount = md.GetInt(retryCount)
 
 	return
 }

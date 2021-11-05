@@ -46,7 +46,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			listener.LoggerOption(listenerLogger),
 		)
 		if err := ln.Init(metadata.MapMetadata(svc.Listener.Metadata)); err != nil {
-			listenerLogger.Fatal("init:", err)
+			listenerLogger.Fatal("init: ", err)
 		}
 
 		handlerLogger := log.WithFields(map[string]interface{}{
@@ -61,7 +61,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			handler.LoggerOption(handlerLogger),
 		)
 		if err := h.Init(metadata.MapMetadata(svc.Handler.Metadata)); err != nil {
-			handlerLogger.Fatal("init:", err)
+			handlerLogger.Fatal("init: ", err)
 		}
 
 		s := (&service.Service{}).
@@ -95,7 +95,7 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 				connector.LoggerOption(connectorLogger),
 			)
 			if err := cr.Init(metadata.MapMetadata(v.Connector.Metadata)); err != nil {
-				connectorLogger.Fatal("init:", err)
+				connectorLogger.Fatal("init: ", err)
 			}
 
 			dialerLogger := log.WithFields(map[string]interface{}{
@@ -108,7 +108,7 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 				dialer.LoggerOption(dialerLogger),
 			)
 			if err := d.Init(metadata.MapMetadata(v.Dialer.Metadata)); err != nil {
-				dialerLogger.Fatal("init:", err)
+				dialerLogger.Fatal("init: ", err)
 			}
 
 			tr := (&chain.Transport{}).
@@ -165,22 +165,19 @@ func selectorFromConfig(cfg *config.LoadbalancingConfig) chain.Selector {
 	var strategy chain.Strategy
 	switch cfg.Strategy {
 	case "round":
-		strategy = &chain.RoundRobinStrategy{}
+		strategy = chain.RoundRobinStrategy()
 	case "random":
-		strategy = &chain.RandomStrategy{}
+		strategy = chain.RandomStrategy()
 	case "fifio":
-		strategy = &chain.FIFOStrategy{}
+		strategy = chain.FIFOStrategy()
 	default:
-		strategy = &chain.RoundRobinStrategy{}
+		strategy = chain.RoundRobinStrategy()
 	}
 
 	return chain.NewSelector(
 		strategy,
-		&chain.InvalidFilter{},
-		&chain.FailFilter{
-			MaxFails:    cfg.MaxFails,
-			FailTimeout: cfg.FailTimeout,
-		},
+		chain.InvalidFilter(),
+		chain.FailFilter(cfg.MaxFails, cfg.FailTimeout),
 	)
 }
 

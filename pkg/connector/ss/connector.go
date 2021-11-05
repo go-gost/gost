@@ -18,7 +18,7 @@ func init() {
 	registry.RegiserConnector("ss", NewConnector)
 }
 
-type Connector struct {
+type ssConnector struct {
 	md     metadata
 	logger logger.Logger
 }
@@ -29,16 +29,16 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 		opt(options)
 	}
 
-	return &Connector{
+	return &ssConnector{
 		logger: options.Logger,
 	}
 }
 
-func (c *Connector) Init(md md.Metadata) (err error) {
+func (c *ssConnector) Init(md md.Metadata) (err error) {
 	return c.parseMetadata(md)
 }
 
-func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
+func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
 	c.logger = c.logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
@@ -60,8 +60,10 @@ func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address
 		return nil, err
 	}
 
-	conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
-	defer conn.SetDeadline(time.Time{})
+	if c.md.connectTimeout > 0 {
+		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
+		defer conn.SetDeadline(time.Time{})
+	}
 
 	if c.md.cipher != nil {
 		conn = c.md.cipher.StreamConn(conn)
@@ -82,7 +84,7 @@ func (c *Connector) Connect(ctx context.Context, conn net.Conn, network, address
 	return sc, nil
 }
 
-func (c *Connector) parseMetadata(md md.Metadata) (err error) {
+func (c *ssConnector) parseMetadata(md md.Metadata) (err error) {
 	c.md.cipher, err = utils.ShadowCipher(
 		md.GetString(method),
 		md.GetString(password),

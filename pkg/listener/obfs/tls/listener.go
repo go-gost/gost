@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("obfs-tls", NewListener)
+	registry.RegisterListener("otls", NewListener)
 }
 
 type obfsListener struct {

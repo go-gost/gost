@@ -62,11 +62,13 @@ func (l *logger) Errorf(format string, args ...interface{}) {
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
 func (l *logger) Fatal(args ...interface{}) {
 	l.log(logrus.FatalLevel, args...)
+	l.logger.Logger.Exit(1)
 }
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 func (l *logger) Fatalf(format string, args ...interface{}) {
 	l.logf(logrus.FatalLevel, format, args...)
+	l.logger.Logger.Exit(1)
 }
 
 func (l *logger) GetLevel() LogLevel {

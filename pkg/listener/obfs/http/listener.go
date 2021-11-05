@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("obfs-http", NewListener)
+	registry.RegisterListener("ohttp", NewListener)
 }
 
 type obfsListener struct {

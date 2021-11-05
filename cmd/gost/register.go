@@ -3,6 +3,7 @@ package main
 import (
 	// Register connectors
 	_ "github.com/go-gost/gost/pkg/connector/http"
+	_ "github.com/go-gost/gost/pkg/connector/socks/v4"
 	_ "github.com/go-gost/gost/pkg/connector/ss"
 
 	// Register dialers
@@ -10,6 +11,8 @@ import (
 
 	// Register handlers
 	_ "github.com/go-gost/gost/pkg/handler/http"
+	_ "github.com/go-gost/gost/pkg/handler/socks/v4"
+	_ "github.com/go-gost/gost/pkg/handler/socks/v5"
 	_ "github.com/go-gost/gost/pkg/handler/ss"
 	_ "github.com/go-gost/gost/pkg/handler/ssu"
 

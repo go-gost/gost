@@ -1,9 +1,7 @@
 package ss
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -87,22 +85,26 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		"dst": addr.String(),
 	})
 
-	h.logger.Infof("%s > %s", conn.RemoteAddr(), addr)
+	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
 	if h.bypass != nil && h.bypass.Contains(addr.String()) {
 		h.logger.Info("bypass: ", addr.String())
 		return
 	}
 
-	cc, err := h.dial(ctx, addr.String())
+	r := (&handler.Router{}).
+		WithChain(h.chain).
+		WithRetry(h.md.retryCount).
+		WithLogger(h.logger)
+	cc, err := r.Dial(ctx, "tcp", addr.String())
 	if err != nil {
 		return
 	}
 	defer cc.Close()
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), addr)
+	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(sc, cc)
-	h.logger.Infof("%s >< %s", conn.RemoteAddr(), addr)
+	h.logger.Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
 func (h *ssHandler) discard(conn net.Conn) {
@@ -121,33 +123,5 @@ func (h *ssHandler) parseMetadata(md md.Metadata) (err error) {
 
 	h.md.readTimeout = md.GetDuration(readTimeout)
 	h.md.retryCount = md.GetInt(retryCount)
-	return
-}
-
-func (h *ssHandler) dial(ctx context.Context, addr string) (conn net.Conn, err error) {
-	count := h.md.retryCount + 1
-	if count <= 0 {
-		count = 1
-	}
-
-	for i := 0; i < count; i++ {
-		route := h.chain.GetRouteFor(addr)
-
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			buf := bytes.Buffer{}
-			for _, node := range route.Path() {
-				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
-			}
-			fmt.Fprintf(&buf, "%s", addr)
-			h.logger.Debugf("route(retry=%d): %s", i, buf.String())
-		}
-
-		conn, err = route.Dial(ctx, "tcp", addr)
-		if err == nil {
-			break
-		}
-		h.logger.Errorf("route(retry=%d): %s", i, err)
-	}
-
 	return
 }

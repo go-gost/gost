@@ -49,13 +49,17 @@ type Strategy interface {
 	Apply(nodes ...*Node) *Node
 }
 
-// RoundStrategy is a strategy for node selector.
-// The node will be selected by round-robin algorithm.
-type RoundRobinStrategy struct {
+type roundRobinStrategy struct {
 	counter uint64
 }
 
-func (s *RoundRobinStrategy) Apply(nodes ...*Node) *Node {
+// RoundRobinStrategy is a strategy for node selector.
+// The node will be selected by round-robin algorithm.
+func RoundRobinStrategy() Strategy {
+	return &roundRobinStrategy{}
+}
+
+func (s *roundRobinStrategy) Apply(nodes ...*Node) *Node {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -64,23 +68,20 @@ func (s *RoundRobinStrategy) Apply(nodes ...*Node) *Node {
 	return nodes[int(n%uint64(len(nodes)))]
 }
 
-// RandomStrategy is a strategy for node selector.
-// The node will be selected randomly.
-type RandomStrategy struct {
-	Seed int64
+type randomStrategy struct {
 	rand *rand.Rand
-	once sync.Once
 	mux  sync.Mutex
 }
 
-func (s *RandomStrategy) Apply(nodes ...*Node) *Node {
-	s.once.Do(func() {
-		seed := s.Seed
-		if seed == 0 {
-			seed = time.Now().UnixNano()
-		}
-		s.rand = rand.New(rand.NewSource(seed))
-	})
+// RandomStrategy is a strategy for node selector.
+// The node will be selected randomly.
+func RandomStrategy() Strategy {
+	return &randomStrategy{
+		rand: rand.New(rand.NewSource(time.Now().UnixNano())),
+	}
+}
+
+func (s *randomStrategy) Apply(nodes ...*Node) *Node {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -93,13 +94,17 @@ func (s *RandomStrategy) Apply(nodes ...*Node) *Node {
 	return nodes[r%len(nodes)]
 }
 
+type fifoStrategy struct{}
+
 // FIFOStrategy is a strategy for node selector.
 // The node will be selected from first to last,
 // and will stick to the selected node until it is failed.
-type FIFOStrategy struct{}
+func FIFOStrategy() Strategy {
+	return &fifoStrategy{}
+}
 
 // Apply applies the fifo strategy for the nodes.
-func (s *FIFOStrategy) Apply(nodes ...*Node) *Node {
+func (s *fifoStrategy) Apply(nodes ...*Node) *Node {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -110,20 +115,27 @@ type Filter interface {
 	Filter(nodes ...*Node) []*Node
 }
 
+type failFilter struct {
+	maxFails    int
+	failTimeout time.Duration
+}
+
 // FailFilter filters the dead node.
 // A node is marked as dead if its failed count is greater than MaxFails.
-type FailFilter struct {
-	MaxFails    int
-	FailTimeout time.Duration
+func FailFilter(maxFails int, timeout time.Duration) Filter {
+	return &failFilter{
+		maxFails:    maxFails,
+		failTimeout: timeout,
+	}
 }
 
 // Filter filters dead nodes.
-func (f *FailFilter) Filter(nodes ...*Node) []*Node {
-	maxFails := f.MaxFails
+func (f *failFilter) Filter(nodes ...*Node) []*Node {
+	maxFails := f.maxFails
 	if maxFails == 0 {
 		maxFails = DefaultMaxFails
 	}
-	failTimeout := f.FailTimeout
+	failTimeout := f.failTimeout
 	if failTimeout == 0 {
 		failTimeout = DefaultFailTimeout
 	}
@@ -141,12 +153,16 @@ func (f *FailFilter) Filter(nodes ...*Node) []*Node {
 	return nl
 }
 
+type invalidFilter struct{}
+
 // InvalidFilter filters the invalid node.
 // A node is invalid if its port is invalid (negative or zero value).
-type InvalidFilter struct{}
+func InvalidFilter() Filter {
+	return &invalidFilter{}
+}
 
 // Filter filters invalid nodes.
-func (f *InvalidFilter) Filter(nodes ...*Node) []*Node {
+func (f *invalidFilter) Filter(nodes ...*Node) []*Node {
 	var nl []*Node
 	for _, node := range nodes {
 		_, sport, _ := net.SplitHostPort(node.Addr())

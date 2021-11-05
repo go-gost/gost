@@ -3,7 +3,6 @@ package http
 import "github.com/go-gost/gost/pkg/auth"
 
 const (
-	addrKey        = "addr"
 	proxyAgentKey  = "proxyAgent"
 	authsKey       = "auths"
 	probeResistKey = "probeResist"
@@ -12,7 +11,6 @@ const (
 )
 
 type metadata struct {
-	addr          string
 	authenticator auth.Authenticator
 	proxyAgent    string
 	retryCount    int

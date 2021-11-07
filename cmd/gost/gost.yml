@@ -54,7 +54,7 @@ services:
     type: tcp
     metadata:
       keepAlive: 15s
-  chain: chain-socks4
+  # chain: chain-socks5
   # bypass: bypass01
 
 chains:
@@ -126,6 +126,22 @@ chains:
       connector:
         type: socks4
         metadata: {}
+      dialer:
+        type: tcp
+        metadata: {}
+- name: chain-socks5
+  hops:
+  - name: hop01
+    nodes:
+    - name: node01
+      addr: ":1081"
+      url: "http://gost:gost@:8081"
+      # bypass: bypass01
+      connector:
+        type: socks5
+        metadata:
+          # notls: true
+          auth: gost:gost
       dialer:
         type: tcp
         metadata: {}

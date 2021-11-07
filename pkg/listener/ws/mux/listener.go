@@ -5,7 +5,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-gost/gost/pkg/internal/utils"
+	util_tls "github.com/go-gost/gost/pkg/internal/utils/tls"
+	"github.com/go-gost/gost/pkg/internal/utils/ws"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -111,7 +112,7 @@ func (l *mwsListener) Addr() net.Addr {
 }
 
 func (l *mwsListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = utils.LoadTLSConfig(
+	l.md.tlsConfig, err = util_tls.LoadTLSConfig(
 		md.GetString(certFile),
 		md.GetString(keyFile),
 		md.GetString(caFile),
@@ -130,7 +131,7 @@ func (l *mwsListener) upgrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	l.mux(utils.WebsocketServerConn(conn))
+	l.mux(ws.WebsocketServerConn(conn))
 }
 
 func (l *mwsListener) mux(conn net.Conn) {

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/internal/utils"
+	util_tls "github.com/go-gost/gost/pkg/internal/utils/tls"
 	md "github.com/go-gost/gost/pkg/metadata"
 )
 
@@ -30,7 +30,7 @@ type metadata struct {
 
 func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 	var err error
-	h.md.tlsConfig, err = utils.LoadTLSConfig(
+	h.md.tlsConfig, err = util_tls.LoadTLSConfig(
 		md.GetString(certFile),
 		md.GetString(keyFile),
 		md.GetString(caFile),

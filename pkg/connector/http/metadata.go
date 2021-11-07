@@ -1,10 +1,14 @@
 package http
 
-import "net/url"
+import (
+	"net/url"
+	"time"
+)
 
 const (
-	userAgent = "userAgent"
-	auth      = "auth"
+	connectTimeout = "timeout"
+	userAgent      = "userAgent"
+	auth           = "auth"
 )
 
 const (
@@ -12,6 +16,7 @@ const (
 )
 
 type metadata struct {
-	UserAgent string
-	User      *url.Userinfo
+	connectTimeout time.Duration
+	UserAgent      string
+	User           *url.Userinfo
 }

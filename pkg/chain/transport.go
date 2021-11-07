@@ -52,6 +52,9 @@ func (tr *Transport) Handshake(ctx context.Context, conn net.Conn) (net.Conn, er
 	if hs, ok := tr.dialer.(dialer.Handshaker); ok {
 		return hs.Handshake(ctx, conn)
 	}
+	if hs, ok := tr.connector.(connector.Handshaker); ok {
+		return hs.Handshake(ctx, conn)
+	}
 	return conn, nil
 }
 

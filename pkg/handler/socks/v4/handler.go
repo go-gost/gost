@@ -139,9 +139,14 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		h.logger.Debug(resp)
 	}
 
+	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	h.logger.Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	h.logger.
+		WithFields(map[string]interface{}{
+			"duration": time.Since(t),
+		}).
+		Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
 func (h *socks4Handler) handleBind(ctx context.Context, conn net.Conn, req *gosocks4.Request) {

@@ -3,12 +3,6 @@ package bufpool
 import "sync"
 
 var (
-	smallBufferSize  = 1 * 1024  // 1KB buffer
-	mediumBufferSize = 8 * 1024  // 8KB buffer
-	largeBufferSize  = 64 * 1024 // 64KB buffer
-)
-
-var (
 	pools = []struct {
 		size int
 		pool sync.Pool
@@ -77,24 +71,32 @@ var (
 				},
 			},
 		},
+		{
+			size: 65 * 1024,
+			pool: sync.Pool{
+				New: func() interface{} {
+					return make([]byte, 65*1024)
+				},
+			},
+		},
 	}
 )
 
-// Get returns a buffer size range from (0, 64]KB,
-// panic if size > 64KB.
+// Get returns a buffer size range from (0, 65]KB,
+// panic if size > 65KB.
 func Get(size int) []byte {
 	for i := range pools {
 		if size <= pools[i].size {
 			return pools[i].pool.Get().([]byte)
 		}
 	}
-	panic("size too large (max=64KB)")
+	panic("size too large (max=65KB)")
 }
 
 func Put(b []byte) {
 	for i := range pools {
-		if len(b) == pools[i].size {
-			pools[i].pool.Put(b)
+		if cap(b) == pools[i].size {
+			pools[i].pool.Put(b[:cap(b)])
 		}
 	}
 }

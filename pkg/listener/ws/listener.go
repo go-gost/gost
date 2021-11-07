@@ -5,7 +5,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-gost/gost/pkg/internal/utils"
+	util_tls "github.com/go-gost/gost/pkg/internal/utils/tls"
+	"github.com/go-gost/gost/pkg/internal/utils/ws"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -115,7 +116,7 @@ func (l *wsListener) Addr() net.Addr {
 }
 
 func (l *wsListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = utils.LoadTLSConfig(
+	l.md.tlsConfig, err = util_tls.LoadTLSConfig(
 		md.GetString(certFile),
 		md.GetString(keyFile),
 		md.GetString(caFile),
@@ -135,7 +136,7 @@ func (l *wsListener) upgrade(w http.ResponseWriter, r *http.Request) {
 	}
 
 	select {
-	case l.connChan <- utils.WebsocketServerConn(conn):
+	case l.connChan <- ws.WebsocketServerConn(conn):
 	default:
 		conn.Close()
 		l.logger.Warn("connection queue is full")

@@ -12,3 +12,7 @@ type Connector interface {
 	Init(metadata.Metadata) error
 	Connect(ctx context.Context, conn net.Conn, network, address string, opts ...ConnectOption) (net.Conn, error)
 }
+
+type Handshaker interface {
+	Handshake(ctx context.Context, conn net.Conn) (net.Conn, error)
+}

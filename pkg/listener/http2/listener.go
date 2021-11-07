@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-gost/gost/pkg/internal/utils"
+	util_tls "github.com/go-gost/gost/pkg/internal/utils/tls"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -126,7 +127,7 @@ func (l *http2Listener) handleFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 func (l *http2Listener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = utils.LoadTLSConfig(
+	l.md.tlsConfig, err = util_tls.LoadTLSConfig(
 		md.GetString(certFile),
 		md.GetString(keyFile),
 		md.GetString(caFile),

@@ -1,6 +1,7 @@
 package v5
 
 import (
+	"crypto/tls"
 	"net/url"
 	"time"
 )
@@ -8,11 +9,12 @@ import (
 const (
 	connectTimeout = "timeout"
 	auth           = "auth"
-	disable4a      = "disable4a"
+	noTLS          = "notls"
 )
 
 type metadata struct {
 	connectTimeout time.Duration
 	User           *url.Userinfo
-	disable4a      bool
+	tlsConfig      *tls.Config
+	noTLS          bool
 }

@@ -10,6 +10,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/logger"
@@ -74,6 +75,11 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		c.logger.Debug(string(dump))
 	}
 
+	if c.md.connectTimeout > 0 {
+		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
+		defer conn.SetDeadline(time.Time{})
+	}
+
 	req = req.WithContext(ctx)
 	if err := req.Write(conn); err != nil {
 		return nil, err
@@ -98,6 +104,7 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 }
 
 func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
+	c.md.connectTimeout = md.GetDuration(connectTimeout)
 	c.md.UserAgent, _ = md.Get(userAgent).(string)
 	if c.md.UserAgent == "" {
 		c.md.UserAgent = defaultUserAgent

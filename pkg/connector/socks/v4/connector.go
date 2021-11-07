@@ -79,8 +79,8 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 
 	if c.md.connectTimeout > 0 {
 		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
+		defer conn.SetDeadline(time.Time{})
 	}
-	defer conn.SetDeadline(time.Time{})
 
 	req := gosocks4.NewRequest(gosocks4.CmdConnect, addr, nil)
 	if err := req.Write(conn); err != nil {

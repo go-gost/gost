@@ -7,21 +7,22 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/internal/utils/mux"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
-func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, req *gosocks5.Request) {
+func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, req *gosocks5.Request) {
 	addr := req.Addr.String()
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"dst": addr,
-		"cmd": "bind",
+		"cmd": "mbind",
 	})
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
 	if h.chain.IsEmpty() {
-		h.bindLocal(ctx, conn, addr)
+		h.muxBindLocal(ctx, conn, addr)
 		return
 	}
 
@@ -51,12 +52,17 @@ func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, req *goso
 		return
 	}
 
+	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	h.logger.Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	h.logger.
+		WithFields(map[string]interface{}{
+			"duration": time.Since(t),
+		}).
+		Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
-func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, addr string) {
+func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, addr string) {
 	bindAddr, _ := net.ResolveTCPAddr("tcp", addr)
 	ln, err := net.ListenTCP("tcp", bindAddr) // strict mode: if the port already in use, it will return error
 	if err != nil {
@@ -94,76 +100,56 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, addr strin
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"bind": socksAddr.String(),
 	})
-	h.logger.Infof("bind on %s OK", socksAddr.String())
+	h.logger.Infof("bind on: %s OK", socksAddr.String())
 
-	h.serveBind(ctx, conn, ln)
+	h.serveMuxBind(ctx, conn, ln)
 }
 
-func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Listener) {
-	var rc net.Conn
-	accept := func() <-chan error {
-		errc := make(chan error, 1)
+func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.Listener) {
+	// Upgrade connection to multiplex stream.
+	session, err := mux.NewMuxSession(conn)
+	if err != nil {
+		h.logger.Error(err)
+		return
+	}
+	defer session.Close()
 
-		go func() {
-			defer close(errc)
-			defer ln.Close()
-
-			c, err := ln.Accept()
+	go func() {
+		defer ln.Close()
+		for {
+			conn, err := session.Accept()
 			if err != nil {
-				errc <- err
+				h.logger.Error(err)
+				return
 			}
-			rc = c
-		}()
+			conn.Close() // we do not handle incoming connections.
+		}
+	}()
 
-		return errc
-	}
-
-	pc1, pc2 := net.Pipe()
-	pipe := func() <-chan error {
-		errc := make(chan error, 1)
-
-		go func() {
-			defer close(errc)
-			defer pc1.Close()
-
-			errc <- handler.Transport(conn, pc1)
-		}()
-
-		return errc
-	}
-
-	defer pc2.Close()
-
-	select {
-	case err := <-accept():
+	for {
+		rc, err := ln.Accept()
 		if err != nil {
 			h.logger.Error(err)
 			return
 		}
-		defer rc.Close()
+		h.logger.Infof("peer accepted: %s", rc.RemoteAddr().String())
 
-		raddr, _ := gosocks5.NewAddr(rc.RemoteAddr().String())
-		reply := gosocks5.NewReply(gosocks5.Succeeded, raddr)
-		if err := reply.Write(pc2); err != nil {
-			h.logger.Error(err)
-		}
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(reply.String())
-		}
-		h.logger.Infof("peer accepted: %s", raddr.String())
+		go func(c net.Conn) {
+			defer c.Close()
 
-		start := time.Now()
-		h.logger.Infof("%s <-> %s", conn.RemoteAddr(), raddr.String())
-		handler.Transport(pc2, rc)
-		h.logger.
-			WithFields(map[string]interface{}{"duration": time.Since(start)}).
-			Infof("%s >-< %s", conn.RemoteAddr(), raddr.String())
+			sc, err := session.GetConn()
+			if err != nil {
+				h.logger.Error(err)
+				return
+			}
+			defer sc.Close()
 
-	case err := <-pipe():
-		if err != nil {
-			h.logger.Error(err)
-		}
-		ln.Close()
-		return
+			t := time.Now()
+			h.logger.Infof("%s <-> %s", conn.RemoteAddr(), c.RemoteAddr().String())
+			handler.Transport(sc, c)
+			h.logger.
+				WithFields(map[string]interface{}{"duration": time.Since(t)}).
+				Infof("%s >-< %s", conn.RemoteAddr(), c.RemoteAddr().String())
+		}(rc)
 	}
 }

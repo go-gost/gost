@@ -8,7 +8,7 @@ import (
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/internal/bufpool"
-	"github.com/go-gost/gost/pkg/internal/utils"
+	"github.com/go-gost/gost/pkg/internal/utils/ss"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
@@ -71,21 +71,21 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 
 	var sc net.Conn
 	if c.md.noDelay {
-		sc = utils.ShadowConn(conn, nil)
+		sc = ss.ShadowConn(conn, nil)
 		// write the addr at once.
 		if _, err := sc.Write(rawaddr[:n]); err != nil {
 			return nil, err
 		}
 	} else {
 		// cache the header
-		sc = utils.ShadowConn(conn, rawaddr[:n])
+		sc = ss.ShadowConn(conn, rawaddr[:n])
 	}
 
 	return sc, nil
 }
 
 func (c *ssConnector) parseMetadata(md md.Metadata) (err error) {
-	c.md.cipher, err = utils.ShadowCipher(
+	c.md.cipher, err = ss.ShadowCipher(
 		md.GetString(method),
 		md.GetString(password),
 		md.GetString(key),

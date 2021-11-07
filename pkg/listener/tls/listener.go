@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/internal/utils"
+	util_tls "github.com/go-gost/gost/pkg/internal/utils/tls"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -56,7 +57,7 @@ func (l *tlsListener) Init(md md.Metadata) (err error) {
 }
 
 func (l *tlsListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = utils.LoadTLSConfig(
+	l.md.tlsConfig, err = util_tls.LoadTLSConfig(
 		md.GetString(certFile),
 		md.GetString(keyFile),
 		md.GetString(caFile),

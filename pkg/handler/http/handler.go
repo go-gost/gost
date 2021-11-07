@@ -246,9 +246,14 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		}
 	}
 
+	start := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	h.logger.Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	h.logger.
+		WithFields(map[string]interface{}{
+			"duration": time.Since(start),
+		}).
+		Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
 func (h *httpHandler) decodeServerName(s string) (string, error) {

@@ -9,26 +9,10 @@ import (
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/internal/utils/socks"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
-)
-
-const (
-	// MethodTLS is an extended SOCKS5 method with tls encryption support.
-	MethodTLS uint8 = 0x80
-	// MethodTLSAuth is an extended SOCKS5 method with tls encryption and authentication support.
-	MethodTLSAuth uint8 = 0x82
-	// MethodMux is an extended SOCKS5 method for stream multiplexing.
-	MethodMux = 0x88
-)
-
-const (
-	// CmdMuxBind is an extended SOCKS5 request CMD for
-	// multiplexing transport with the binding server.
-	CmdMuxBind uint8 = 0xF2
-	// CmdUDPTun is an extended SOCKS5 request CMD for UDP over TCP.
-	CmdUDPTun uint8 = 0xF3
 )
 
 func init() {
@@ -58,8 +42,8 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 }
 
 func (h *socks5Handler) Init(md md.Metadata) (err error) {
-	if err := h.parseMetadata(md); err != nil {
-		return err
+	if err = h.parseMetadata(md); err != nil {
+		return
 	}
 
 	h.selector = &serverSelector{
@@ -110,9 +94,11 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 		h.handleConnect(ctx, conn, req.Addr.String())
 	case gosocks5.CmdBind:
 		h.handleBind(ctx, conn, req)
-	case CmdMuxBind:
+	case socks.CmdMuxBind:
+		h.handleMuxBind(ctx, conn, req)
 	case gosocks5.CmdUdp:
-	case CmdUDPTun:
+		h.handleUDP(ctx, conn, req)
+	case socks.CmdUDPTun:
 	default:
 		h.logger.Errorf("unknown cmd: %d", req.Cmd)
 		resp := gosocks5.NewReply(gosocks5.CmdUnsupported, nil)

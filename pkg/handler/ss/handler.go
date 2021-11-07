@@ -11,7 +11,7 @@ import (
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/internal/utils"
+	"github.com/go-gost/gost/pkg/internal/utils/ss"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
@@ -64,7 +64,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	sc := conn
 	if h.md.cipher != nil {
-		sc = utils.ShadowConn(h.md.cipher.StreamConn(conn), nil)
+		sc = ss.ShadowConn(h.md.cipher.StreamConn(conn), nil)
 	}
 
 	if h.md.readTimeout > 0 {
@@ -102,9 +102,14 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 	defer cc.Close()
 
+	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(sc, cc)
-	h.logger.Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	h.logger.
+		WithFields(map[string]interface{}{
+			"duration": time.Since(t),
+		}).
+		Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
 func (h *ssHandler) discard(conn net.Conn) {
@@ -112,7 +117,7 @@ func (h *ssHandler) discard(conn net.Conn) {
 }
 
 func (h *ssHandler) parseMetadata(md md.Metadata) (err error) {
-	h.md.cipher, err = utils.ShadowCipher(
+	h.md.cipher, err = ss.ShadowCipher(
 		md.GetString(method),
 		md.GetString(password),
 		md.GetString(key),

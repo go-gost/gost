@@ -3,6 +3,7 @@ package v5
 import (
 	"context"
 	"net"
+	"time"
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/handler"
@@ -51,7 +52,12 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr s
 		h.logger.Debug(resp)
 	}
 
+	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	h.logger.Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	h.logger.
+		WithFields(map[string]interface{}{
+			"duration": time.Since(t),
+		}).
+		Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }

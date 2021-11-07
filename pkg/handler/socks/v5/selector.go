@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/auth"
+	"github.com/go-gost/gost/pkg/internal/utils/socks"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
@@ -27,7 +28,7 @@ func (s *serverSelector) Select(methods ...uint8) (method uint8) {
 	}
 	method = gosocks5.MethodNoAuth
 	for _, m := range methods {
-		if m == MethodTLS && !s.noTLS {
+		if m == socks.MethodTLS && !s.noTLS {
 			method = m
 			break
 		}
@@ -38,8 +39,8 @@ func (s *serverSelector) Select(methods ...uint8) (method uint8) {
 		if method == gosocks5.MethodNoAuth {
 			method = gosocks5.MethodUserPass
 		}
-		if method == MethodTLS && !s.noTLS {
-			method = MethodTLSAuth
+		if method == socks.MethodTLS && !s.noTLS {
+			method = socks.MethodTLSAuth
 		}
 	}
 
@@ -51,11 +52,11 @@ func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (net.Conn, erro
 		s.logger.Debugf("%d %d", gosocks5.Ver5, method)
 	}
 	switch method {
-	case MethodTLS:
+	case socks.MethodTLS:
 		conn = tls.Server(conn, s.TLSConfig)
 
-	case gosocks5.MethodUserPass, MethodTLSAuth:
-		if method == MethodTLSAuth {
+	case gosocks5.MethodUserPass, socks.MethodTLSAuth:
+		if method == socks.MethodTLSAuth {
 			conn = tls.Server(conn, s.TLSConfig)
 		}
 

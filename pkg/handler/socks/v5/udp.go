@@ -3,13 +3,16 @@ package v5
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net"
 	"time"
 
 	"github.com/go-gost/gosocks5"
+	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/internal/bufpool"
+	"github.com/go-gost/gost/pkg/internal/utils/socks"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
@@ -50,18 +53,26 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosoc
 	})
 	h.logger.Infof("bind on %s OK", saddr.String())
 
-	if !h.chain.IsEmpty() {
+	if h.chain.IsEmpty() {
+		// serve as standard socks5 udp relay.
+		peer, err := net.ListenUDP("udp", nil)
+		if err != nil {
+			h.logger.Error(err)
+			return
+		}
+		defer peer.Close()
 
+		go h.relayUDP(relay, peer)
+	} else {
+		tun, err := h.getUDPTun(ctx)
+		if err != nil {
+			h.logger.Error(err)
+			return
+		}
+		defer tun.Close()
+
+		go h.tunnelClientUDP(relay, tun)
 	}
-
-	peer, err := net.ListenUDP("udp", nil)
-	if err != nil {
-		h.logger.Error(err)
-		return
-	}
-	defer peer.Close()
-
-	go h.transportUDP(relay, peer)
 
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), saddr)
@@ -71,8 +82,54 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosoc
 		Infof("%s >-< %s", conn.RemoteAddr(), saddr)
 }
 
-func (h *socks5Handler) transportUDP(relay, peer net.PacketConn) (err error) {
-	const bufSize = 65 * 1024
+func (h *socks5Handler) getUDPTun(ctx context.Context) (conn net.Conn, err error) {
+	r := (&handler.Router{}).
+		WithChain(h.chain).
+		WithRetry(h.md.retryCount).
+		WithLogger(h.logger)
+	conn, err = r.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			conn.Close()
+			conn = nil
+		}
+	}()
+
+	if h.md.timeout > 0 {
+		conn.SetDeadline(time.Now().Add(h.md.timeout))
+		defer conn.SetDeadline(time.Time{})
+	}
+
+	req := gosocks5.NewRequest(socks.CmdUDPTun, nil)
+	if err = req.Write(conn); err != nil {
+		return
+	}
+	if h.logger.IsLevelEnabled(logger.DebugLevel) {
+		h.logger.Debug(req)
+	}
+
+	reply, err := gosocks5.ReadReply(conn)
+	if err != nil {
+		return
+	}
+	if h.logger.IsLevelEnabled(logger.DebugLevel) {
+		h.logger.Debug(reply)
+	}
+
+	if reply.Rep != gosocks5.Succeeded {
+		err = errors.New("UDP associate failed")
+		return
+	}
+
+	return
+}
+
+func (h *socks5Handler) tunnelClientUDP(c net.PacketConn, tunnel net.Conn) (err error) {
+	bufSize := h.md.udpBufferSize
 	errc := make(chan error, 2)
 
 	var clientAddr net.Addr
@@ -82,7 +139,126 @@ func (h *socks5Handler) transportUDP(relay, peer net.PacketConn) (err error) {
 		defer bufpool.Put(b)
 
 		for {
-			n, laddr, err := relay.ReadFrom(b)
+			n, laddr, err := c.ReadFrom(b)
+			if err != nil {
+				errc <- err
+				return
+			}
+
+			if clientAddr == nil {
+				clientAddr = laddr
+			}
+
+			var addr gosocks5.Addr
+			header := gosocks5.UDPHeader{
+				Addr: &addr,
+			}
+			hlen, err := header.ReadFrom(bytes.NewReader(b[:n]))
+			if err != nil {
+				errc <- err
+				return
+			}
+
+			raddr, err := net.ResolveUDPAddr("udp", addr.String())
+			if err != nil {
+				continue // drop silently
+			}
+
+			if h.bypass != nil && h.bypass.Contains(raddr.String()) {
+				h.logger.Warn("bypass: ", raddr)
+				continue // bypass
+			}
+
+			dgram := gosocks5.UDPDatagram{
+				Header: &header,
+				Data:   b[hlen:n],
+			}
+			dgram.Header.Rsv = uint16(len(dgram.Data))
+
+			if _, err := dgram.WriteTo(tunnel); err != nil {
+				errc <- err
+				return
+			}
+
+			if h.logger.IsLevelEnabled(logger.DebugLevel) {
+				h.logger.Debugf("%s >>> %s: %v data: %d",
+					clientAddr, raddr, b[:hlen], len(dgram.Data))
+			}
+		}
+	}()
+
+	go func() {
+		b := bufpool.Get(bufSize)
+		defer bufpool.Put(b)
+
+		const dataPos = 262
+
+		for {
+			addr := gosocks5.Addr{}
+			header := gosocks5.UDPHeader{
+				Addr: &addr,
+			}
+
+			data := b[dataPos:]
+			dgram := gosocks5.UDPDatagram{
+				Header: &header,
+				Data:   data,
+			}
+			_, err := dgram.ReadFrom(tunnel)
+			if err != nil {
+				errc <- err
+				return
+			}
+			// NOTE: the dgram.Data may be reallocated if the provided buffer is too short,
+			// we drop it for simplicity. As this occurs, you should enlarge the buffer size.
+			if len(dgram.Data) > len(data) {
+				h.logger.Warnf("buffer too short, dropped")
+				continue
+			}
+
+			// pipe from tunnel to relay
+			if clientAddr == nil {
+				h.logger.Warnf("ignore unexpected peer from %s", addr)
+				continue
+			}
+
+			raddr := addr.String()
+			if h.bypass != nil && h.bypass.Contains(raddr) {
+				h.logger.Warn("bypass: ", raddr)
+				continue // bypass
+			}
+
+			addrLen := addr.Length()
+			addr.Encode(b[dataPos-addrLen : dataPos])
+
+			hlen := addrLen + 3
+			if _, err := c.WriteTo(b[dataPos-hlen:dataPos+len(dgram.Data)], clientAddr); err != nil {
+				errc <- err
+				return
+			}
+
+			if h.logger.IsLevelEnabled(logger.DebugLevel) {
+				h.logger.Debugf("%s <<< %s: %v data: %d",
+					clientAddr, addr.String(), b[dataPos-hlen:dataPos], len(dgram.Data))
+			}
+		}
+	}()
+
+	return <-errc
+}
+
+func (h *socks5Handler) relayUDP(c, peer net.PacketConn) (err error) {
+	bufSize := h.md.udpBufferSize
+	errc := make(chan error, 2)
+
+	var clientAddr net.Addr
+
+	go func() {
+		b := bufpool.Get(bufSize)
+		defer bufpool.Put(b)
+
+		for {
+			n, laddr, err := c.ReadFrom(b)
 			if err != nil {
 				errc <- err
 				return
@@ -127,7 +303,7 @@ func (h *socks5Handler) transportUDP(relay, peer net.PacketConn) (err error) {
 		b := bufpool.Get(bufSize)
 		defer bufpool.Put(b)
 
-		const dataPos = 1024
+		const dataPos = 262
 
 		for {
 			n, raddr, err := peer.ReadFrom(b[dataPos:])
@@ -152,7 +328,7 @@ func (h *socks5Handler) transportUDP(relay, peer net.PacketConn) (err error) {
 			socksAddr.Encode(b[dataPos-addrLen : dataPos])
 
 			hlen := addrLen + 3
-			if _, err := relay.WriteTo(b[dataPos-hlen:dataPos+n], clientAddr); err != nil {
+			if _, err := c.WriteTo(b[dataPos-hlen:dataPos+n], clientAddr); err != nil {
 				errc <- err
 				return
 			}

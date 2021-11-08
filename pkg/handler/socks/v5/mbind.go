@@ -87,6 +87,7 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, addr st
 
 	// Issue: may not reachable when host has multi-interface
 	socksAddr.Host, _, _ = net.SplitHostPort(conn.LocalAddr().String())
+	socksAddr.Type = 0
 	reply := gosocks5.NewReply(gosocks5.Succeeded, socksAddr)
 	if err := reply.Write(conn); err != nil {
 		h.logger.Error(err)

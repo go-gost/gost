@@ -99,6 +99,7 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 	case gosocks5.CmdUdp:
 		h.handleUDP(ctx, conn, req)
 	case socks.CmdUDPTun:
+		h.handleUDPTun(ctx, conn, req)
 	default:
 		h.logger.Errorf("unknown cmd: %d", req.Cmd)
 		resp := gosocks5.NewReply(gosocks5.CmdUnsupported, nil)

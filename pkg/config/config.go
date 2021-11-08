@@ -24,6 +24,11 @@ type LogConfig struct {
 	Format string
 }
 
+type ProfilingConfig struct {
+	Addr    string
+	Enabled bool
+}
+
 type LoadbalancingConfig struct {
 	Strategy    string
 	MaxFails    int
@@ -87,10 +92,11 @@ type NodeConfig struct {
 }
 
 type Config struct {
-	Log      *LogConfig
-	Services []ServiceConfig
-	Chains   []ChainConfig
-	Bypasses []BypassConfig
+	Log       *LogConfig
+	Profiling *ProfilingConfig
+	Services  []ServiceConfig
+	Chains    []ChainConfig
+	Bypasses  []BypassConfig
 }
 
 func (c *Config) Load() error {

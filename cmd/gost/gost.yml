@@ -3,6 +3,10 @@ log:
   level: debug # debug, info, warn, error, fatal
   format: json # text, json
 
+profiling:
+  addr: ":6060"
+  enabled: true
+
 services:
 - name: http+tcp
   url: "http://gost:gost@:8000"
@@ -50,12 +54,29 @@ services:
       readTimeout: 5s
       retry: 3
       notls: true
+      # udpBufferSize: 4096 # range [512, 66560]
   listener:
     type: tcp
     metadata:
       keepAlive: 15s
   # chain: chain-socks5
   # bypass: bypass01
+- name: socks5+tcp
+  url: "socks5://gost:gost@:1080"
+  addr: ":11080"
+  handler:
+    type: socks5
+    metadata:
+      auths:
+       - gost:gost
+      readTimeout: 5s
+      retry: 3
+      notls: true
+      # udpBufferSize: 4096 # range [512, 66560]
+  listener:
+    type: tcp
+    metadata:
+      keepAlive: 15s
 
 chains:
 - name: chain01
@@ -134,13 +155,13 @@ chains:
   - name: hop01
     nodes:
     - name: node01
-      addr: ":1081"
+      addr: ":11080"
       url: "http://gost:gost@:8081"
       # bypass: bypass01
       connector:
         type: socks5
         metadata:
-          # notls: true
+          notls: true
           auth: gost:gost
       dialer:
         type: tcp

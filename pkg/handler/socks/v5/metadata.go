@@ -11,21 +11,25 @@ import (
 )
 
 const (
-	certFile    = "certFile"
-	keyFile     = "keyFile"
-	caFile      = "caFile"
-	authsKey    = "auths"
-	readTimeout = "readTimeout"
-	retryCount  = "retry"
-	noTLS       = "notls"
+	certFile      = "certFile"
+	keyFile       = "keyFile"
+	caFile        = "caFile"
+	authsKey      = "auths"
+	readTimeout   = "readTimeout"
+	timeout       = "timeout"
+	retryCount    = "retry"
+	noTLS         = "notls"
+	udpBufferSize = "udpBufferSize"
 )
 
 type metadata struct {
 	tlsConfig     *tls.Config
 	authenticator auth.Authenticator
+	timeout       time.Duration
 	readTimeout   time.Duration
 	retryCount    int
 	noTLS         bool
+	udpBufferSize int
 }
 
 func (h *socks5Handler) parseMetadata(md md.Metadata) error {
@@ -55,8 +59,21 @@ func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 	}
 
 	h.md.readTimeout = md.GetDuration(readTimeout)
+	h.md.timeout = md.GetDuration(timeout)
 	h.md.retryCount = md.GetInt(retryCount)
 	h.md.noTLS = md.GetBool(noTLS)
+
+	h.md.udpBufferSize = md.GetInt(udpBufferSize)
+	if h.md.udpBufferSize > 0 {
+		if h.md.udpBufferSize < 512 {
+			h.md.udpBufferSize = 512 // min buffer size
+		}
+		if h.md.udpBufferSize > 65*1024 {
+			h.md.udpBufferSize = 65 * 1024 // max buffer size
+		}
+	} else {
+		h.md.udpBufferSize = 4096 // default buffer size
+	}
 
 	return nil
 }

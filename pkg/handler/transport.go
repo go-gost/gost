@@ -2,19 +2,8 @@ package handler
 
 import (
 	"io"
-	"sync"
-)
 
-const (
-	poolBufferSize = 32 * 1024
-)
-
-var (
-	pool = sync.Pool{
-		New: func() interface{} {
-			return make([]byte, poolBufferSize)
-		},
-	}
+	"github.com/go-gost/gost/pkg/internal/bufpool"
 )
 
 func Transport(rw1, rw2 io.ReadWriter) error {
@@ -35,8 +24,8 @@ func Transport(rw1, rw2 io.ReadWriter) error {
 }
 
 func copyBuffer(dst io.Writer, src io.Reader) error {
-	buf := pool.Get().([]byte)
-	defer pool.Put(buf)
+	buf := bufpool.Get(16 * 1024)
+	defer bufpool.Put(buf)
 
 	_, err := io.CopyBuffer(dst, src, buf)
 	return err

@@ -126,6 +126,25 @@ func (l *udpListener) listenLoop() {
 }
 
 func (l *udpListener) parseMetadata(md md.Metadata) (err error) {
+	l.md.ttl = md.GetDuration(ttl)
+	if l.md.ttl <= 0 {
+		l.md.ttl = defaultTTL
+	}
+	l.md.readBufferSize = md.GetInt(readBufferSize)
+	if l.md.readBufferSize <= 0 {
+		l.md.readBufferSize = defaultReadBufferSize
+	}
+
+	l.md.readQueueSize = md.GetInt(readQueueSize)
+	if l.md.readQueueSize <= 0 {
+		l.md.readQueueSize = defaultReadQueueSize
+	}
+
+	l.md.connQueueSize = md.GetInt(connQueueSize)
+	if l.md.connQueueSize <= 0 {
+		l.md.connQueueSize = defaultConnQueueSize
+	}
+
 	return
 }
 

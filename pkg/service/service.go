@@ -7,11 +7,13 @@ import (
 
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/listener"
+	"github.com/go-gost/gost/pkg/logger"
 )
 
 type Service struct {
 	listener listener.Listener
 	handler  handler.Handler
+	logger   logger.Logger
 }
 
 func (s *Service) WithListener(ln listener.Listener) *Service {
@@ -21,6 +23,11 @@ func (s *Service) WithListener(ln listener.Listener) *Service {
 
 func (s *Service) WithHandler(h handler.Handler) *Service {
 	s.handler = h
+	return s
+}
+
+func (s *Service) WithLogger(logger logger.Logger) *Service {
+	s.logger = logger
 	return s
 }
 
@@ -50,7 +57,7 @@ func (s *Service) serve() error {
 				if max := 1 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				// log.Logf("server: Accept error: %v; retrying in %v", e, tempDelay)
+				s.logger.Warnf("accept: %v, retrying in %v", e, tempDelay)
 				time.Sleep(tempDelay)
 				continue
 			}

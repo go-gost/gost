@@ -55,7 +55,6 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 	}
 
 	l.Listener = ln
-	l.logger.Info("listening on:", l.Listener.Addr())
 	return
 }
 

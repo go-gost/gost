@@ -323,7 +323,6 @@ func (h *socks5Handler) relayUDP(c, peer net.PacketConn) (err error) {
 			if socksAddr == nil {
 				socksAddr = &gosocks5.Addr{}
 			}
-			socksAddr.Type = 0
 			addrLen := socksAddr.Length()
 			socksAddr.Encode(b[dataPos-addrLen : dataPos])
 

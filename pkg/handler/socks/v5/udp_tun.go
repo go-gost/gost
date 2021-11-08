@@ -165,7 +165,6 @@ func (h *socks5Handler) tunnelServerUDP(tunnel net.Conn, c net.PacketConn) (err 
 			if addr == nil {
 				addr = &gosocks5.Addr{}
 			}
-			addr.Type = 0
 			header := gosocks5.UDPHeader{
 				Rsv:  uint16(n),
 				Addr: addr,

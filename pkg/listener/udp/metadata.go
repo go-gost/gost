@@ -9,6 +9,13 @@ const (
 	defaultConnQueueSize  = 128
 )
 
+const (
+	ttl            = "ttl"
+	readBufferSize = "readBufferSize"
+	readQueueSize  = "readQueueSize"
+	connQueueSize  = "connQueueSize"
+)
+
 type metadata struct {
 	ttl time.Duration
 

@@ -36,10 +36,13 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 	}
 
 	for _, svc := range cfg.Services {
-		listenerLogger := log.WithFields(map[string]interface{}{
-			"kind":    "listener",
-			"type":    svc.Listener.Type,
+		serviceLogger := log.WithFields(map[string]interface{}{
 			"service": svc.Name,
+		})
+
+		listenerLogger := serviceLogger.WithFields(map[string]interface{}{
+			"kind": "listener",
+			"type": svc.Listener.Type,
 		})
 		ln := registry.GetListener(svc.Listener.Type)(
 			listener.AddrOption(svc.Addr),
@@ -49,10 +52,9 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			listenerLogger.Fatal("init: ", err)
 		}
 
-		handlerLogger := log.WithFields(map[string]interface{}{
-			"kind":    "handler",
-			"type":    svc.Handler.Type,
-			"service": svc.Name,
+		handlerLogger := serviceLogger.WithFields(map[string]interface{}{
+			"kind": "handler",
+			"type": svc.Handler.Type,
 		})
 
 		h := registry.GetHandler(svc.Handler.Type)(
@@ -66,8 +68,11 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 
 		s := (&service.Service{}).
 			WithListener(ln).
-			WithHandler(h)
+			WithHandler(h).
+			WithLogger(serviceLogger)
 		services = append(services, s)
+
+		serviceLogger.Info("listening on: ", s.Addr())
 	}
 
 	return

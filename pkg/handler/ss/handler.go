@@ -49,7 +49,6 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),

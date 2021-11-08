@@ -43,6 +43,18 @@ services:
       keepAlive: 15s
   chain: chain01
   # bypass: bypass01
+- name: ssu
+  url: "ss://chacha20:gost@:8000"
+  addr: ":8338"
+  handler:
+    type: ssu
+    metadata:
+      # method: AES-256-GCM
+      # password: gost
+      readTimeout: 5s
+      retry: 3
+  listener:
+    type: udp
 - name: socks5+tcp
   url: "socks5://gost:gost@:1080"
   addr: ":1080"

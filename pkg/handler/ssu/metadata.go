@@ -12,10 +12,12 @@ const (
 	key         = "key"
 	readTimeout = "readTimeout"
 	retryCount  = "retry"
+	bufferSize  = "bufferSize"
 )
 
 type metadata struct {
 	cipher      core.Cipher
 	readTimeout time.Duration
 	retryCount  int
+	bufferSize  int
 }

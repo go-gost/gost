@@ -70,19 +70,15 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 		h.logger.Error(err)
 		return
 	}
-	conn.SetReadDeadline(time.Time{})
+	h.logger.Debug(req)
 
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
-		h.logger.Debug(req)
-	}
+	conn.SetReadDeadline(time.Time{})
 
 	if h.md.authenticator != nil &&
 		!h.md.authenticator.Authenticate(string(req.Userid), "") {
 		resp := gosocks4.NewReply(gosocks4.RejectedUserid, nil)
 		resp.Write(conn)
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(resp)
-		}
+		h.logger.Debug(resp)
 		return
 	}
 
@@ -107,9 +103,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 	if h.bypass != nil && h.bypass.Contains(addr) {
 		resp := gosocks4.NewReply(gosocks4.Rejected, nil)
 		resp.Write(conn)
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(resp)
-		}
+		h.logger.Debug(resp)
 		h.logger.Info("bypass: ", addr)
 		return
 	}
@@ -122,9 +116,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 	if err != nil {
 		resp := gosocks4.NewReply(gosocks4.Failed, nil)
 		resp.Write(conn)
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(resp)
-		}
+		h.logger.Debug(resp)
 		return
 	}
 
@@ -135,9 +127,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		h.logger.Error(err)
 		return
 	}
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
-		h.logger.Debug(resp)
-	}
+	h.logger.Debug(resp)
 
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)

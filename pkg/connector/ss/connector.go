@@ -2,6 +2,7 @@ package ss
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -40,21 +41,30 @@ func (c *ssConnector) Init(md md.Metadata) (err error) {
 
 func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
 	c.logger = c.logger.WithFields(map[string]interface{}{
-		"remote": conn.RemoteAddr().String(),
-		"local":  conn.LocalAddr().String(),
-		"target": address,
+		"remote":  conn.RemoteAddr().String(),
+		"local":   conn.LocalAddr().String(),
+		"network": network,
+		"address": address,
 	})
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+	default:
+		err := fmt.Errorf("network %s unsupported, should be tcp, tcp4 or tcp6", network)
+		c.logger.Error(err)
+		return nil, err
+	}
 	c.logger.Infof("connect: ", address)
 
-	socksAddr, err := gosocks5.NewAddr(address)
-	if err != nil {
-		c.logger.Error("parse addr: ", err)
+	addr := gosocks5.Addr{}
+	if err := addr.ParseFrom(address); err != nil {
+		c.logger.Error(err)
 		return nil, err
 	}
 	rawaddr := bufpool.Get(512)
 	defer bufpool.Put(rawaddr)
 
-	n, err := socksAddr.Encode(rawaddr)
+	n, err := addr.Encode(rawaddr)
 	if err != nil {
 		c.logger.Error("encoding addr: ", err)
 		return nil, err

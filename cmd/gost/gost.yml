@@ -45,7 +45,7 @@ services:
   # bypass: bypass01
 - name: ssu
   url: "ss://chacha20:gost@:8000"
-  addr: ":8338"
+  addr: ":8388"
   handler:
     type: ssu
     metadata:
@@ -54,7 +54,8 @@ services:
       readTimeout: 5s
       retry: 3
   listener:
-    type: udp
+    type: tcp
+  # chain: chain-ssu
 - name: socks5+tcp
   url: "socks5://gost:gost@:1080"
   addr: ":1080"
@@ -71,7 +72,7 @@ services:
     type: tcp
     metadata:
       keepAlive: 15s
-  # chain: chain-socks5
+  chain: chain-socks5
   # bypass: bypass01
 - name: socks5+tcp
   url: "socks5://gost:gost@:1080"
@@ -177,6 +178,20 @@ chains:
           auth: gost:gost
       dialer:
         type: tcp
+        metadata: {}
+- name: chain-ssu
+  hops:
+  - name: hop01
+    nodes:
+    - name: node01
+      addr: ":8339"
+      url: "http://gost:gost@:8081"
+      # bypass: bypass01
+      connector:
+        type: ssu
+        metadata: {}
+      dialer:
+        type: udp
         metadata: {}
 
 bypasses:

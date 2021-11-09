@@ -18,9 +18,7 @@ type clientSelector struct {
 }
 
 func (s *clientSelector) Methods() []uint8 {
-	if s.logger.IsLevelEnabled(logger.DebugLevel) {
-		s.logger.Debug("methods: ", s.methods)
-	}
+	s.logger.Debug("methods: ", s.methods)
 	return s.methods
 }
 
@@ -33,9 +31,7 @@ func (s *clientSelector) Select(methods ...uint8) (method uint8) {
 }
 
 func (s *clientSelector) OnSelected(method uint8, conn net.Conn) (net.Conn, error) {
-	if s.logger.IsLevelEnabled(logger.DebugLevel) {
-		s.logger.Debug("method selected: ", method)
-	}
+	s.logger.Debug("method selected: ", method)
 
 	switch method {
 	case socks.MethodTLS:
@@ -57,18 +53,14 @@ func (s *clientSelector) OnSelected(method uint8, conn net.Conn) (net.Conn, erro
 			s.logger.Error(err)
 			return nil, err
 		}
-		if s.logger.IsLevelEnabled(logger.DebugLevel) {
-			s.logger.Debug(req)
-		}
+		s.logger.Debug(req)
 
 		resp, err := gosocks5.ReadUserPassResponse(conn)
 		if err != nil {
 			s.logger.Error(err)
 			return nil, err
 		}
-		if s.logger.IsLevelEnabled(logger.DebugLevel) {
-			s.logger.Debug(resp)
-		}
+		s.logger.Debug(resp)
 
 		if resp.Status != gosocks5.Succeeded {
 			return nil, gosocks5.ErrAuthFailure

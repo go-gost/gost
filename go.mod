@@ -7,7 +7,7 @@ require (
 	github.com/coreos/go-iptables v0.5.0 // indirect
 	github.com/ginuerzh/tls-dissector v0.0.2-0.20201202075250-98fa925912da
 	github.com/go-gost/gosocks4 v0.0.1
-	github.com/go-gost/gosocks5 v0.3.1-0.20211108125245-019dfd6b3aea
+	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/snappy v0.0.3
 	github.com/google/gopacket v1.1.19 // indirect

@@ -42,10 +42,20 @@ func (c *socks4Connector) Init(md md.Metadata) (err error) {
 
 func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
 	c.logger = c.logger.WithFields(map[string]interface{}{
-		"remote": conn.RemoteAddr().String(),
-		"local":  conn.LocalAddr().String(),
-		"target": address,
+		"remote":  conn.RemoteAddr().String(),
+		"local":   conn.LocalAddr().String(),
+		"network": network,
+		"address": address,
 	})
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+	default:
+		err := fmt.Errorf("network %s unsupported, should be tcp, tcp4 or tcp6", network)
+		c.logger.Error(err)
+		return nil, err
+	}
+
 	c.logger.Info("connect: ", address)
 
 	var addr *gosocks4.Addr
@@ -87,19 +97,14 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 		c.logger.Error(err)
 		return nil, err
 	}
-	if c.logger.IsLevelEnabled(logger.DebugLevel) {
-		c.logger.Debug(req)
-	}
+	c.logger.Debug(req)
 
 	reply, err := gosocks4.ReadReply(conn)
 	if err != nil {
 		c.logger.Error(err)
 		return nil, err
 	}
-
-	if c.logger.IsLevelEnabled(logger.DebugLevel) {
-		c.logger.Debug(reply)
-	}
+	c.logger.Debug(reply)
 
 	if reply.Code != gosocks4.Granted {
 		return nil, fmt.Errorf("error: %d", reply.Code)

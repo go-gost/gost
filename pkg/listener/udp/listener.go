@@ -2,9 +2,8 @@ package udp
 
 import (
 	"net"
-	"sync"
-	"sync/atomic"
 
+	"github.com/go-gost/gost/pkg/internal/bufpool"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -16,13 +15,14 @@ func init() {
 }
 
 type udpListener struct {
-	addr     string
-	md       metadata
-	conn     net.PacketConn
-	connChan chan net.Conn
-	errChan  chan error
-	connPool connPool
-	logger   logger.Logger
+	addr      string
+	md        metadata
+	conn      net.PacketConn
+	connChan  chan net.Conn
+	errChan   chan error
+	closeChan chan struct{}
+	connPool  *connPool
+	logger    logger.Logger
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -31,8 +31,10 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(options)
 	}
 	return &udpListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		addr:      options.Addr,
+		errChan:   make(chan error, 1),
+		closeChan: make(chan struct{}),
+		logger:    options.Logger,
 	}
 }
 
@@ -46,15 +48,13 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	var conn net.PacketConn
-	conn, err = net.ListenUDP("udp", laddr)
+	l.conn, err = net.ListenUDP("udp", laddr)
 	if err != nil {
 		return
 	}
 
-	l.conn = conn
 	l.connChan = make(chan net.Conn, l.md.connQueueSize)
-	l.errChan = make(chan error, 1)
+	l.connPool = newConnPool(l.md.ttl).WithLogger(l.logger)
 
 	go l.listenLoop()
 
@@ -74,12 +74,14 @@ func (l *udpListener) Accept() (conn net.Conn, err error) {
 }
 
 func (l *udpListener) Close() error {
-	err := l.conn.Close()
-	l.connPool.Range(func(k interface{}, v *serverConn) bool {
-		v.Close()
-		return true
-	})
-	return err
+	select {
+	case <-l.closeChan:
+		return nil
+	default:
+		close(l.closeChan)
+		l.connPool.Close()
+		return l.conn.Close()
+	}
 }
 
 func (l *udpListener) Addr() net.Addr {
@@ -88,41 +90,41 @@ func (l *udpListener) Addr() net.Addr {
 
 func (l *udpListener) listenLoop() {
 	for {
-		b := make([]byte, l.md.readBufferSize)
+		b := bufpool.Get(l.md.readBufferSize)
 
 		n, raddr, err := l.conn.ReadFrom(b)
 		if err != nil {
-			l.logger.Error("accept:", err)
 			l.errChan <- err
 			close(l.errChan)
 			return
 		}
 
-		conn, ok := l.connPool.Get(raddr.String())
-		if !ok {
-			conn = newServerConn(l.conn, raddr,
-				&serverConnConfig{
-					ttl:   l.md.ttl,
-					qsize: l.md.readQueueSize,
-					onClose: func() {
-						l.connPool.Delete(raddr.String())
-					},
-				})
-
-			select {
-			case l.connChan <- conn:
-				l.connPool.Set(raddr.String(), conn)
-			default:
-				conn.Close()
-				l.logger.Error("connection queue is full")
-			}
+		c := l.getConn(raddr)
+		if c == nil {
+			bufpool.Put(b)
+			continue
 		}
 
-		if err := conn.send(b[:n]); err != nil {
-			l.logger.Warn("data discarded:", err)
+		if err := c.Queue(b[:n]); err != nil {
+			l.logger.Warn("data discarded: ", err)
 		}
-		l.logger.Debug("recv", n)
 	}
+}
+
+func (l *udpListener) getConn(addr net.Addr) *conn {
+	c, ok := l.connPool.Get(addr.String())
+	if !ok {
+		c = newConn(l.conn, addr, l.md.readQueueSize)
+		select {
+		case l.connChan <- c:
+			l.connPool.Set(addr.String(), c)
+		default:
+			c.Close()
+			l.logger.Warnf("connection queue is full, client %s discarded", addr.String())
+			return nil
+		}
+	}
+	return c
 }
 
 func (l *udpListener) parseMetadata(md md.Metadata) (err error) {
@@ -146,37 +148,4 @@ func (l *udpListener) parseMetadata(md md.Metadata) (err error) {
 	}
 
 	return
-}
-
-type connPool struct {
-	size int64
-	m    sync.Map
-}
-
-func (p *connPool) Get(key interface{}) (conn *serverConn, ok bool) {
-	v, ok := p.m.Load(key)
-	if ok {
-		conn, ok = v.(*serverConn)
-	}
-	return
-}
-
-func (p *connPool) Set(key interface{}, conn *serverConn) {
-	p.m.Store(key, conn)
-	atomic.AddInt64(&p.size, 1)
-}
-
-func (p *connPool) Delete(key interface{}) {
-	p.m.Delete(key)
-	atomic.AddInt64(&p.size, -1)
-}
-
-func (p *connPool) Range(f func(key interface{}, value *serverConn) bool) {
-	p.m.Range(func(k, v interface{}) bool {
-		return f(k, v.(*serverConn))
-	})
-}
-
-func (p *connPool) Size() int64 {
-	return atomic.LoadInt64(&p.size)
 }

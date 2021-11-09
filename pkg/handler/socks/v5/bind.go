@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 )
 
 func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, req *gosocks5.Request) {
@@ -33,9 +32,7 @@ func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, req *goso
 	if err != nil {
 		resp := gosocks5.NewReply(gosocks5.Failure, nil)
 		resp.Write(conn)
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(resp)
-		}
+		h.logger.Debug(resp)
 		return
 	}
 	defer cc.Close()
@@ -45,9 +42,7 @@ func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, req *goso
 		h.logger.Error(err)
 		resp := gosocks5.NewReply(gosocks5.NetUnreachable, nil)
 		resp.Write(conn)
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(resp)
-		}
+		h.logger.Debug(resp)
 		return
 	}
 
@@ -65,32 +60,25 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, addr strin
 		if err := reply.Write(conn); err != nil {
 			h.logger.Error(err)
 		}
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(reply.String())
-		}
+		h.logger.Debug(reply)
 		return
 	}
 
-	socksAddr, err := gosocks5.NewAddr(ln.Addr().String())
-	if err != nil {
+	socksAddr := gosocks5.Addr{}
+	if err := socksAddr.ParseFrom(ln.Addr().String()); err != nil {
 		h.logger.Warn(err)
-		socksAddr = &gosocks5.Addr{
-			Type: gosocks5.AddrIPv4,
-		}
 	}
 
 	// Issue: may not reachable when host has multi-interface
 	socksAddr.Host, _, _ = net.SplitHostPort(conn.LocalAddr().String())
 	socksAddr.Type = 0
-	reply := gosocks5.NewReply(gosocks5.Succeeded, socksAddr)
+	reply := gosocks5.NewReply(gosocks5.Succeeded, &socksAddr)
 	if err := reply.Write(conn); err != nil {
 		h.logger.Error(err)
 		ln.Close()
 		return
 	}
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
-		h.logger.Debug(reply.String())
-	}
+	h.logger.Debug(reply)
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"bind": socksAddr.String(),
@@ -143,14 +131,13 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 		}
 		defer rc.Close()
 
-		raddr, _ := gosocks5.NewAddr(rc.RemoteAddr().String())
-		reply := gosocks5.NewReply(gosocks5.Succeeded, raddr)
+		raddr := gosocks5.Addr{}
+		raddr.ParseFrom(rc.RemoteAddr().String())
+		reply := gosocks5.NewReply(gosocks5.Succeeded, &raddr)
 		if err := reply.Write(pc2); err != nil {
 			h.logger.Error(err)
 		}
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(reply.String())
-		}
+		h.logger.Debug(reply)
 		h.logger.Infof("peer accepted: %s", raddr.String())
 
 		start := time.Now()

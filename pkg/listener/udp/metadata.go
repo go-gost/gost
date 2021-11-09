@@ -4,7 +4,7 @@ import "time"
 
 const (
 	defaultTTL            = 60 * time.Second
-	defaultReadBufferSize = 1024
+	defaultReadBufferSize = 4096
 	defaultReadQueueSize  = 128
 	defaultConnQueueSize  = 128
 )

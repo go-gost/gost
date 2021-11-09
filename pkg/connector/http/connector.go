@@ -43,6 +43,21 @@ func (c *httpConnector) Init(md md.Metadata) (err error) {
 }
 
 func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
+	c.logger = c.logger.WithFields(map[string]interface{}{
+		"local":   conn.LocalAddr().String(),
+		"remote":  conn.RemoteAddr().String(),
+		"network": network,
+		"address": address,
+	})
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+	default:
+		err := fmt.Errorf("network %s unsupported, should be tcp, tcp4 or tcp6", network)
+		c.logger.Error(err)
+		return nil, err
+	}
+
 	req := &http.Request{
 		Method:     http.MethodConnect,
 		URL:        &url.URL{Host: address},
@@ -56,11 +71,6 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 	}
 	req.Header.Set("Proxy-Connection", "keep-alive")
 
-	c.logger = c.logger.WithFields(map[string]interface{}{
-		"local":  conn.LocalAddr().String(),
-		"remote": conn.RemoteAddr().String(),
-		"target": address,
-	})
 	c.logger.Infof("connect: ", address)
 
 	if user := c.md.User; user != nil {

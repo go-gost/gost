@@ -23,9 +23,7 @@ func (selector *serverSelector) Methods() []uint8 {
 }
 
 func (s *serverSelector) Select(methods ...uint8) (method uint8) {
-	if s.logger.IsLevelEnabled(logger.DebugLevel) {
-		s.logger.Debugf("%d %d %v", gosocks5.Ver5, len(methods), methods)
-	}
+	s.logger.Debugf("%d %d %v", gosocks5.Ver5, len(methods), methods)
 	method = gosocks5.MethodNoAuth
 	for _, m := range methods {
 		if m == socks.MethodTLS && !s.noTLS {
@@ -48,9 +46,7 @@ func (s *serverSelector) Select(methods ...uint8) (method uint8) {
 }
 
 func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (net.Conn, error) {
-	if s.logger.IsLevelEnabled(logger.DebugLevel) {
-		s.logger.Debugf("%d %d", gosocks5.Ver5, method)
-	}
+	s.logger.Debugf("%d %d", gosocks5.Ver5, method)
 	switch method {
 	case socks.MethodTLS:
 		conn = tls.Server(conn, s.TLSConfig)
@@ -65,9 +61,7 @@ func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (net.Conn, erro
 			s.logger.Error(err)
 			return nil, err
 		}
-		if s.logger.IsLevelEnabled(logger.DebugLevel) {
-			s.logger.Debug(req.String())
-		}
+		s.logger.Debug(req)
 
 		if s.Authenticator != nil &&
 			!s.Authenticator.Authenticate(req.Username, req.Password) {
@@ -76,9 +70,8 @@ func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (net.Conn, erro
 				s.logger.Error(err)
 				return nil, err
 			}
-			if s.logger.IsLevelEnabled(logger.DebugLevel) {
-				s.logger.Info(resp.String())
-			}
+			s.logger.Info(resp)
+
 			return nil, gosocks5.ErrAuthFailure
 		}
 
@@ -87,9 +80,8 @@ func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (net.Conn, erro
 			s.logger.Error(err)
 			return nil, err
 		}
-		if s.logger.IsLevelEnabled(logger.DebugLevel) {
-			s.logger.Debug(resp.String())
-		}
+		s.logger.Debug(resp)
+
 	case gosocks5.MethodNoAcceptable:
 		return nil, gosocks5.ErrBadMethod
 	}

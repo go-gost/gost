@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"strings"
@@ -79,6 +80,7 @@ func (c *socks5Connector) Handshake(ctx context.Context, conn net.Conn) (net.Con
 
 	cc := gosocks5.ClientConn(conn, c.selector)
 	if err := cc.Handleshake(); err != nil {
+		c.logger.Error(err)
 		return nil, err
 	}
 
@@ -87,12 +89,22 @@ func (c *socks5Connector) Handshake(ctx context.Context, conn net.Conn) (net.Con
 
 func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
 	c.logger = c.logger.WithFields(map[string]interface{}{
-		"target": address,
+		"network": network,
+		"address": address,
 	})
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+	default:
+		err := fmt.Errorf("network %s unsupported, should be tcp, tcp4 or tcp6", network)
+		c.logger.Error(err)
+		return nil, err
+	}
+
 	c.logger.Info("connect: ", address)
 
-	addr, err := gosocks5.NewAddr(address)
-	if err != nil {
+	addr := gosocks5.Addr{}
+	if err := addr.ParseFrom(address); err != nil {
 		c.logger.Error(err)
 		return nil, err
 	}
@@ -102,25 +114,19 @@ func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, a
 		defer conn.SetDeadline(time.Time{})
 	}
 
-	req := gosocks5.NewRequest(gosocks5.CmdConnect, addr)
+	req := gosocks5.NewRequest(gosocks5.CmdConnect, &addr)
 	if err := req.Write(conn); err != nil {
 		c.logger.Error(err)
 		return nil, err
 	}
-
-	if c.logger.IsLevelEnabled(logger.DebugLevel) {
-		c.logger.Debug(req)
-	}
+	c.logger.Debug(req)
 
 	reply, err := gosocks5.ReadReply(conn)
 	if err != nil {
 		c.logger.Error(err)
 		return nil, err
 	}
-
-	if c.logger.IsLevelEnabled(logger.DebugLevel) {
-		c.logger.Debug(reply)
-	}
+	c.logger.Debug(reply)
 
 	if reply.Rep != gosocks5.Succeeded {
 		return nil, errors.New("service unavailable")

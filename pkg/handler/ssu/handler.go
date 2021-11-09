@@ -1,16 +1,15 @@
 package ssu
 
 import (
-	"bytes"
 	"context"
 	"net"
 	"time"
 
-	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/internal/bufpool"
+	"github.com/go-gost/gost/pkg/internal/utils/socks"
 	"github.com/go-gost/gost/pkg/internal/utils/ss"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -91,7 +90,10 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 
 		t := time.Now()
 		h.logger.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
-		h.relayPacket(pc, cc)
+		h.relayPacket(
+			ss.UDPServerConn(pc, conn.RemoteAddr(), h.md.bufferSize),
+			cc,
+		)
 		h.logger.
 			WithFields(map[string]interface{}{"duration": time.Since(t)}).
 			Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
@@ -104,7 +106,7 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
-	h.tunnelUDP(conn, cc)
+	h.tunnelUDP(socks.UDPTunServerConn(conn), cc)
 	h.logger.
 		WithFields(map[string]interface{}{"duration": time.Since(t)}).
 		Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
@@ -112,47 +114,30 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 
 func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 	bufSize := h.md.bufferSize
-
 	errc := make(chan error, 2)
-	var clientAddr net.Addr
 
 	go func() {
-		b := bufpool.Get(bufSize)
-		defer bufpool.Put(b)
-
 		for {
 			err := func() error {
+				b := bufpool.Get(bufSize)
+				defer bufpool.Put(b)
+
 				n, addr, err := pc1.ReadFrom(b)
 				if err != nil {
 					return err
 				}
-				if clientAddr == nil {
-					clientAddr = addr
-				}
 
-				rb := bytes.NewBuffer(b[:n])
-				saddr := gosocks5.Addr{}
-				if _, err := saddr.ReadFrom(rb); err != nil {
-					return err
-				}
-				taddr, err := net.ResolveUDPAddr("udp", saddr.String())
-				if err != nil {
-					return err
-				}
-
-				if h.bypass != nil && h.bypass.Contains(taddr.String()) {
-					h.logger.Warn("bypass: ", taddr)
+				if h.bypass != nil && h.bypass.Contains(addr.String()) {
+					h.logger.Warn("bypass: ", addr)
 					return nil
 				}
 
-				if _, err = pc2.WriteTo(rb.Bytes(), taddr); err != nil {
+				if _, err = pc2.WriteTo(b[:n], addr); err != nil {
 					return err
 				}
 
-				if h.logger.IsLevelEnabled(logger.DebugLevel) {
-					h.logger.Debugf("%s >>> %s: %v, data: %d",
-						addr, taddr, saddr.String(), rb.Len())
-				}
+				h.logger.Debugf("%s >>> %s data: %d",
+					pc2.LocalAddr(), addr, n)
 				return nil
 			}()
 
@@ -164,19 +149,14 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 	}()
 
 	go func() {
-		b := bufpool.Get(bufSize)
-		defer bufpool.Put(b)
-
-		const dataPos = 259
-
 		for {
 			err := func() error {
-				n, raddr, err := pc2.ReadFrom(b[dataPos:])
+				b := bufpool.Get(bufSize)
+				defer bufpool.Put(b)
+
+				n, raddr, err := pc2.ReadFrom(b)
 				if err != nil {
 					return err
-				}
-				if clientAddr == nil {
-					return nil
 				}
 
 				if h.bypass != nil && h.bypass.Contains(raddr.String()) {
@@ -184,21 +164,12 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 					return nil
 				}
 
-				socksAddr, _ := gosocks5.NewAddr(raddr.String())
-				if socksAddr == nil {
-					socksAddr = &gosocks5.Addr{}
-				}
-				addrLen := socksAddr.Length()
-				socksAddr.Encode(b[dataPos-addrLen : dataPos])
-
-				if _, err = pc1.WriteTo(b[dataPos-addrLen:dataPos+n], clientAddr); err != nil {
+				if _, err = pc1.WriteTo(b[:n], raddr); err != nil {
 					return err
 				}
 
-				if h.logger.IsLevelEnabled(logger.DebugLevel) {
-					h.logger.Debugf("%s <<< %s: %v data: %d",
-						clientAddr, raddr, b[dataPos-addrLen:dataPos], n)
-				}
+				h.logger.Debugf("%s <<< %s data: %d",
+					pc2.LocalAddr(), raddr, n)
 				return nil
 			}()
 
@@ -212,7 +183,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 	return <-errc
 }
 
-func (h *ssuHandler) tunnelUDP(tunnel net.Conn, c net.PacketConn) (err error) {
+func (h *ssuHandler) tunnelUDP(tunnel, c net.PacketConn) (err error) {
 	bufSize := h.md.bufferSize
 	errc := make(chan error, 2)
 
@@ -220,48 +191,31 @@ func (h *ssuHandler) tunnelUDP(tunnel net.Conn, c net.PacketConn) (err error) {
 		b := bufpool.Get(bufSize)
 		defer bufpool.Put(b)
 
-		const dataPos = 262
-
 		for {
-			addr := gosocks5.Addr{}
-			header := gosocks5.UDPHeader{
-				Addr: &addr,
-			}
+			err := func() error {
+				n, addr, err := tunnel.ReadFrom(b)
+				if err != nil {
+					return err
+				}
 
-			data := b[dataPos:]
-			dgram := gosocks5.UDPDatagram{
-				Header: &header,
-				Data:   data,
-			}
-			_, err := dgram.ReadFrom(tunnel)
+				if h.bypass != nil && h.bypass.Contains(addr.String()) {
+					h.logger.Warn("bypass: ", addr.String())
+					return nil // bypass
+				}
+
+				if _, err := c.WriteTo(b[:n], addr); err != nil {
+					return err
+				}
+
+				h.logger.Debugf("%s >>> %s data: %d",
+					c.LocalAddr(), addr, n)
+
+				return nil
+			}()
+
 			if err != nil {
 				errc <- err
 				return
-			}
-			// NOTE: the dgram.Data may be reallocated if the provided buffer is too short,
-			// we drop it for simplicity. As this occurs, you should enlarge the buffer size.
-			if len(dgram.Data) > len(data) {
-				h.logger.Warnf("buffer too short, dropped")
-				continue
-			}
-
-			raddr, err := net.ResolveUDPAddr("udp", addr.String())
-			if err != nil {
-				continue // drop silently
-			}
-			if h.bypass != nil && h.bypass.Contains(raddr.String()) {
-				h.logger.Warn("bypass: ", raddr.String())
-				continue // bypass
-			}
-
-			if _, err := c.WriteTo(dgram.Data, raddr); err != nil {
-				errc <- err
-				return
-			}
-
-			if h.logger.IsLevelEnabled(logger.DebugLevel) {
-				h.logger.Debugf("%s >>> %s: %v data: %d",
-					tunnel.RemoteAddr(), raddr, header.String(), len(dgram.Data))
 			}
 		}
 	}()
@@ -271,37 +225,30 @@ func (h *ssuHandler) tunnelUDP(tunnel net.Conn, c net.PacketConn) (err error) {
 		defer bufpool.Put(b)
 
 		for {
-			n, raddr, err := c.ReadFrom(b)
+			err := func() error {
+				n, raddr, err := c.ReadFrom(b)
+				if err != nil {
+					return err
+				}
+
+				if h.bypass != nil && h.bypass.Contains(raddr.String()) {
+					h.logger.Warn("bypass: ", raddr.String())
+					return nil // bypass
+				}
+
+				if _, err := tunnel.WriteTo(b[:n], raddr); err != nil {
+					return err
+				}
+
+				h.logger.Debugf("%s <<< %s data: %d",
+					c.LocalAddr(), raddr, n)
+
+				return nil
+			}()
+
 			if err != nil {
 				errc <- err
 				return
-			}
-
-			if h.bypass != nil && h.bypass.Contains(raddr.String()) {
-				h.logger.Warn("bypass: ", raddr.String())
-				continue // bypass
-			}
-
-			addr, _ := gosocks5.NewAddr(raddr.String())
-			if addr == nil {
-				addr = &gosocks5.Addr{}
-			}
-			header := gosocks5.UDPHeader{
-				Rsv:  uint16(n),
-				Addr: addr,
-			}
-			dgram := gosocks5.UDPDatagram{
-				Header: &header,
-				Data:   b[:n],
-			}
-
-			if _, err := dgram.WriteTo(tunnel); err != nil {
-				errc <- err
-				return
-			}
-			if h.logger.IsLevelEnabled(logger.DebugLevel) {
-				h.logger.Debugf("%s <<< %s: %v data: %d",
-					tunnel.RemoteAddr(), raddr, header.String(), len(dgram.Data))
 			}
 		}
 	}()

@@ -6,9 +6,11 @@ import (
 	_ "github.com/go-gost/gost/pkg/connector/socks/v4"
 	_ "github.com/go-gost/gost/pkg/connector/socks/v5"
 	_ "github.com/go-gost/gost/pkg/connector/ss"
+	_ "github.com/go-gost/gost/pkg/connector/ssu"
 
 	// Register dialers
 	_ "github.com/go-gost/gost/pkg/dialer/tcp"
+	_ "github.com/go-gost/gost/pkg/dialer/udp"
 
 	// Register handlers
 	_ "github.com/go-gost/gost/pkg/handler/http"

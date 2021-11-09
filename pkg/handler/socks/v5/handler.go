@@ -83,11 +83,8 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 		h.logger.Error(err)
 		return
 	}
+	h.logger.Debug(req)
 	conn.SetReadDeadline(time.Time{})
-
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
-		h.logger.Debug(req)
-	}
 
 	switch req.Cmd {
 	case gosocks5.CmdConnect:
@@ -104,9 +101,7 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 		h.logger.Errorf("unknown cmd: %d", req.Cmd)
 		resp := gosocks5.NewReply(gosocks5.CmdUnsupported, nil)
 		resp.Write(conn)
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(resp)
-		}
+		h.logger.Debug(resp)
 		return
 	}
 }

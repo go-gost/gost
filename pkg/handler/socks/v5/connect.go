@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 )
 
 func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr string) {
@@ -20,9 +19,7 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr s
 	if h.bypass != nil && h.bypass.Contains(addr) {
 		resp := gosocks5.NewReply(gosocks5.NotAllowed, nil)
 		resp.Write(conn)
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(resp)
-		}
+		h.logger.Debug(resp)
 		h.logger.Info("bypass: ", addr)
 		return
 	}
@@ -35,9 +32,7 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr s
 	if err != nil {
 		resp := gosocks5.NewReply(gosocks5.NetUnreachable, nil)
 		resp.Write(conn)
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			h.logger.Debug(resp)
-		}
+		h.logger.Debug(resp)
 		return
 	}
 
@@ -48,9 +43,7 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr s
 		h.logger.Error(err)
 		return
 	}
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
-		h.logger.Debug(resp)
-	}
+	h.logger.Debug(resp)
 
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)

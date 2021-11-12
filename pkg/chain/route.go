@@ -26,33 +26,33 @@ func (r *Route) Connect(ctx context.Context) (conn net.Conn, err error) {
 	node := r.nodes[0]
 	cc, err := node.transport.Dial(ctx, r.nodes[0].Addr())
 	if err != nil {
-		node.marker.Mark()
+		node.Marker().Mark()
 		return
 	}
 
 	cn, err := node.transport.Handshake(ctx, cc)
 	if err != nil {
 		cc.Close()
-		node.marker.Mark()
+		node.Marker().Mark()
 		return
 	}
-	node.marker.Reset()
+	node.Marker().Reset()
 
 	preNode := node
 	for _, node := range r.nodes[1:] {
 		cc, err = preNode.transport.Connect(ctx, cn, "tcp", node.Addr())
 		if err != nil {
 			cn.Close()
-			node.marker.Mark()
+			node.Marker().Mark()
 			return
 		}
 		cc, err = node.transport.Handshake(ctx, cc)
 		if err != nil {
 			cn.Close()
-			node.marker.Mark()
+			node.Marker().Mark()
 			return
 		}
-		node.marker.Reset()
+		node.Marker().Reset()
 
 		cn = cc
 		preNode = node
@@ -89,7 +89,7 @@ func (r *Route) dialDirect(ctx context.Context, network, address string) (net.Co
 	default:
 	}
 
-	d := &net.Dialer{}
+	d := net.Dialer{}
 	return d.DialContext(ctx, network, address)
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"os"
+	"strings"
 
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
@@ -62,6 +63,11 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			handler.BypassOption(bypasses[svc.Bypass]),
 			handler.LoggerOption(handlerLogger),
 		)
+
+		if forwarder, ok := h.(handler.Forwarder); ok {
+			forwarder.Forward(forwarderFromConfig(svc.Forwarder))
+		}
+
 		if err := h.Init(metadata.MapMetadata(svc.Handler.Metadata)); err != nil {
 			handlerLogger.Fatal("init: ", err)
 		}
@@ -85,7 +91,7 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 
 	c := &chain.Chain{}
 
-	selector := selectorFromConfig(cfg.LB)
+	selector := selectorFromConfig(cfg.Selector)
 	for _, hop := range cfg.Hops {
 		group := &chain.NodeGroup{}
 		for _, v := range hop.Nodes {
@@ -127,7 +133,7 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 		}
 
 		sel := selector
-		if s := selectorFromConfig(hop.LB); s != nil {
+		if s := selectorFromConfig(hop.Selector); s != nil {
 			sel = s
 		}
 		group.WithSelector(sel)
@@ -162,7 +168,7 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 	return logger.NewLogger(opts...)
 }
 
-func selectorFromConfig(cfg *config.LoadbalancingConfig) chain.Selector {
+func selectorFromConfig(cfg *config.SelectorConfig) chain.Selector {
 	if cfg == nil {
 		return nil
 	}
@@ -173,7 +179,7 @@ func selectorFromConfig(cfg *config.LoadbalancingConfig) chain.Selector {
 		strategy = chain.RoundRobinStrategy()
 	case "random":
 		strategy = chain.RandomStrategy()
-	case "fifio":
+	case "fifo":
 		strategy = chain.FIFOStrategy()
 	default:
 		strategy = chain.RoundRobinStrategy()
@@ -190,6 +196,19 @@ func bypassFromConfig(cfg *config.BypassConfig) bypass.Bypass {
 	if cfg == nil {
 		return nil
 	}
-
 	return bypass.NewBypassPatterns(cfg.Reverse, cfg.Matchers...)
+}
+
+func forwarderFromConfig(cfg *config.ForwarderConfig) *chain.NodeGroup {
+	if cfg == nil {
+		return nil
+	}
+
+	group := &chain.NodeGroup{}
+	for _, target := range cfg.Targets {
+		if v := strings.TrimSpace(target); v != "" {
+			group.AddNode(chain.NewNode(target, target))
+		}
+	}
+	return group.WithSelector(selectorFromConfig(cfg.Selector))
 }

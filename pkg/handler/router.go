@@ -36,6 +36,7 @@ func (r *Router) Dial(ctx context.Context, network, address string) (conn net.Co
 	if count <= 0 {
 		count = 1
 	}
+	r.logger.Debugf("dial: %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
 		route := r.chain.GetRouteFor(network, address)

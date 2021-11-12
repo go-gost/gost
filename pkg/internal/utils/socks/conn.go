@@ -76,6 +76,7 @@ func (c *UDPTunConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 		Data:   b,
 	}
 	dgram.Header.Rsv = uint16(len(dgram.Data))
+	dgram.Header.Frag = 0xff // UDP tun relay flag, used by shadowsocks
 	_, err = dgram.WriteTo(c.Conn)
 	n = len(b)
 

@@ -6,18 +6,17 @@ import (
 	_ "github.com/go-gost/gost/pkg/connector/socks/v4"
 	_ "github.com/go-gost/gost/pkg/connector/socks/v5"
 	_ "github.com/go-gost/gost/pkg/connector/ss"
-	_ "github.com/go-gost/gost/pkg/connector/ssu"
 
 	// Register dialers
 	_ "github.com/go-gost/gost/pkg/dialer/tcp"
 	_ "github.com/go-gost/gost/pkg/dialer/udp"
 
 	// Register handlers
+	_ "github.com/go-gost/gost/pkg/handler/forward/local"
 	_ "github.com/go-gost/gost/pkg/handler/http"
 	_ "github.com/go-gost/gost/pkg/handler/socks/v4"
 	_ "github.com/go-gost/gost/pkg/handler/socks/v5"
 	_ "github.com/go-gost/gost/pkg/handler/ss"
-	_ "github.com/go-gost/gost/pkg/handler/ssu"
 
 	// Register listeners
 	_ "github.com/go-gost/gost/pkg/listener/ftcp"

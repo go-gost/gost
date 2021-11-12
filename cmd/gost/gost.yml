@@ -10,7 +10,7 @@ profiling:
 services:
 - name: http+tcp
   url: "http://gost:gost@:8000"
-  addr: ":8000"
+  addr: ":28000"
   handler:
     type: http
     metadata:
@@ -27,38 +27,27 @@ services:
       keepAlive: 15s
   chain: chain01
   # bypass: bypass01
-- name: ss+tcp
+- name: ss
   url: "ss://chacha20:gost@:8000"
-  addr: ":8338"
+  addr: ":28338"
   handler:
     type: ss
     metadata:
-      method: AES-256-GCM
+      method: chacha20-ietf
       password: gost
       readTimeout: 5s
       retry: 3
+      udp: true
+      bufferSize: 4096
   listener:
     type: tcp
     metadata:
       keepAlive: 15s
-  chain: chain01
+  # chain: chain01
   # bypass: bypass01
-- name: ssu
-  url: "ss://chacha20:gost@:8000"
-  addr: ":8388"
-  handler:
-    type: ssu
-    metadata:
-      # method: AES-256-GCM
-      # password: gost
-      readTimeout: 5s
-      retry: 3
-  listener:
-    type: tcp
-  # chain: chain-ssu
-- name: socks5+tcp
+- name: socks5
   url: "socks5://gost:gost@:1080"
-  addr: ":1080"
+  addr: ":21080"
   handler:
     type: socks5
     metadata:
@@ -72,11 +61,11 @@ services:
     type: tcp
     metadata:
       keepAlive: 15s
-  chain: chain-socks5
+  chain: chain-ss
   # bypass: bypass01
 - name: socks5+tcp
   url: "socks5://gost:gost@:1080"
-  addr: ":11080"
+  addr: ":21081"
   handler:
     type: socks5
     metadata:
@@ -90,18 +79,40 @@ services:
     type: tcp
     metadata:
       keepAlive: 15s
+- name: forward
+  url: "socks5://gost:gost@:1080"
+  addr: ":10053"
+  forwarder:
+    targets:
+    - 192.168.8.8:53
+    - 192.168.8.1:53
+    - 1.1.1.1:53
+    selector:
+      strategy: fifo
+      maxFails: 1
+      failTimeout: 30s
+  handler:
+    type: forward
+    metadata:
+      readTimeout: 5s
+      retry: 3
+  listener:
+    type: udp
+    metadata:
+      keepAlive: 15s
+  chain: chain-ss
 
 chains:
 - name: chain01
-  # chain level load balancing
-  lb:
+  # chain level selector
+  selector:
     strategy: round
     maxFails: 1
     failTimeout: 30s
   hops:
   - name: hop01
-    # hop level load balancing
-    lb:
+    # hop level selector
+    selector:
       strategy: round
       maxFails: 1
       failTimeout: 30s
@@ -131,8 +142,8 @@ chains:
         type: tcp
         metadata: {}
   - name: hop02
-    # hop level load balancing
-    lb:
+    # hop level selector
+    selector:
       strategy: round
       maxFails: 1
       failTimeout: 30s
@@ -179,19 +190,25 @@ chains:
       dialer:
         type: tcp
         metadata: {}
-- name: chain-ssu
+- name: chain-ss
   hops:
   - name: hop01
     nodes:
     - name: node01
-      addr: ":8339"
+      addr: ":28338"
       url: "http://gost:gost@:8081"
       # bypass: bypass01
       connector:
-        type: ssu
-        metadata: {}
+        type: ss
+        metadata: 
+          method: chacha20-ietf
+          password: gost
+          readTimeout: 5s
+          nodelay: true
+          udp: true
+          bufferSize: 4096
       dialer:
-        type: udp
+        type: tcp
         metadata: {}
 
 bypasses:

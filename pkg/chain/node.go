@@ -12,14 +12,14 @@ type Node struct {
 	addr      string
 	transport *Transport
 	bypass    bypass.Bypass
-	marker    *failMarker
+	marker    *FailMarker
 }
 
 func NewNode(name, addr string) *Node {
 	return &Node{
 		name:   name,
 		addr:   addr,
-		marker: &failMarker{},
+		marker: &FailMarker{},
 	}
 }
 
@@ -29,6 +29,10 @@ func (node *Node) Name() string {
 
 func (node *Node) Addr() string {
 	return node.addr
+}
+
+func (node *Node) Marker() *FailMarker {
+	return node.marker
 }
 
 func (node *Node) WithTransport(tr *Transport) *Node {
@@ -80,13 +84,13 @@ func (g *NodeGroup) Next() *Node {
 	return selector.Select(g.nodes...)
 }
 
-type failMarker struct {
+type FailMarker struct {
 	failTime  int64
 	failCount uint32
 	mux       sync.RWMutex
 }
 
-func (m *failMarker) FailTime() int64 {
+func (m *FailMarker) FailTime() int64 {
 	if m == nil {
 		return 0
 	}
@@ -97,7 +101,7 @@ func (m *failMarker) FailTime() int64 {
 	return m.failTime
 }
 
-func (m *failMarker) FailCount() uint32 {
+func (m *FailMarker) FailCount() uint32 {
 	if m == nil {
 		return 0
 	}
@@ -108,7 +112,7 @@ func (m *failMarker) FailCount() uint32 {
 	return m.failCount
 }
 
-func (m *failMarker) Mark() {
+func (m *FailMarker) Mark() {
 	if m == nil {
 		return
 	}
@@ -120,7 +124,7 @@ func (m *failMarker) Mark() {
 	m.failCount++
 }
 
-func (m *failMarker) Reset() {
+func (m *FailMarker) Reset() {
 	if m == nil {
 		return
 	}

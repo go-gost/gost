@@ -2,6 +2,7 @@ package ss
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/internal/bufpool"
+	"github.com/go-gost/gost/pkg/internal/utils/socks"
 	"github.com/go-gost/gost/pkg/internal/utils/ss"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -46,15 +48,23 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 		"network": network,
 		"address": address,
 	})
+	c.logger.Infof("connect: %s/%s", address, network)
 
 	switch network {
 	case "tcp", "tcp4", "tcp6":
+	case "udp", "udp4", "udp6":
+		if c.md.enableUDP {
+			return c.connectUDP(ctx, conn, network, address)
+		} else {
+			err := errors.New("UDP relay is disabled")
+			c.logger.Error(err)
+			return nil, err
+		}
 	default:
-		err := fmt.Errorf("network %s unsupported, should be tcp, tcp4 or tcp6", network)
+		err := fmt.Errorf("network %s unsupported", network)
 		c.logger.Error(err)
 		return nil, err
 	}
-	c.logger.Infof("connect: ", address)
 
 	addr := gosocks5.Addr{}
 	if err := addr.ParseFrom(address); err != nil {
@@ -94,18 +104,28 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 	return sc, nil
 }
 
-func (c *ssConnector) parseMetadata(md md.Metadata) (err error) {
-	c.md.cipher, err = ss.ShadowCipher(
-		md.GetString(method),
-		md.GetString(password),
-		md.GetString(key),
-	)
-	if err != nil {
-		return
+func (c *ssConnector) connectUDP(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
+	if c.md.connectTimeout > 0 {
+		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
+		defer conn.SetDeadline(time.Time{})
 	}
 
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.noDelay = md.GetBool(noDelay)
+	taddr, _ := net.ResolveUDPAddr(network, address)
+	if taddr == nil {
+		taddr = &net.UDPAddr{}
+	}
 
-	return
+	pc, ok := conn.(net.PacketConn)
+	if ok {
+		if c.md.cipher != nil {
+			pc = c.md.cipher.PacketConn(pc)
+		}
+
+		return ss.UDPClientConn(pc, conn.RemoteAddr(), taddr, c.md.udpBufferSize), nil
+	}
+
+	if c.md.cipher != nil {
+		conn = ss.ShadowConn(c.md.cipher.StreamConn(conn), nil)
+	}
+	return socks.UDPTunClientConn(conn, taddr), nil
 }

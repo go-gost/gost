@@ -2,6 +2,7 @@ package v4
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -47,6 +48,7 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 		"network": network,
 		"address": address,
 	})
+	c.logger.Infof("connect: %s/%s", address, network)
 
 	switch network {
 	case "tcp", "tcp4", "tcp6":
@@ -55,8 +57,6 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 		c.logger.Error(err)
 		return nil, err
 	}
-
-	c.logger.Info("connect: ", address)
 
 	var addr *gosocks4.Addr
 
@@ -107,7 +107,9 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 	c.logger.Debug(reply)
 
 	if reply.Code != gosocks4.Granted {
-		return nil, fmt.Errorf("error: %d", reply.Code)
+		err = errors.New("host unreachable")
+		c.logger.Error(err)
+		return nil, err
 	}
 
 	return conn, nil

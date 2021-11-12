@@ -29,7 +29,7 @@ type ProfilingConfig struct {
 	Enabled bool
 }
 
-type LoadbalancingConfig struct {
+type SelectorConfig struct {
 	Strategy    string
 	MaxFails    int
 	FailTimeout time.Duration
@@ -50,6 +50,11 @@ type HandlerConfig struct {
 	Metadata map[string]interface{}
 }
 
+type ForwarderConfig struct {
+	Targets  []string
+	Selector *SelectorConfig
+}
+
 type DialerConfig struct {
 	Type     string
 	Metadata map[string]interface{}
@@ -61,25 +66,26 @@ type ConnectorConfig struct {
 }
 
 type ServiceConfig struct {
-	Name     string
-	URL      string
-	Addr     string
-	Listener *ListenerConfig
-	Handler  *HandlerConfig
-	Chain    string
-	Bypass   string
+	Name      string
+	URL       string
+	Addr      string
+	Listener  *ListenerConfig
+	Handler   *HandlerConfig
+	Forwarder *ForwarderConfig
+	Chain     string
+	Bypass    string
 }
 
 type ChainConfig struct {
-	Name string
-	LB   *LoadbalancingConfig
-	Hops []HopConfig
+	Name     string
+	Selector *SelectorConfig
+	Hops     []HopConfig
 }
 
 type HopConfig struct {
-	Name  string
-	LB    *LoadbalancingConfig
-	Nodes []NodeConfig
+	Name     string
+	Selector *SelectorConfig
+	Nodes    []NodeConfig
 }
 
 type NodeConfig struct {

@@ -67,6 +67,7 @@ func (c *socks5Connector) Init(md md.Metadata) (err error) {
 	return
 }
 
+// Handshake implements connector.Handshaker.
 func (c *socks5Connector) Handshake(ctx context.Context, conn net.Conn) (net.Conn, error) {
 	c.logger = c.logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
@@ -92,16 +93,17 @@ func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, a
 		"network": network,
 		"address": address,
 	})
+	c.logger.Infof("connect: %s/%s", address, network)
 
 	switch network {
+	case "udp", "udp4", "udp6":
+		return c.connectUDP(ctx, conn, network, address)
 	case "tcp", "tcp4", "tcp6":
 	default:
-		err := fmt.Errorf("network %s unsupported, should be tcp, tcp4 or tcp6", network)
+		err := fmt.Errorf("network %s unsupported", network)
 		c.logger.Error(err)
 		return nil, err
 	}
-
-	c.logger.Info("connect: ", address)
 
 	addr := gosocks5.Addr{}
 	if err := addr.ParseFrom(address); err != nil {
@@ -129,10 +131,46 @@ func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, a
 	c.logger.Debug(reply)
 
 	if reply.Rep != gosocks5.Succeeded {
-		return nil, errors.New("service unavailable")
+		err = errors.New("host unreachable")
+		c.logger.Error(err)
+		return nil, err
 	}
 
 	return conn, nil
+}
+
+func (c *socks5Connector) connectUDP(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
+	addr, err := net.ResolveUDPAddr(network, address)
+	if err != nil {
+		c.logger.Error(err)
+		return nil, err
+	}
+
+	req := gosocks5.NewRequest(socks.CmdUDPTun, nil)
+	if err := req.Write(conn); err != nil {
+		c.logger.Error(err)
+		return nil, err
+	}
+	c.logger.Debug(req)
+
+	reply, err := gosocks5.ReadReply(conn)
+	if err != nil {
+		c.logger.Error(err)
+		return nil, err
+	}
+	c.logger.Debug(reply)
+
+	if reply.Rep != gosocks5.Succeeded {
+		return nil, errors.New("get socks5 UDP tunnel failure")
+	}
+
+	baddr, err := net.ResolveUDPAddr("udp", reply.Addr.String())
+	if err != nil {
+		return nil, err
+	}
+	c.logger.Debugf("associate on %s OK", baddr)
+
+	return socks.UDPTunClientConn(conn, addr), nil
 }
 
 func (c *socks5Connector) parseMetadata(md md.Metadata) (err error) {

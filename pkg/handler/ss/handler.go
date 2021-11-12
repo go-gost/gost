@@ -1,6 +1,7 @@
 package ss
 
 import (
+	"bufio"
 	"context"
 	"io"
 	"io/ioutil"
@@ -61,24 +62,55 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
-	sc := conn
+	// standard UDP relay.
+	if pc, ok := conn.(net.PacketConn); ok {
+		if h.md.enableUDP {
+			h.handleUDP(ctx, conn.RemoteAddr(), pc)
+			return
+		} else {
+			h.logger.Error("UDP relay is diabled")
+		}
+
+		return
+	}
+
 	if h.md.cipher != nil {
-		sc = ss.ShadowConn(h.md.cipher.StreamConn(conn), nil)
+		conn = ss.ShadowConn(h.md.cipher.StreamConn(conn), nil)
 	}
 
 	if h.md.readTimeout > 0 {
-		sc.SetReadDeadline(time.Now().Add(h.md.readTimeout))
+		conn.SetReadDeadline(time.Now().Add(h.md.readTimeout))
 	}
 
-	addr := &gosocks5.Addr{}
-	_, err := addr.ReadFrom(sc)
+	br := bufio.NewReader(conn)
+	data, err := br.Peek(3)
 	if err != nil {
 		h.logger.Error(err)
 		h.discard(conn)
 		return
 	}
+	conn.SetReadDeadline(time.Time{})
 
-	sc.SetReadDeadline(time.Time{})
+	conn = handler.NewBufferReaderConn(conn, br)
+	if data[2] == 0xff {
+		if h.md.enableUDP {
+			// UDP-over-TCP relay
+			h.handleUDPTun(ctx, conn)
+		} else {
+			h.logger.Error("UDP relay is diabled")
+		}
+		return
+	}
+
+	// standard TCP.
+	addr := &gosocks5.Addr{}
+	if _, err = addr.ReadFrom(conn); err != nil {
+		h.logger.Error(err)
+		h.discard(conn)
+		return
+	}
+
+	conn.SetReadDeadline(time.Time{})
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"dst": addr.String(),
@@ -103,7 +135,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-	handler.Transport(sc, cc)
+	handler.Transport(conn, cc)
 	h.logger.
 		WithFields(map[string]interface{}{
 			"duration": time.Since(t),
@@ -113,19 +145,4 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 
 func (h *ssHandler) discard(conn net.Conn) {
 	io.Copy(ioutil.Discard, conn)
-}
-
-func (h *ssHandler) parseMetadata(md md.Metadata) (err error) {
-	h.md.cipher, err = ss.ShadowCipher(
-		md.GetString(method),
-		md.GetString(password),
-		md.GetString(key),
-	)
-	if err != nil {
-		return
-	}
-
-	h.md.readTimeout = md.GetDuration(readTimeout)
-	h.md.retryCount = md.GetInt(retryCount)
-	return
 }

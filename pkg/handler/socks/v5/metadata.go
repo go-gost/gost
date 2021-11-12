@@ -10,18 +10,6 @@ import (
 	md "github.com/go-gost/gost/pkg/metadata"
 )
 
-const (
-	certFile      = "certFile"
-	keyFile       = "keyFile"
-	caFile        = "caFile"
-	authsKey      = "auths"
-	readTimeout   = "readTimeout"
-	timeout       = "timeout"
-	retryCount    = "retry"
-	noTLS         = "notls"
-	udpBufferSize = "udpBufferSize"
-)
-
 type metadata struct {
 	tlsConfig     *tls.Config
 	authenticator auth.Authenticator
@@ -29,10 +17,26 @@ type metadata struct {
 	readTimeout   time.Duration
 	retryCount    int
 	noTLS         bool
+	enableBind    bool
+	enableUDP     bool
 	udpBufferSize int
 }
 
 func (h *socks5Handler) parseMetadata(md md.Metadata) error {
+	const (
+		certFile      = "certFile"
+		keyFile       = "keyFile"
+		caFile        = "caFile"
+		authsKey      = "auths"
+		readTimeout   = "readTimeout"
+		timeout       = "timeout"
+		retryCount    = "retry"
+		noTLS         = "notls"
+		enableBind    = "bind"
+		enableUDP     = "udp"
+		udpBufferSize = "udpBufferSize"
+	)
+
 	var err error
 	h.md.tlsConfig, err = util_tls.LoadTLSConfig(
 		md.GetString(certFile),
@@ -62,6 +66,8 @@ func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 	h.md.timeout = md.GetDuration(timeout)
 	h.md.retryCount = md.GetInt(retryCount)
 	h.md.noTLS = md.GetBool(noTLS)
+	h.md.enableBind = md.GetBool(enableBind)
+	h.md.enableUDP = md.GetBool(enableUDP)
 
 	h.md.udpBufferSize = md.GetInt(udpBufferSize)
 	if h.md.udpBufferSize > 0 {

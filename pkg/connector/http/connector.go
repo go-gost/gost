@@ -49,6 +49,7 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		"network": network,
 		"address": address,
 	})
+	c.logger.Infof("connect: %s/%s", address, network)
 
 	switch network {
 	case "tcp", "tcp4", "tcp6":
@@ -70,8 +71,6 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		req.Header.Set("User-Agent", c.md.UserAgent)
 	}
 	req.Header.Set("Proxy-Connection", "keep-alive")
-
-	c.logger.Infof("connect: ", address)
 
 	if user := c.md.User; user != nil {
 		u := user.Username()

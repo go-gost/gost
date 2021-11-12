@@ -15,10 +15,6 @@ const (
 	DefaultFailTimeout = 30 * time.Second
 )
 
-var (
-	defaultSelector Selector = NewSelector(nil)
-)
-
 type Selector interface {
 	Select(nodes ...*Node) *Node
 }
@@ -145,8 +141,8 @@ func (f *failFilter) Filter(nodes ...*Node) []*Node {
 	}
 	var nl []*Node
 	for _, node := range nodes {
-		if node.marker.FailCount() < uint32(maxFails) ||
-			time.Since(time.Unix(node.marker.FailTime(), 0)) >= failTimeout {
+		if node.Marker().FailCount() < uint32(maxFails) ||
+			time.Since(time.Unix(node.Marker().FailTime(), 0)) >= failTimeout {
 			nl = append(nl, node)
 		}
 	}

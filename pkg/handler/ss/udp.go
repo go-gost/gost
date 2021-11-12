@@ -1,63 +1,20 @@
-package ssu
+package ss
 
 import (
 	"context"
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/bypass"
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/internal/bufpool"
 	"github.com/go-gost/gost/pkg/internal/utils/socks"
 	"github.com/go-gost/gost/pkg/internal/utils/ss"
-	"github.com/go-gost/gost/pkg/logger"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
 )
 
-func init() {
-	registry.RegisterHandler("ssu", NewHandler)
-}
-
-type ssuHandler struct {
-	chain  *chain.Chain
-	bypass bypass.Bypass
-	logger logger.Logger
-	md     metadata
-}
-
-func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
-	for _, opt := range opts {
-		opt(options)
+func (h *ssHandler) handleUDP(ctx context.Context, raddr net.Addr, conn net.PacketConn) {
+	if h.md.cipher != nil {
+		conn = h.md.cipher.PacketConn(conn)
 	}
-
-	return &ssuHandler{
-		chain:  options.Chain,
-		bypass: options.Bypass,
-		logger: options.Logger,
-	}
-}
-
-func (h *ssuHandler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
-}
-
-func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
-	defer conn.Close()
-
-	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
-		"remote": conn.RemoteAddr().String(),
-		"local":  conn.LocalAddr().String(),
-	})
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
-	defer func() {
-		h.logger.WithFields(map[string]interface{}{
-			"duration": time.Since(start),
-		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
-	}()
 
 	// obtain a udp connection
 	r := (&handler.Router{}).
@@ -81,28 +38,40 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 		"bind": cc.LocalAddr().String(),
 	})
 	h.logger.Infof("bind on %s OK", cc.LocalAddr().String())
+	t := time.Now()
+	h.logger.Infof("%s <-> %s", raddr, cc.LocalAddr())
+	h.relayPacket(
+		ss.UDPServerConn(conn, raddr, h.md.bufferSize),
+		cc,
+	)
+	h.logger.
+		WithFields(map[string]interface{}{"duration": time.Since(t)}).
+		Infof("%s >-< %s", raddr, cc.LocalAddr())
+}
 
-	pc, ok := conn.(net.PacketConn)
-	if ok {
-		if h.md.cipher != nil {
-			pc = h.md.cipher.PacketConn(pc)
-		}
-
-		t := time.Now()
-		h.logger.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
-		h.relayPacket(
-			ss.UDPServerConn(pc, conn.RemoteAddr(), h.md.bufferSize),
-			cc,
-		)
-		h.logger.
-			WithFields(map[string]interface{}{"duration": time.Since(t)}).
-			Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
+func (h *ssHandler) handleUDPTun(ctx context.Context, conn net.Conn) {
+	// obtain a udp connection
+	r := (&handler.Router{}).
+		WithChain(h.chain).
+		WithRetry(h.md.retryCount).
+		WithLogger(h.logger)
+	c, err := r.Dial(ctx, "udp", "")
+	if err != nil {
+		h.logger.Error(err)
 		return
 	}
 
-	if h.md.cipher != nil {
-		conn = ss.ShadowConn(h.md.cipher.StreamConn(conn), nil)
+	cc, ok := c.(net.PacketConn)
+	if !ok {
+		h.logger.Errorf("%s: not a packet connection")
+		return
 	}
+	defer cc.Close()
+
+	h.logger = h.logger.WithFields(map[string]interface{}{
+		"bind": cc.LocalAddr().String(),
+	})
+	h.logger.Infof("bind on %s OK", cc.LocalAddr().String())
 
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
@@ -112,7 +81,7 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 		Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
 }
 
-func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
+func (h *ssHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 	bufSize := h.md.bufferSize
 	errc := make(chan error, 2)
 
@@ -183,7 +152,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 	return <-errc
 }
 
-func (h *ssuHandler) tunnelUDP(tunnel, c net.PacketConn) (err error) {
+func (h *ssHandler) tunnelUDP(tunnel, c net.PacketConn) (err error) {
 	bufSize := h.md.bufferSize
 	errc := make(chan error, 2)
 
@@ -254,32 +223,4 @@ func (h *ssuHandler) tunnelUDP(tunnel, c net.PacketConn) (err error) {
 	}()
 
 	return <-errc
-}
-
-func (h *ssuHandler) parseMetadata(md md.Metadata) (err error) {
-	h.md.cipher, err = ss.ShadowCipher(
-		md.GetString(method),
-		md.GetString(password),
-		md.GetString(key),
-	)
-	if err != nil {
-		return
-	}
-
-	h.md.readTimeout = md.GetDuration(readTimeout)
-	h.md.retryCount = md.GetInt(retryCount)
-
-	h.md.bufferSize = md.GetInt(bufferSize)
-	if h.md.bufferSize > 0 {
-		if h.md.bufferSize < 512 {
-			h.md.bufferSize = 512 // min buffer size
-		}
-		if h.md.bufferSize > 65*1024 {
-			h.md.bufferSize = 65 * 1024 // max buffer size
-		}
-	} else {
-		h.md.bufferSize = 4096 // default buffer size
-	}
-
-	return
 }

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks4"
-	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
@@ -108,7 +107,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		return
 	}
 
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
@@ -141,20 +140,4 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 
 func (h *socks4Handler) handleBind(ctx context.Context, conn net.Conn, req *gosocks4.Request) {
 	// TODO: bind
-}
-
-func (h *socks4Handler) parseMetadata(md md.Metadata) (err error) {
-	if v, _ := md.Get(authsKey).([]interface{}); len(v) > 0 {
-		authenticator := auth.NewLocalAuthenticator(nil)
-		for _, auth := range v {
-			if v, _ := auth.(string); v != "" {
-				authenticator.Add(v, "")
-			}
-		}
-		h.md.authenticator = authenticator
-	}
-
-	h.md.readTimeout = md.GetDuration(readTimeout)
-	h.md.retryCount = md.GetInt(retryCount)
-	return
 }

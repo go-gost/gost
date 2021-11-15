@@ -57,10 +57,3 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 	l.Listener = ln
 	return
 }
-
-func (l *tcpListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.keepAlive = md.GetBool(keepAlive)
-	l.md.keepAlivePeriod = md.GetDuration(keepAlivePeriod)
-
-	return
-}

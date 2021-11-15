@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
@@ -50,38 +49,6 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 func (h *httpHandler) Init(md md.Metadata) error {
 	return h.parseMetadata(md)
-}
-
-func (h *httpHandler) parseMetadata(md md.Metadata) error {
-	h.md.proxyAgent = md.GetString(proxyAgentKey)
-
-	if v, _ := md.Get(authsKey).([]interface{}); len(v) > 0 {
-		authenticator := auth.NewLocalAuthenticator(nil)
-		for _, auth := range v {
-			if s, _ := auth.(string); s != "" {
-				ss := strings.SplitN(s, ":", 2)
-				if len(ss) == 1 {
-					authenticator.Add(ss[0], "")
-				} else {
-					authenticator.Add(ss[0], ss[1])
-				}
-			}
-		}
-		h.md.authenticator = authenticator
-	}
-
-	if v := md.GetString(probeResistKey); v != "" {
-		if ss := strings.SplitN(v, ":", 2); len(ss) == 2 {
-			h.md.probeResist = &probeResist{
-				Type:  ss[0],
-				Value: ss[1],
-				Knock: md.GetString(knockKey),
-			}
-		}
-	}
-	h.md.retryCount = md.GetInt(retryCount)
-
-	return nil
 }
 
 func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -209,7 +176,7 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 
 	req.Header.Del("Proxy-Authorization")
 
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)

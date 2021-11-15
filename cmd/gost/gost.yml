@@ -13,6 +13,8 @@ services:
   addr: ":28000"
   handler:
     type: http
+    chain: chain01
+    # bypass: bypass01
     metadata:
       proxyAgent: "gost/3.0"
       retry: 3
@@ -25,13 +27,13 @@ services:
     type: tcp
     metadata:
       keepAlive: 15s
-  chain: chain01
-  # bypass: bypass01
 - name: ss
   url: "ss://chacha20:gost@:8000"
   addr: ":28338"
   handler:
     type: ss
+    # chain: chain01
+    # bypass: bypass01
     metadata:
       method: chacha20-ietf
       password: gost
@@ -43,26 +45,26 @@ services:
     type: tcp
     metadata:
       keepAlive: 15s
-  # chain: chain01
-  # bypass: bypass01
 - name: socks5
   url: "socks5://gost:gost@:1080"
   addr: ":21080"
   handler:
     type: socks5
+    # chain: chain-ss
+    # bypass: bypass01
     metadata:
       auths:
        - gost:gost
       readTimeout: 5s
       retry: 3
       notls: true
+      bind: true
+      udp: true
       # udpBufferSize: 4096 # range [512, 66560]
   listener:
     type: tcp
     metadata:
       keepAlive: 15s
-  chain: chain-ss
-  # bypass: bypass01
 - name: socks5+tcp
   url: "socks5://gost:gost@:1080"
   addr: ":21081"
@@ -93,6 +95,7 @@ services:
       failTimeout: 30s
   handler:
     type: forward
+    chain: chain-ss
     metadata:
       readTimeout: 5s
       retry: 3
@@ -100,7 +103,38 @@ services:
     type: udp
     metadata:
       keepAlive: 15s
-  chain: chain-ss
+
+- name: kcp-forward-tunnel
+  addr: ":8388"
+  forwarder:
+    targets:
+    - 127.0.0.1:28338
+  handler:
+    type: forward
+    metadata:
+      readTimeout: 5s
+      retry: 3
+  listener:
+    type: kcp
+    metadata:
+      keepAlive: 15s
+
+- name: rtcp
+  addr: ":28100"
+  forwarder:
+    targets:
+    - 192.168.8.8:80
+  handler:
+    type: forward
+    metadata:
+      readTimeout: 5s
+      retry: 3
+  listener:
+    type: rtcp
+    chain: chain-socks5
+    metadata:
+      keepAlive: 15s
+      mux: true
 
 chains:
 - name: chain01
@@ -179,7 +213,7 @@ chains:
   - name: hop01
     nodes:
     - name: node01
-      addr: ":11080"
+      addr: ":21080"
       url: "http://gost:gost@:8081"
       # bypass: bypass01
       connector:

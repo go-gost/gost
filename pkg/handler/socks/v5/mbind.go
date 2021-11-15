@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/internal/utils/mux"
 )
@@ -20,12 +21,20 @@ func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, req *g
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
+	if !h.md.enableBind {
+		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
+		reply.Write(conn)
+		h.logger.Debug(reply)
+		h.logger.Error("BIND is diabled")
+		return
+	}
+
 	if h.chain.IsEmpty() {
 		h.muxBindLocal(ctx, conn, addr)
 		return
 	}
 
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
@@ -90,14 +99,14 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, addr st
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"bind": socksAddr.String(),
 	})
-	h.logger.Infof("bind on: %s OK", socksAddr.String())
+	h.logger.Debugf("bind on %s OK", &socksAddr)
 
 	h.serveMuxBind(ctx, conn, ln)
 }
 
 func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.Listener) {
 	// Upgrade connection to multiplex stream.
-	session, err := mux.NewMuxSession(conn)
+	session, err := mux.ClientSession(conn)
 	if err != nil {
 		h.logger.Error(err)
 		return
@@ -122,7 +131,7 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 			h.logger.Error(err)
 			return
 		}
-		h.logger.Infof("peer accepted: %s", rc.RemoteAddr().String())
+		h.logger.Debugf("peer %s accepted", rc.RemoteAddr())
 
 		go func(c net.Conn) {
 			defer c.Close()
@@ -133,6 +142,18 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 				return
 			}
 			defer sc.Close()
+
+			// incompatible with GOST v2.x
+			if !h.md.compatibilityMode {
+				addr := gosocks5.Addr{}
+				addr.ParseFrom(c.RemoteAddr().String())
+				reply := gosocks5.NewReply(gosocks5.Succeeded, &addr)
+				if err := reply.Write(sc); err != nil {
+					h.logger.Error(err)
+					return
+				}
+				h.logger.Debug(reply)
+			}
 
 			t := time.Now()
 			h.logger.Infof("%s <-> %s", conn.RemoteAddr(), c.RemoteAddr().String())

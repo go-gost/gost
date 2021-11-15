@@ -42,11 +42,14 @@ type BypassConfig struct {
 }
 type ListenerConfig struct {
 	Type     string
+	Chain    string
 	Metadata map[string]interface{}
 }
 
 type HandlerConfig struct {
 	Type     string
+	Chain    string
+	Bypass   string
 	Metadata map[string]interface{}
 }
 
@@ -72,8 +75,6 @@ type ServiceConfig struct {
 	Listener  *ListenerConfig
 	Handler   *HandlerConfig
 	Forwarder *ForwarderConfig
-	Chain     string
-	Bypass    string
 }
 
 type ChainConfig struct {

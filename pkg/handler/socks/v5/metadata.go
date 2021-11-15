@@ -11,30 +11,32 @@ import (
 )
 
 type metadata struct {
-	tlsConfig     *tls.Config
-	authenticator auth.Authenticator
-	timeout       time.Duration
-	readTimeout   time.Duration
-	retryCount    int
-	noTLS         bool
-	enableBind    bool
-	enableUDP     bool
-	udpBufferSize int
+	tlsConfig         *tls.Config
+	authenticator     auth.Authenticator
+	timeout           time.Duration
+	readTimeout       time.Duration
+	retryCount        int
+	noTLS             bool
+	enableBind        bool
+	enableUDP         bool
+	udpBufferSize     int
+	compatibilityMode bool
 }
 
 func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 	const (
-		certFile      = "certFile"
-		keyFile       = "keyFile"
-		caFile        = "caFile"
-		authsKey      = "auths"
-		readTimeout   = "readTimeout"
-		timeout       = "timeout"
-		retryCount    = "retry"
-		noTLS         = "notls"
-		enableBind    = "bind"
-		enableUDP     = "udp"
-		udpBufferSize = "udpBufferSize"
+		certFile          = "certFile"
+		keyFile           = "keyFile"
+		caFile            = "caFile"
+		authsKey          = "auths"
+		readTimeout       = "readTimeout"
+		timeout           = "timeout"
+		retryCount        = "retry"
+		noTLS             = "notls"
+		enableBind        = "bind"
+		enableUDP         = "udp"
+		udpBufferSize     = "udpBufferSize"
+		compatibilityMode = "comp"
 	)
 
 	var err error
@@ -80,6 +82,8 @@ func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 	} else {
 		h.md.udpBufferSize = 4096 // default buffer size
 	}
+
+	h.md.compatibilityMode = md.GetBool(compatibilityMode)
 
 	return nil
 }

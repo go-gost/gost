@@ -1,10 +1,9 @@
 package tcp
 
-import "time"
+import (
+	"time"
 
-const (
-	keepAlive       = "keepAlive"
-	keepAlivePeriod = "keepAlivePeriod"
+	md "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -14,4 +13,16 @@ const (
 type metadata struct {
 	keepAlive       bool
 	keepAlivePeriod time.Duration
+}
+
+func (l *tcpListener) parseMetadata(md md.Metadata) (err error) {
+	const (
+		keepAlive       = "keepAlive"
+		keepAlivePeriod = "keepAlivePeriod"
+	)
+
+	l.md.keepAlive = md.GetBool(keepAlive)
+	l.md.keepAlivePeriod = md.GetDuration(keepAlivePeriod)
+
+	return
 }

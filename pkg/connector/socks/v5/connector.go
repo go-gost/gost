@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/go-gost/gosocks5"
@@ -171,20 +169,4 @@ func (c *socks5Connector) connectUDP(ctx context.Context, conn net.Conn, network
 	c.logger.Debugf("associate on %s OK", baddr)
 
 	return socks.UDPTunClientConn(conn, addr), nil
-}
-
-func (c *socks5Connector) parseMetadata(md md.Metadata) (err error) {
-	if v := md.GetString(auth); v != "" {
-		ss := strings.SplitN(v, ":", 2)
-		if len(ss) == 1 {
-			c.md.User = url.User(ss[0])
-		} else {
-			c.md.User = url.UserPassword(ss[0], ss[1])
-		}
-	}
-
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.noTLS = md.GetBool(noTLS)
-
-	return
 }

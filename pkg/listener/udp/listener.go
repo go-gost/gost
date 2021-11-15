@@ -15,14 +15,14 @@ func init() {
 }
 
 type udpListener struct {
-	addr      string
-	md        metadata
-	conn      net.PacketConn
-	connChan  chan net.Conn
-	errChan   chan error
-	closeChan chan struct{}
-	connPool  *connPool
-	logger    logger.Logger
+	addr     string
+	md       metadata
+	conn     net.PacketConn
+	connChan chan net.Conn
+	errChan  chan error
+	closed   chan struct{}
+	connPool *connPool
+	logger   logger.Logger
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -31,10 +31,10 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(options)
 	}
 	return &udpListener{
-		addr:      options.Addr,
-		errChan:   make(chan error, 1),
-		closeChan: make(chan struct{}),
-		logger:    options.Logger,
+		addr:    options.Addr,
+		errChan: make(chan error, 1),
+		closed:  make(chan struct{}),
+		logger:  options.Logger,
 	}
 }
 
@@ -75,13 +75,14 @@ func (l *udpListener) Accept() (conn net.Conn, err error) {
 
 func (l *udpListener) Close() error {
 	select {
-	case <-l.closeChan:
-		return nil
+	case <-l.closed:
 	default:
-		close(l.closeChan)
+		close(l.closed)
 		l.connPool.Close()
 		return l.conn.Close()
 	}
+
+	return nil
 }
 
 func (l *udpListener) Addr() net.Addr {
@@ -125,27 +126,4 @@ func (l *udpListener) getConn(addr net.Addr) *conn {
 		}
 	}
 	return c
-}
-
-func (l *udpListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.ttl = md.GetDuration(ttl)
-	if l.md.ttl <= 0 {
-		l.md.ttl = defaultTTL
-	}
-	l.md.readBufferSize = md.GetInt(readBufferSize)
-	if l.md.readBufferSize <= 0 {
-		l.md.readBufferSize = defaultReadBufferSize
-	}
-
-	l.md.readQueueSize = md.GetInt(readQueueSize)
-	if l.md.readQueueSize <= 0 {
-		l.md.readQueueSize = defaultReadQueueSize
-	}
-
-	l.md.connQueueSize = md.GetInt(connQueueSize)
-	if l.md.connQueueSize <= 0 {
-		l.md.connQueueSize = defaultConnQueueSize
-	}
-
-	return
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 )
 
@@ -24,7 +25,7 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr s
 		return
 	}
 
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)

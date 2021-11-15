@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 )
 
@@ -19,12 +20,20 @@ func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, req *goso
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
+	if !h.md.enableBind {
+		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
+		reply.Write(conn)
+		h.logger.Debug(reply)
+		h.logger.Error("BIND is diabled")
+		return
+	}
+
 	if h.chain.IsEmpty() {
 		h.bindLocal(ctx, conn, addr)
 		return
 	}
 
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
@@ -83,7 +92,7 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, addr strin
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"bind": socksAddr.String(),
 	})
-	h.logger.Infof("bind on %s OK", socksAddr.String())
+	h.logger.Debugf("bind on %s OK", &socksAddr)
 
 	h.serveBind(ctx, conn, ln)
 }
@@ -127,9 +136,18 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 	case err := <-accept():
 		if err != nil {
 			h.logger.Error(err)
+
+			reply := gosocks5.NewReply(gosocks5.Failure, nil)
+			if err := reply.Write(pc2); err != nil {
+				h.logger.Error(err)
+			}
+			h.logger.Debug(reply)
+
 			return
 		}
 		defer rc.Close()
+
+		h.logger.Debugf("peer %s accepted", rc.RemoteAddr())
 
 		raddr := gosocks5.Addr{}
 		raddr.ParseFrom(rc.RemoteAddr().String())
@@ -138,7 +156,6 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 			h.logger.Error(err)
 		}
 		h.logger.Debug(reply)
-		h.logger.Infof("peer accepted: %s", raddr.String())
 
 		start := time.Now()
 		h.logger.Infof("%s <-> %s", conn.RemoteAddr(), raddr.String())

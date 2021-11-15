@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/internal/bufpool"
 	"github.com/go-gost/gost/pkg/internal/utils/socks"
 )
@@ -18,6 +18,14 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosoc
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"cmd": "udp",
 	})
+
+	if !h.md.enableUDP {
+		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
+		reply.Write(conn)
+		h.logger.Debug(reply)
+		h.logger.Error("UDP relay is diabled")
+		return
+	}
 
 	relay, err := net.ListenUDP("udp", nil)
 	if err != nil {
@@ -43,7 +51,7 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosoc
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"bind": saddr.String(),
 	})
-	h.logger.Infof("bind on %s OK", saddr.String())
+	h.logger.Debugf("bind on %s OK", &saddr)
 
 	if h.chain.IsEmpty() {
 		// serve as standard socks5 udp relay.
@@ -81,7 +89,7 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosoc
 }
 
 func (h *socks5Handler) getUDPTun(ctx context.Context) (conn net.Conn, err error) {
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)

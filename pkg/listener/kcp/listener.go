@@ -48,6 +48,7 @@ func (l *kcpListener) Init(md md.Metadata) (err error) {
 		config = DefaultConfig
 	}
 	config.Init()
+	l.md.config = config
 
 	var ln *kcp.Listener
 
@@ -167,8 +168,4 @@ func (l *kcpListener) mux(conn net.Conn) {
 			l.logger.Error("connection queue is full")
 		}
 	}
-}
-
-func (l *kcpListener) parseMetadata(md md.Metadata) (err error) {
-	return
 }

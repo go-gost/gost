@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/internal/bufpool"
 	"github.com/go-gost/gost/pkg/internal/utils/socks"
 	"github.com/go-gost/gost/pkg/internal/utils/ss"
@@ -17,7 +17,7 @@ func (h *ssHandler) handleUDP(ctx context.Context, raddr net.Addr, conn net.Pack
 	}
 
 	// obtain a udp connection
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
@@ -51,7 +51,7 @@ func (h *ssHandler) handleUDP(ctx context.Context, raddr net.Addr, conn net.Pack
 
 func (h *ssHandler) handleUDPTun(ctx context.Context, conn net.Conn) {
 	// obtain a udp connection
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)

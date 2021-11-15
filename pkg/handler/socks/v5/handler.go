@@ -90,29 +90,13 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 	case gosocks5.CmdConnect:
 		h.handleConnect(ctx, conn, req.Addr.String())
 	case gosocks5.CmdBind:
-		if h.md.enableBind {
-			h.handleBind(ctx, conn, req)
-		} else {
-			h.logger.Error("BIND is diabled")
-		}
+		h.handleBind(ctx, conn, req)
 	case socks.CmdMuxBind:
-		if h.md.enableBind {
-			h.handleMuxBind(ctx, conn, req)
-		} else {
-			h.logger.Error("BIND is diabled")
-		}
+		h.handleMuxBind(ctx, conn, req)
 	case gosocks5.CmdUdp:
-		if h.md.enableUDP {
-			h.handleUDP(ctx, conn, req)
-		} else {
-			h.logger.Error("UDP relay is diabled")
-		}
+		h.handleUDP(ctx, conn, req)
 	case socks.CmdUDPTun:
-		if h.md.enableUDP {
-			h.handleUDPTun(ctx, conn, req)
-		} else {
-			h.logger.Error("UDP relay is diabled")
-		}
+		h.handleUDPTun(ctx, conn, req)
 	default:
 		h.logger.Errorf("unknown cmd: %d", req.Cmd)
 		resp := gosocks5.NewReply(gosocks5.CmdUnsupported, nil)

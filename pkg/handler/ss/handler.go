@@ -123,7 +123,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)

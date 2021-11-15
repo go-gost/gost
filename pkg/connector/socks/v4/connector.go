@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -113,14 +112,4 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 	}
 
 	return conn, nil
-}
-
-func (c *socks4Connector) parseMetadata(md md.Metadata) (err error) {
-	if v := md.GetString(auth); v != "" {
-		c.md.User = url.User(v)
-	}
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.disable4a = md.GetBool(disable4a)
-
-	return
 }

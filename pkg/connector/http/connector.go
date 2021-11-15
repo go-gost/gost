@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/go-gost/gost/pkg/connector"
@@ -110,23 +109,4 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 	}
 
 	return conn, nil
-}
-
-func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.UserAgent, _ = md.Get(userAgent).(string)
-	if c.md.UserAgent == "" {
-		c.md.UserAgent = defaultUserAgent
-	}
-
-	if v := md.GetString(auth); v != "" {
-		ss := strings.SplitN(v, ":", 2)
-		if len(ss) == 1 {
-			c.md.User = url.User(ss[0])
-		} else {
-			c.md.User = url.UserPassword(ss[0], ss[1])
-		}
-	}
-
-	return
 }

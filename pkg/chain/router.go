@@ -1,4 +1,4 @@
-package handler
+package chain
 
 import (
 	"bytes"
@@ -6,17 +6,16 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
 type Router struct {
-	chain   *chain.Chain
+	chain   *Chain
 	retries int
 	logger  logger.Logger
 }
 
-func (r *Router) WithChain(chain *chain.Chain) *Router {
+func (r *Router) WithChain(chain *Chain) *Router {
 	r.chain = chain
 	return r
 }

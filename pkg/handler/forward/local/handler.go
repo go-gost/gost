@@ -75,7 +75,7 @@ func (h *localForwardHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
 
-	r := (&handler.Router{}).
+	r := (&chain.Router{}).
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
@@ -104,10 +104,4 @@ func (h *localForwardHandler) Handle(ctx context.Context, conn net.Conn) {
 			"duration": time.Since(t),
 		}).
 		Infof("%s >-< %s", conn.RemoteAddr(), target.Addr())
-}
-
-func (h *localForwardHandler) parseMetadata(md md.Metadata) (err error) {
-	h.md.readTimeout = md.GetDuration(readTimeout)
-	h.md.retryCount = md.GetInt(retryCount)
-	return
 }

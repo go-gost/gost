@@ -47,6 +47,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 		ln := registry.GetListener(svc.Listener.Type)(
 			listener.AddrOption(svc.Addr),
+			listener.ChainOption(chains[svc.Listener.Chain]),
 			listener.LoggerOption(listenerLogger),
 		)
 		if err := ln.Init(metadata.MapMetadata(svc.Listener.Metadata)); err != nil {
@@ -59,8 +60,8 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 
 		h := registry.GetHandler(svc.Handler.Type)(
-			handler.ChainOption(chains[svc.Chain]),
-			handler.BypassOption(bypasses[svc.Bypass]),
+			handler.ChainOption(chains[svc.Handler.Chain]),
+			handler.BypassOption(bypasses[svc.Handler.Bypass]),
 			handler.LoggerOption(handlerLogger),
 		)
 

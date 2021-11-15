@@ -3,7 +3,7 @@ package udp
 import (
 	"net"
 
-	"github.com/go-gost/gost/pkg/internal/bufpool"
+	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"

@@ -3,7 +3,7 @@ package tcp
 import (
 	"net"
 
-	"github.com/go-gost/gost/pkg/internal/utils"
+	util "github.com/go-gost/gost/pkg/common/util"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -47,7 +47,7 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 	}
 
 	if l.md.keepAlive {
-		l.Listener = &utils.TCPKeepAliveListener{
+		l.Listener = &util.TCPKeepAliveListener{
 			TCPListener:     ln,
 			KeepAlivePeriod: l.md.keepAlivePeriod,
 		}

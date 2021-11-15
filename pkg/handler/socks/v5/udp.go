@@ -10,8 +10,8 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/internal/bufpool"
-	"github.com/go-gost/gost/pkg/internal/utils/socks"
+	"github.com/go-gost/gost/pkg/common/bufpool"
+	"github.com/go-gost/gost/pkg/common/util/socks"
 )
 
 func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosocks5.Request) {

@@ -3,7 +3,7 @@ package ss
 import (
 	"time"
 
-	"github.com/go-gost/gost/pkg/internal/utils/ss"
+	"github.com/go-gost/gost/pkg/common/util/ss"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )

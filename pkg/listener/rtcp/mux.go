@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/internal/utils/mux"
-	"github.com/go-gost/gost/pkg/internal/utils/socks"
+	"github.com/go-gost/gost/pkg/common/util/mux"
+	"github.com/go-gost/gost/pkg/common/util/socks"
 )
 
 func (l *rtcpListener) muxAccept() (net.Conn, error) {

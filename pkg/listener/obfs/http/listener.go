@@ -3,7 +3,7 @@ package http
 import (
 	"net"
 
-	"github.com/go-gost/gost/pkg/internal/utils"
+	"github.com/go-gost/gost/pkg/common/util"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -47,7 +47,7 @@ func (l *obfsListener) Init(md md.Metadata) (err error) {
 	}
 
 	if l.md.keepAlive {
-		l.Listener = &utils.TCPKeepAliveListener{
+		l.Listener = &util.TCPKeepAliveListener{
 			TCPListener:     ln,
 			KeepAlivePeriod: l.md.keepAlivePeriod,
 		}

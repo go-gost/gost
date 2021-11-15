@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/internal/utils/socks"
+	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/logger"
 )
 

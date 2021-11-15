@@ -5,8 +5,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-gost/gost/pkg/internal/utils"
-	util_tls "github.com/go-gost/gost/pkg/internal/utils/tls"
+	"github.com/go-gost/gost/pkg/common/util"
+	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -60,7 +60,7 @@ func (l *http2Listener) Init(md md.Metadata) (err error) {
 	l.addr = ln.Addr()
 
 	ln = tls.NewListener(
-		&utils.TCPKeepAliveListener{
+		&util.TCPKeepAliveListener{
 			TCPListener:     ln.(*net.TCPListener),
 			KeepAlivePeriod: l.md.keepAlivePeriod,
 		},
@@ -127,7 +127,7 @@ func (l *http2Listener) handleFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 func (l *http2Listener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = util_tls.LoadTLSConfig(
+	l.md.tlsConfig, err = tls_util.LoadTLSConfig(
 		md.GetString(certFile),
 		md.GetString(keyFile),
 		md.GetString(caFile),

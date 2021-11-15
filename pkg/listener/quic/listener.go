@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	utils "github.com/go-gost/gost/pkg/internal/utils/quic"
+	quic_util "github.com/go-gost/gost/pkg/common/util/quic"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -53,7 +53,7 @@ func (l *quicListener) Init(md md.Metadata) (err error) {
 	}
 
 	if l.md.cipherKey != nil {
-		conn = utils.QUICCipherConn(conn, l.md.cipherKey)
+		conn = quic_util.QUICCipherConn(conn, l.md.cipherKey)
 	}
 
 	config := &quic.Config{
@@ -120,7 +120,7 @@ func (l *quicListener) mux(ctx context.Context, session quic.Session) {
 			return
 		}
 
-		conn := utils.QUICConn(session, stream)
+		conn := quic_util.QUICConn(session, stream)
 		select {
 		case l.connChan <- conn:
 		case <-stream.Context().Done():

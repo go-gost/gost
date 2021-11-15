@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/internal/bufpool"
+	"github.com/go-gost/gost/pkg/common/bufpool"
 )
 
 var (

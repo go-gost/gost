@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/auth"
-	util_tls "github.com/go-gost/gost/pkg/internal/utils/tls"
+	util_tls "github.com/go-gost/gost/pkg/common/util/tls"
 	md "github.com/go-gost/gost/pkg/metadata"
 )
 

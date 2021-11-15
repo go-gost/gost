@@ -4,7 +4,7 @@ import (
 	"net"
 	"time"
 
-	utils "github.com/go-gost/gost/pkg/internal/utils/kcp"
+	kcp_util "github.com/go-gost/gost/pkg/common/util/kcp"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -142,7 +142,7 @@ func (l *kcpListener) mux(conn net.Conn) {
 	smuxConfig.KeepAliveInterval = time.Duration(l.md.config.KeepAlive) * time.Second
 
 	if !l.md.config.NoComp {
-		conn = utils.KCPCompStreamConn(conn)
+		conn = kcp_util.KCPCompStreamConn(conn)
 	}
 
 	mux, err := smux.Server(conn, smuxConfig)

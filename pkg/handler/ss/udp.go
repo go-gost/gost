@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/internal/bufpool"
-	"github.com/go-gost/gost/pkg/internal/utils/socks"
-	"github.com/go-gost/gost/pkg/internal/utils/ss"
+	"github.com/go-gost/gost/pkg/common/bufpool"
+	"github.com/go-gost/gost/pkg/common/util/socks"
+	"github.com/go-gost/gost/pkg/common/util/ss"
 )
 
 func (h *ssHandler) handleUDP(ctx context.Context, raddr net.Addr, conn net.PacketConn) {

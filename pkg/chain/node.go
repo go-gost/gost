@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-gost/gost/pkg/bypass"
@@ -86,8 +86,7 @@ func (g *NodeGroup) Next() *Node {
 
 type FailMarker struct {
 	failTime  int64
-	failCount uint32
-	mux       sync.RWMutex
+	failCount int64
 }
 
 func (m *FailMarker) FailTime() int64 {
@@ -95,21 +94,15 @@ func (m *FailMarker) FailTime() int64 {
 		return 0
 	}
 
-	m.mux.RLock()
-	defer m.mux.RUnlock()
-
-	return m.failTime
+	return atomic.LoadInt64(&m.failCount)
 }
 
-func (m *FailMarker) FailCount() uint32 {
+func (m *FailMarker) FailCount() int64 {
 	if m == nil {
 		return 0
 	}
 
-	m.mux.RLock()
-	defer m.mux.RUnlock()
-
-	return m.failCount
+	return atomic.LoadInt64(&m.failCount)
 }
 
 func (m *FailMarker) Mark() {
@@ -117,11 +110,8 @@ func (m *FailMarker) Mark() {
 		return
 	}
 
-	m.mux.Lock()
-	defer m.mux.Unlock()
-
-	m.failTime = time.Now().Unix()
-	m.failCount++
+	atomic.AddInt64(&m.failCount, 1)
+	atomic.StoreInt64(&m.failTime, time.Now().Unix())
 }
 
 func (m *FailMarker) Reset() {
@@ -129,9 +119,5 @@ func (m *FailMarker) Reset() {
 		return
 	}
 
-	m.mux.Lock()
-	defer m.mux.Unlock()
-
-	m.failTime = 0
-	m.failCount = 0
+	atomic.StoreInt64(&m.failCount, 0)
 }

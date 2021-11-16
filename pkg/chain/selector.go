@@ -11,7 +11,6 @@ import (
 
 // default options for FailFilter
 const (
-	DefaultMaxFails    = 1
 	DefaultFailTimeout = 30 * time.Second
 )
 
@@ -128,20 +127,17 @@ func FailFilter(maxFails int, timeout time.Duration) Filter {
 // Filter filters dead nodes.
 func (f *failFilter) Filter(nodes ...*Node) []*Node {
 	maxFails := f.maxFails
-	if maxFails == 0 {
-		maxFails = DefaultMaxFails
-	}
 	failTimeout := f.failTimeout
 	if failTimeout == 0 {
 		failTimeout = DefaultFailTimeout
 	}
 
-	if len(nodes) <= 1 || maxFails < 0 {
+	if len(nodes) <= 1 || maxFails <= 0 {
 		return nodes
 	}
 	var nl []*Node
 	for _, node := range nodes {
-		if node.Marker().FailCount() < uint32(maxFails) ||
+		if node.Marker().FailCount() < int64(maxFails) ||
 			time.Since(time.Unix(node.Marker().FailTime(), 0)) >= failTimeout {
 			nl = append(nl, node)
 		}

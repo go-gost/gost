@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/common/bufpool"
+	"github.com/go-gost/gost/pkg/common/util/udp"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -18,10 +19,10 @@ type udpListener struct {
 	addr     string
 	md       metadata
 	conn     net.PacketConn
-	connChan chan net.Conn
+	cqueue   chan net.Conn
 	errChan  chan error
 	closed   chan struct{}
-	connPool *connPool
+	connPool *udp.ConnPool
 	logger   logger.Logger
 }
 
@@ -53,8 +54,8 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	l.connChan = make(chan net.Conn, l.md.connQueueSize)
-	l.connPool = newConnPool(l.md.ttl).WithLogger(l.logger)
+	l.cqueue = make(chan net.Conn, l.md.backlog)
+	l.connPool = udp.NewConnPool(l.md.ttl).WithLogger(l.logger)
 
 	go l.listenLoop()
 
@@ -64,7 +65,7 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 func (l *udpListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
-	case conn = <-l.connChan:
+	case conn = <-l.cqueue:
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed
@@ -106,18 +107,18 @@ func (l *udpListener) listenLoop() {
 			continue
 		}
 
-		if err := c.Queue(b[:n]); err != nil {
+		if err := c.WriteQueue(b[:n]); err != nil {
 			l.logger.Warn("data discarded: ", err)
 		}
 	}
 }
 
-func (l *udpListener) getConn(addr net.Addr) *conn {
+func (l *udpListener) getConn(addr net.Addr) *udp.Conn {
 	c, ok := l.connPool.Get(addr.String())
 	if !ok {
-		c = newConn(l.conn, addr, l.md.readQueueSize)
+		c = udp.NewConn(l.conn, l.conn.LocalAddr(), addr, l.md.readQueueSize)
 		select {
-		case l.connChan <- c:
+		case l.cqueue <- c:
 			l.connPool.Set(addr.String(), c)
 		default:
 			c.Close()

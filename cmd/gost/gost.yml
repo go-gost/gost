@@ -131,10 +131,30 @@ services:
       retry: 3
   listener:
     type: rtcp
-    chain: chain-socks5
+    # chain: chain-socks5
     metadata:
       keepAlive: 15s
       mux: true
+- name: rudp 
+  addr: ":1053"
+  forwarder:
+    targets:
+    - 192.168.8.8:53
+    - 192.168.8.1:53
+    selector:
+      strategy: round
+      maxFails: 1
+      failTimeout: 30s
+  handler:
+    type: forward
+    metadata:
+      readTimeout: 5s
+      retry: 3
+  listener:
+    type: rudp
+    chain: chain-socks5
+    metadata:
+      keepAlive: 15s
 
 chains:
 - name: chain01

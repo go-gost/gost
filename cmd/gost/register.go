@@ -12,7 +12,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/dialer/udp"
 
 	// Register handlers
-	_ "github.com/go-gost/gost/pkg/handler/forward/local"
+	_ "github.com/go-gost/gost/pkg/handler/forward"
 	_ "github.com/go-gost/gost/pkg/handler/http"
 	_ "github.com/go-gost/gost/pkg/handler/socks/v4"
 	_ "github.com/go-gost/gost/pkg/handler/socks/v5"
@@ -27,6 +27,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/listener/obfs/tls"
 	_ "github.com/go-gost/gost/pkg/listener/quic"
 	_ "github.com/go-gost/gost/pkg/listener/rtcp"
+	_ "github.com/go-gost/gost/pkg/listener/rudp"
 	_ "github.com/go-gost/gost/pkg/listener/tcp"
 	_ "github.com/go-gost/gost/pkg/listener/tls"
 	_ "github.com/go-gost/gost/pkg/listener/tls/mux"

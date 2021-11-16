@@ -1,4 +1,4 @@
-package local
+package forward
 
 import (
 	"context"
@@ -17,7 +17,7 @@ func init() {
 	registry.RegisterHandler("forward", NewHandler)
 }
 
-type localForwardHandler struct {
+type forwardHandler struct {
 	group  *chain.NodeGroup
 	chain  *chain.Chain
 	bypass bypass.Bypass
@@ -31,23 +31,23 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 		opt(options)
 	}
 
-	return &localForwardHandler{
+	return &forwardHandler{
 		chain:  options.Chain,
 		bypass: options.Bypass,
 		logger: options.Logger,
 	}
 }
 
-func (h *localForwardHandler) Init(md md.Metadata) (err error) {
+func (h *forwardHandler) Init(md md.Metadata) (err error) {
 	return h.parseMetadata(md)
 }
 
 // Forward implements handler.Forwarder.
-func (h *localForwardHandler) Forward(group *chain.NodeGroup) {
+func (h *forwardHandler) Forward(group *chain.NodeGroup) {
 	h.group = group
 }
 
-func (h *localForwardHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()

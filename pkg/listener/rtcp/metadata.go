@@ -8,28 +8,28 @@ import (
 
 const (
 	defaultKeepAlivePeriod = 180 * time.Second
-	defaultConnQueueSize   = 128
+	defaultBacklog         = 128
 )
 
 type metadata struct {
-	enableMux     bool
-	connQueueSize int
-	retryCount    int
+	enableMux  bool
+	backlog    int
+	retryCount int
 }
 
 func (l *rtcpListener) parseMetadata(md md.Metadata) (err error) {
 	const (
-		enableMux     = "mux"
-		connQueueSize = "connQueueSize"
-		retryCount    = "retry"
+		enableMux  = "mux"
+		backlog    = "backlog"
+		retryCount = "retry"
 	)
 
 	l.md.enableMux = md.GetBool(enableMux)
 	l.md.retryCount = md.GetInt(retryCount)
 
-	l.md.connQueueSize = md.GetInt(connQueueSize)
-	if l.md.connQueueSize <= 0 {
-		l.md.connQueueSize = defaultConnQueueSize
+	l.md.backlog = md.GetInt(backlog)
+	if l.md.backlog <= 0 {
+		l.md.backlog = defaultBacklog
 	}
 	return
 }

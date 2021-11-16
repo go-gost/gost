@@ -26,7 +26,7 @@ type rtcpListener struct {
 	chain      *chain.Chain
 	md         metadata
 	ln         net.Listener
-	connChan   chan net.Conn
+	cqueue     chan net.Conn
 	session    *mux.Session
 	sessionMux sync.Mutex
 	logger     logger.Logger
@@ -57,7 +57,7 @@ func (l *rtcpListener) Init(md md.Metadata) (err error) {
 	}
 
 	l.laddr = laddr
-	l.connChan = make(chan net.Conn, l.md.connQueueSize)
+	l.cqueue = make(chan net.Conn, l.md.backlog)
 
 	if l.chain.IsEmpty() {
 		l.ln, err = net.ListenTCP("tcp", laddr)
@@ -93,7 +93,7 @@ func (l *rtcpListener) Accept() (conn net.Conn, err error) {
 	}
 
 	select {
-	case conn = <-l.connChan:
+	case conn = <-l.cqueue:
 	case <-l.closed:
 		err = net.ErrClosed
 	}
@@ -130,7 +130,7 @@ func (l *rtcpListener) listenLoop() {
 		tempDelay = 0
 
 		select {
-		case l.connChan <- conn:
+		case l.cqueue <- conn:
 		default:
 			conn.Close()
 			l.logger.Warnf("connection queue is full, client %s discarded", conn.RemoteAddr().String())
@@ -169,36 +169,29 @@ func (l *rtcpListener) waitPeer(conn net.Conn) (net.Conn, error) {
 	addr.ParseFrom(l.addr)
 	req := gosocks5.NewRequest(gosocks5.CmdBind, &addr)
 	if err := req.Write(conn); err != nil {
-		l.logger.Error(err)
 		return nil, err
 	}
 
 	// first reply, bind status
 	rep, err := gosocks5.ReadReply(conn)
 	if err != nil {
-		l.logger.Error(err)
 		return nil, err
 	}
 
 	l.logger.Debug(rep)
 
 	if rep.Rep != gosocks5.Succeeded {
-		err = fmt.Errorf("bind on %s failed", l.addr)
-		l.logger.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("bind on %s failed", l.addr)
 	}
 	l.logger.Debugf("bind on %s OK", rep.Addr)
 
 	// second reply, peer connected
 	rep, err = gosocks5.ReadReply(conn)
 	if err != nil {
-		l.logger.Error(err)
 		return nil, err
 	}
 	if rep.Rep != gosocks5.Succeeded {
-		err = fmt.Errorf("peer connect failed")
-		l.logger.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("peer connect failed")
 	}
 
 	raddr, err := net.ResolveTCPAddr("tcp", rep.Addr.String())

@@ -1,4 +1,4 @@
-package udp
+package rudp
 
 import (
 	"time"
@@ -19,14 +19,16 @@ type metadata struct {
 	readBufferSize int
 	readQueueSize  int
 	backlog        int
+	retryCount     int
 }
 
-func (l *udpListener) parseMetadata(md md.Metadata) (err error) {
+func (l *rudpListener) parseMetadata(md md.Metadata) (err error) {
 	const (
 		ttl            = "ttl"
 		readBufferSize = "readBufferSize"
 		readQueueSize  = "readQueueSize"
 		backlog        = "backlog"
+		retryCount     = "retry"
 	)
 
 	l.md.ttl = md.GetDuration(ttl)
@@ -48,5 +50,6 @@ func (l *udpListener) parseMetadata(md md.Metadata) (err error) {
 		l.md.backlog = defaultBacklog
 	}
 
+	l.md.retryCount = md.GetInt(retryCount)
 	return
 }

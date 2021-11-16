@@ -1,4 +1,4 @@
-package local
+package forward
 
 import (
 	"time"
@@ -11,7 +11,7 @@ type metadata struct {
 	retryCount  int
 }
 
-func (h *localForwardHandler) parseMetadata(md md.Metadata) (err error) {
+func (h *forwardHandler) parseMetadata(md md.Metadata) (err error) {
 	const (
 		readTimeout = "readTimeout"
 		retryCount  = "retry"

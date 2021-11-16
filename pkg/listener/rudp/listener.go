@@ -193,7 +193,7 @@ func (l *rudpListener) initUDPTunnel(conn net.Conn) (net.PacketConn, error) {
 	}
 	l.logger.Debugf("bind on %s OK", baddr)
 
-	return socks.UDPTunClientConn(conn, nil), nil
+	return socks.UDPTunClientPacketConn(conn), nil
 }
 
 func (l *rudpListener) getConn(conn net.PacketConn, raddr net.Addr) *udp.Conn {

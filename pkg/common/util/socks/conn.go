@@ -8,33 +8,31 @@ import (
 	"github.com/go-gost/gost/pkg/common/bufpool"
 )
 
-var (
-	_ net.PacketConn = (*UDPTunConn)(nil)
-	_ net.Conn       = (*UDPTunConn)(nil)
-
-	_ net.PacketConn = (*UDPConn)(nil)
-	_ net.Conn       = (*UDPConn)(nil)
-)
-
-type UDPTunConn struct {
+type udpTunConn struct {
 	net.Conn
 	taddr net.Addr
 }
 
-func UDPTunClientConn(c net.Conn, targetAddr net.Addr) *UDPTunConn {
-	return &UDPTunConn{
+func UDPTunClientConn(c net.Conn, targetAddr net.Addr) net.Conn {
+	return &udpTunConn{
 		Conn:  c,
 		taddr: targetAddr,
 	}
 }
 
-func UDPTunServerConn(c net.Conn) *UDPTunConn {
-	return &UDPTunConn{
+func UDPTunClientPacketConn(c net.Conn) net.PacketConn {
+	return &udpTunConn{
 		Conn: c,
 	}
 }
 
-func (c *UDPTunConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
+func UDPTunServerConn(c net.Conn) net.PacketConn {
+	return &udpTunConn{
+		Conn: c,
+	}
+}
+
+func (c *udpTunConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 	socksAddr := gosocks5.Addr{}
 	header := gosocks5.UDPHeader{
 		Addr: &socksAddr,
@@ -57,12 +55,12 @@ func (c *UDPTunConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 	return
 }
 
-func (c *UDPTunConn) Read(b []byte) (n int, err error) {
+func (c *udpTunConn) Read(b []byte) (n int, err error) {
 	n, _, err = c.ReadFrom(b)
 	return
 }
 
-func (c *UDPTunConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
+func (c *udpTunConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	socksAddr := gosocks5.Addr{}
 	if err = socksAddr.ParseFrom(addr.String()); err != nil {
 		return
@@ -83,7 +81,7 @@ func (c *UDPTunConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	return
 }
 
-func (c *UDPTunConn) Write(b []byte) (n int, err error) {
+func (c *udpTunConn) Write(b []byte) (n int, err error) {
 	return c.WriteTo(b, c.taddr)
 }
 
@@ -91,15 +89,15 @@ var (
 	DefaultBufferSize = 4096
 )
 
-type UDPConn struct {
+type udpConn struct {
 	net.PacketConn
 	raddr      net.Addr
 	taddr      net.Addr
 	bufferSize int
 }
 
-func NewUDPConn(c net.PacketConn, bufferSize int) *UDPConn {
-	return &UDPConn{
+func UDPConn(c net.PacketConn, bufferSize int) net.PacketConn {
+	return &udpConn{
 		PacketConn: c,
 		bufferSize: bufferSize,
 	}
@@ -108,7 +106,7 @@ func NewUDPConn(c net.PacketConn, bufferSize int) *UDPConn {
 // ReadFrom reads an UDP datagram.
 // NOTE: for server side,
 // the returned addr is the target address the client want to relay to.
-func (c *UDPConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
+func (c *udpConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 	rbuf := bufpool.Get(c.bufferSize)
 	defer bufpool.Put(rbuf)
 
@@ -131,12 +129,12 @@ func (c *UDPConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 	return
 }
 
-func (c *UDPConn) Read(b []byte) (n int, err error) {
+func (c *udpConn) Read(b []byte) (n int, err error) {
 	n, _, err = c.ReadFrom(b)
 	return
 }
 
-func (c *UDPConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
+func (c *udpConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	wbuf := bufpool.Get(c.bufferSize)
 	defer bufpool.Put(wbuf)
 
@@ -165,10 +163,10 @@ func (c *UDPConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	return
 }
 
-func (c *UDPConn) Write(b []byte) (n int, err error) {
+func (c *udpConn) Write(b []byte) (n int, err error) {
 	return c.WriteTo(b, c.taddr)
 }
 
-func (c *UDPConn) RemoteAddr() net.Addr {
+func (c *udpConn) RemoteAddr() net.Addr {
 	return c.raddr
 }

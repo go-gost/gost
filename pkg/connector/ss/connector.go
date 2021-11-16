@@ -53,13 +53,7 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 	switch network {
 	case "tcp", "tcp4", "tcp6":
 	case "udp", "udp4", "udp6":
-		if c.md.enableUDP {
-			return c.connectUDP(ctx, conn, network, address)
-		} else {
-			err := errors.New("UDP relay is disabled")
-			c.logger.Error(err)
-			return nil, err
-		}
+		return c.connectUDP(ctx, conn, network, address)
 	default:
 		err := fmt.Errorf("network %s unsupported", network)
 		c.logger.Error(err)
@@ -105,6 +99,12 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 }
 
 func (c *ssConnector) connectUDP(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
+	if c.md.enableUDP {
+		err := errors.New("UDP relay is disabled")
+		c.logger.Error(err)
+		return nil, err
+	}
+
 	if c.md.connectTimeout > 0 {
 		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
 		defer conn.SetDeadline(time.Time{})

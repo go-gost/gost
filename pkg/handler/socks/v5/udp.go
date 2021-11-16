@@ -63,7 +63,7 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosoc
 		defer peer.Close()
 
 		go h.relayUDP(
-			socks.NewUDPConn(relay, h.md.udpBufferSize),
+			socks.UDPConn(relay, h.md.udpBufferSize),
 			peer,
 		)
 	} else {
@@ -75,8 +75,8 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosoc
 		defer tun.Close()
 
 		go h.tunnelClientUDP(
-			socks.NewUDPConn(relay, h.md.udpBufferSize),
-			socks.UDPTunClientConn(tun, nil),
+			socks.UDPConn(relay, h.md.udpBufferSize),
+			socks.UDPTunClientPacketConn(tun),
 		)
 	}
 

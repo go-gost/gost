@@ -22,7 +22,7 @@ func (c *ssConnector) parseMetadata(md md.Metadata) (err error) {
 		password       = "password"
 		key            = "key"
 		connectTimeout = "timeout"
-		noDelay        = "noDelay"
+		noDelay        = "nodelay"
 		enableUDP      = "udp"           // enable UDP relay
 		udpBufferSize  = "udpBufferSize" // udp buffer size
 	)

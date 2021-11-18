@@ -52,10 +52,15 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 
 	switch network {
 	case "tcp", "tcp4", "tcp6":
+		if _, ok := conn.(net.PacketConn); ok {
+			err := fmt.Errorf("tcp over udp is unsupported")
+			c.logger.Error(err)
+			return nil, err
+		}
 	case "udp", "udp4", "udp6":
 		return c.connectUDP(ctx, conn, network, address)
 	default:
-		err := fmt.Errorf("network %s unsupported", network)
+		err := fmt.Errorf("network %s is unsupported", network)
 		c.logger.Error(err)
 		return nil, err
 	}
@@ -99,7 +104,7 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 }
 
 func (c *ssConnector) connectUDP(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
-	if c.md.enableUDP {
+	if !c.md.enableUDP {
 		err := errors.New("UDP relay is disabled")
 		c.logger.Error(err)
 		return nil, err

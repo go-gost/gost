@@ -43,8 +43,9 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 }
 
 // Forward implements handler.Forwarder.
-func (h *forwardHandler) Forward(group *chain.NodeGroup) {
+func (h *forwardHandler) Forward(group *chain.NodeGroup, chain *chain.Chain) {
 	h.group = group
+	h.chain = chain
 }
 
 func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {

@@ -64,13 +64,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	// standard UDP relay.
 	if pc, ok := conn.(net.PacketConn); ok {
-		if h.md.enableUDP {
-			h.handleUDP(ctx, conn.RemoteAddr(), pc)
-			return
-		} else {
-			h.logger.Error("UDP relay is diabled")
-		}
-
+		h.handleUDP(ctx, pc, conn.RemoteAddr())
 		return
 	}
 
@@ -84,21 +78,17 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	br := bufio.NewReader(conn)
 	data, err := br.Peek(3)
+	conn.SetReadDeadline(time.Time{})
 	if err != nil {
 		h.logger.Error(err)
 		h.discard(conn)
 		return
 	}
-	conn.SetReadDeadline(time.Time{})
 
 	conn = handler.NewBufferReaderConn(conn, br)
 	if data[2] == 0xff {
-		if h.md.enableUDP {
-			// UDP-over-TCP relay
-			h.handleUDPTun(ctx, conn)
-		} else {
-			h.logger.Error("UDP relay is diabled")
-		}
+		// UDP-over-TCP relay
+		h.handleUDPTun(ctx, conn)
 		return
 	}
 
@@ -109,8 +99,6 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		h.discard(conn)
 		return
 	}
-
-	conn.SetReadDeadline(time.Time{})
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"dst": addr.String(),

@@ -14,6 +14,10 @@ const (
 	DefaultFailTimeout = 30 * time.Second
 )
 
+var (
+	DefaultSelector = NewSelector(RoundRobinStrategy())
+)
+
 type Selector interface {
 	Select(nodes ...*Node) *Node
 }

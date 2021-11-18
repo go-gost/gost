@@ -51,8 +51,13 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 
 	switch network {
 	case "tcp", "tcp4", "tcp6":
+		if _, ok := conn.(net.PacketConn); ok {
+			err := fmt.Errorf("tcp over udp is unsupported")
+			c.logger.Error(err)
+			return nil, err
+		}
 	default:
-		err := fmt.Errorf("network %s unsupported, should be tcp, tcp4 or tcp6", network)
+		err := fmt.Errorf("network %s is unsupported", network)
 		c.logger.Error(err)
 		return nil, err
 	}

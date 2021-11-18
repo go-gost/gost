@@ -2,9 +2,11 @@ package config
 
 import (
 	"io"
+	"os"
 	"time"
 
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -19,9 +21,9 @@ func init() {
 }
 
 type LogConfig struct {
-	Output string
-	Level  string
-	Format string
+	Output string `yaml:",omitempty"`
+	Level  string `yaml:",omitempty"`
+	Format string `yaml:",omitempty"`
 }
 
 type ProfilingConfig struct {
@@ -37,25 +39,22 @@ type SelectorConfig struct {
 
 type BypassConfig struct {
 	Name     string
-	Reverse  bool
+	Reverse  bool `yaml:",omitempty"`
 	Matchers []string
 }
 type ListenerConfig struct {
 	Type     string
-	Chain    string
-	Metadata map[string]interface{}
+	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
 type HandlerConfig struct {
 	Type     string
-	Chain    string
-	Bypass   string
-	Metadata map[string]interface{}
+	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
 type ForwarderConfig struct {
 	Targets  []string
-	Selector *SelectorConfig
+	Selector *SelectorConfig `yaml:",omitempty"`
 }
 
 type DialerConfig struct {
@@ -70,40 +69,42 @@ type ConnectorConfig struct {
 
 type ServiceConfig struct {
 	Name      string
-	URL       string
-	Addr      string
-	Listener  *ListenerConfig
-	Handler   *HandlerConfig
-	Forwarder *ForwarderConfig
+	URL       string           `yaml:",omitempty"`
+	Addr      string           `yaml:",omitempty"`
+	Chain     string           `yaml:",omitempty"`
+	Bypass    string           `yaml:",omitempty"`
+	Listener  *ListenerConfig  `yaml:",omitempty"`
+	Handler   *HandlerConfig   `yaml:",omitempty"`
+	Forwarder *ForwarderConfig `yaml:",omitempty"`
 }
 
 type ChainConfig struct {
 	Name     string
-	Selector *SelectorConfig
-	Hops     []HopConfig
+	Selector *SelectorConfig `yaml:",omitempty"`
+	Hops     []*HopConfig
 }
 
 type HopConfig struct {
 	Name     string
-	Selector *SelectorConfig
-	Nodes    []NodeConfig
+	Selector *SelectorConfig `yaml:",omitempty"`
+	Nodes    []*NodeConfig
 }
 
 type NodeConfig struct {
 	Name      string
-	URL       string
-	Addr      string
-	Dialer    *DialerConfig
-	Connector *ConnectorConfig
-	Bypass    string
+	URL       string           `yaml:",omitempty"`
+	Addr      string           `yaml:",omitempty"`
+	Dialer    *DialerConfig    `yaml:",omitempty"`
+	Connector *ConnectorConfig `yaml:",omitempty"`
+	Bypass    string           `yaml:",omitempty"`
 }
 
 type Config struct {
-	Log       *LogConfig
-	Profiling *ProfilingConfig
-	Services  []ServiceConfig
-	Chains    []ChainConfig
-	Bypasses  []BypassConfig
+	Log       *LogConfig       `yaml:",omitempty"`
+	Profiling *ProfilingConfig `yaml:",omitempty"`
+	Services  []*ServiceConfig
+	Chains    []*ChainConfig  `yaml:",omitempty"`
+	Bypasses  []*BypassConfig `yaml:",omitempty"`
 }
 
 func (c *Config) Load() error {
@@ -128,4 +129,17 @@ func (c *Config) ReadFile(file string) error {
 		return err
 	}
 	return v.Unmarshal(c)
+}
+
+func (c *Config) WriteFile(file string) error {
+	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	enc := yaml.NewEncoder(f)
+	defer enc.Close()
+
+	return enc.Encode(c)
 }

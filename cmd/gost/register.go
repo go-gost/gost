@@ -14,6 +14,7 @@ import (
 	// Register handlers
 	_ "github.com/go-gost/gost/pkg/handler/forward"
 	_ "github.com/go-gost/gost/pkg/handler/http"
+	_ "github.com/go-gost/gost/pkg/handler/relay"
 	_ "github.com/go-gost/gost/pkg/handler/socks/v4"
 	_ "github.com/go-gost/gost/pkg/handler/socks/v5"
 	_ "github.com/go-gost/gost/pkg/handler/ss"

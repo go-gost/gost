@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/metadata"
 )
 
@@ -20,4 +21,8 @@ type Listener interface {
 // Accepter represents a network endpoint that can accept connection from peer.
 type Accepter interface {
 	Accept() (net.Conn, error)
+}
+
+type Chainable interface {
+	Chain(chain *chain.Chain)
 }

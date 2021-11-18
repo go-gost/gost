@@ -39,10 +39,14 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 	return &rudpListener{
 		addr:   options.Addr,
-		chain:  options.Chain,
 		closed: make(chan struct{}),
 		logger: options.Logger,
 	}
+}
+
+// implements listener.Chainable interface
+func (l *rudpListener) Chain(chain *chain.Chain) {
+	l.chain = chain
 }
 
 func (l *rudpListener) Init(md md.Metadata) (err error) {

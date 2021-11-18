@@ -29,11 +29,11 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 	}
 
 	for _, bypassCfg := range cfg.Bypasses {
-		bypasses[bypassCfg.Name] = bypassFromConfig(&bypassCfg)
+		bypasses[bypassCfg.Name] = bypassFromConfig(bypassCfg)
 	}
 
 	for _, chainCfg := range cfg.Chains {
-		chains[chainCfg.Name] = chainFromConfig(&chainCfg)
+		chains[chainCfg.Name] = chainFromConfig(chainCfg)
 	}
 
 	for _, svc := range cfg.Services {
@@ -47,9 +47,14 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 		ln := registry.GetListener(svc.Listener.Type)(
 			listener.AddrOption(svc.Addr),
-			listener.ChainOption(chains[svc.Listener.Chain]),
 			listener.LoggerOption(listenerLogger),
 		)
+
+		cln, chainable := ln.(listener.Chainable)
+		if chainable {
+			cln.Chain(chains[svc.Chain])
+		}
+
 		if err := ln.Init(metadata.MapMetadata(svc.Listener.Metadata)); err != nil {
 			listenerLogger.Fatal("init: ", err)
 		}
@@ -60,13 +65,17 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 
 		h := registry.GetHandler(svc.Handler.Type)(
-			handler.ChainOption(chains[svc.Handler.Chain]),
-			handler.BypassOption(bypasses[svc.Handler.Bypass]),
+			handler.ChainOption(chains[svc.Chain]),
+			handler.BypassOption(bypasses[svc.Bypass]),
 			handler.LoggerOption(handlerLogger),
 		)
 
 		if forwarder, ok := h.(handler.Forwarder); ok {
-			forwarder.Forward(forwarderFromConfig(svc.Forwarder))
+			chain := chains[svc.Chain]
+			if chainable {
+				chain = nil
+			}
+			forwarder.Forward(forwarderFromConfig(svc.Forwarder), chain)
 		}
 
 		if err := h.Init(metadata.MapMetadata(svc.Handler.Metadata)); err != nil {
@@ -145,6 +154,9 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 }
 
 func logFromConfig(cfg *config.LogConfig) logger.Logger {
+	if cfg == nil {
+		cfg = &config.LogConfig{}
+	}
 	opts := []logger.LoggerOption{
 		logger.FormatLoggerOption(logger.LogFormat(cfg.Format)),
 		logger.LevelLoggerOption(logger.LogLevel(cfg.Level)),
@@ -152,9 +164,9 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 
 	var out io.Writer = os.Stderr
 	switch cfg.Output {
-	case "stdout":
+	case "stdout", "":
 		out = os.Stdout
-	case "stderr", "":
+	case "stderr":
 		out = os.Stderr
 	default:
 		f, err := os.OpenFile(cfg.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -201,7 +213,7 @@ func bypassFromConfig(cfg *config.BypassConfig) bypass.Bypass {
 }
 
 func forwarderFromConfig(cfg *config.ForwarderConfig) *chain.NodeGroup {
-	if cfg == nil {
+	if cfg == nil || len(cfg.Targets) == 0 {
 		return nil
 	}
 

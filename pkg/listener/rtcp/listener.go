@@ -40,10 +40,14 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 	return &rtcpListener{
 		addr:   options.Addr,
-		chain:  options.Chain,
 		closed: make(chan struct{}),
 		logger: options.Logger,
 	}
+}
+
+// implements listener.Chainable interface
+func (l *rtcpListener) Chain(chain *chain.Chain) {
+	l.chain = chain
 }
 
 func (l *rtcpListener) Init(md md.Metadata) (err error) {

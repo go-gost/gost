@@ -76,12 +76,12 @@ func (g *NodeGroup) Next() *Node {
 		return nil
 	}
 
-	selector := g.selector
-	if selector == nil {
-		return g.nodes[0]
+	s := g.selector
+	if s == nil {
+		s = DefaultSelector
 	}
 
-	return selector.Select(g.nodes...)
+	return s.Select(g.nodes...)
 }
 
 type FailMarker struct {

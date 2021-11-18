@@ -11,7 +11,12 @@ import (
 	"github.com/go-gost/gost/pkg/common/util/ss"
 )
 
-func (h *ssHandler) handleUDP(ctx context.Context, raddr net.Addr, conn net.PacketConn) {
+func (h *ssHandler) handleUDP(ctx context.Context, conn net.PacketConn, raddr net.Addr) {
+	if !h.md.enableUDP {
+		h.logger.Error("UDP relay is diabled")
+		return
+	}
+
 	if h.md.cipher != nil {
 		conn = h.md.cipher.PacketConn(conn)
 	}
@@ -50,6 +55,11 @@ func (h *ssHandler) handleUDP(ctx context.Context, raddr net.Addr, conn net.Pack
 }
 
 func (h *ssHandler) handleUDPTun(ctx context.Context, conn net.Conn) {
+	if !h.md.enableUDP {
+		h.logger.Error("UDP relay is diabled")
+		return
+	}
+
 	// obtain a udp connection
 	r := (&chain.Router{}).
 		WithChain(h.chain).

@@ -2,14 +2,12 @@ package ss
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"time"
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/common/bufpool"
-	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/common/util/ss"
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/logger"
@@ -57,8 +55,6 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 			c.logger.Error(err)
 			return nil, err
 		}
-	case "udp", "udp4", "udp6":
-		return c.connectUDP(ctx, conn, network, address)
 	default:
 		err := fmt.Errorf("network %s is unsupported", network)
 		c.logger.Error(err)
@@ -101,36 +97,4 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 	}
 
 	return sc, nil
-}
-
-func (c *ssConnector) connectUDP(ctx context.Context, conn net.Conn, network, address string) (net.Conn, error) {
-	if !c.md.enableUDP {
-		err := errors.New("UDP relay is disabled")
-		c.logger.Error(err)
-		return nil, err
-	}
-
-	if c.md.connectTimeout > 0 {
-		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
-		defer conn.SetDeadline(time.Time{})
-	}
-
-	taddr, _ := net.ResolveUDPAddr(network, address)
-	if taddr == nil {
-		taddr = &net.UDPAddr{}
-	}
-
-	pc, ok := conn.(net.PacketConn)
-	if ok {
-		if c.md.cipher != nil {
-			pc = c.md.cipher.PacketConn(pc)
-		}
-
-		return ss.UDPClientConn(pc, conn.RemoteAddr(), taddr, c.md.udpBufferSize), nil
-	}
-
-	if c.md.cipher != nil {
-		conn = ss.ShadowConn(c.md.cipher.StreamConn(conn), nil)
-	}
-	return socks.UDPTunClientConn(conn, taddr), nil
 }

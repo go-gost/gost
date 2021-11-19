@@ -1,7 +1,6 @@
 package ss
 
 import (
-	"bufio"
 	"context"
 	"io"
 	"io/ioutil"
@@ -62,12 +61,6 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
-	// standard UDP relay.
-	if pc, ok := conn.(net.PacketConn); ok {
-		h.handleUDP(ctx, pc, conn.RemoteAddr())
-		return
-	}
-
 	if h.md.cipher != nil {
 		conn = ss.ShadowConn(h.md.cipher.StreamConn(conn), nil)
 	}
@@ -76,25 +69,8 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		conn.SetReadDeadline(time.Now().Add(h.md.readTimeout))
 	}
 
-	br := bufio.NewReader(conn)
-	data, err := br.Peek(3)
-	conn.SetReadDeadline(time.Time{})
-	if err != nil {
-		h.logger.Error(err)
-		h.discard(conn)
-		return
-	}
-
-	conn = handler.NewBufferReaderConn(conn, br)
-	if data[2] == 0xff {
-		// UDP-over-TCP relay
-		h.handleUDPTun(ctx, conn)
-		return
-	}
-
-	// standard TCP.
 	addr := &gosocks5.Addr{}
-	if _, err = addr.ReadFrom(conn); err != nil {
+	if _, err := addr.ReadFrom(conn); err != nil {
 		h.logger.Error(err)
 		h.discard(conn)
 		return

@@ -50,7 +50,7 @@ func (s *Service) serve() error {
 		if e != nil {
 			if ne, ok := e.(net.Error); ok && ne.Temporary() {
 				if tempDelay == 0 {
-					tempDelay = 5 * time.Millisecond
+					tempDelay = 100 * time.Millisecond
 				} else {
 					tempDelay *= 2
 				}
@@ -61,6 +61,7 @@ func (s *Service) serve() error {
 				time.Sleep(tempDelay)
 				continue
 			}
+			s.logger.Errorf("accept: %v", e)
 			return e
 		}
 		tempDelay = 0

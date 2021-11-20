@@ -3,7 +3,10 @@ package chain
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
+
+	"github.com/go-gost/gost/pkg/connector"
 )
 
 var (
@@ -91,6 +94,41 @@ func (r *Route) dialDirect(ctx context.Context, network, address string) (net.Co
 
 	d := net.Dialer{}
 	return d.DialContext(ctx, network, address)
+}
+
+func (r *Route) Bind(ctx context.Context, network, address string) (connector.Accepter, error) {
+	if r.IsEmpty() {
+		return r.bindLocal(ctx, network, address)
+	}
+
+	conn, err := r.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	accepter, err := r.Last().transport.Bind(ctx, conn, network, address)
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+
+	return accepter, nil
+}
+
+func (r *Route) bindLocal(ctx context.Context, network, address string) (connector.Accepter, error) {
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		addr, err := net.ResolveTCPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return net.ListenTCP(network, addr)
+	case "udp", "udp4", "udp6":
+		return nil, nil
+	default:
+		err := fmt.Errorf("network %s unsupported", network)
+		return nil, err
+	}
 }
 
 func (r *Route) IsEmpty() bool {

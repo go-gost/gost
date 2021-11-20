@@ -2,6 +2,7 @@ package main
 
 import (
 	// Register connectors
+	_ "github.com/go-gost/gost/pkg/connector/forward"
 	_ "github.com/go-gost/gost/pkg/connector/http"
 	_ "github.com/go-gost/gost/pkg/connector/socks/v4"
 	_ "github.com/go-gost/gost/pkg/connector/socks/v5"
@@ -13,7 +14,8 @@ import (
 	_ "github.com/go-gost/gost/pkg/dialer/udp"
 
 	// Register handlers
-	_ "github.com/go-gost/gost/pkg/handler/forward"
+	_ "github.com/go-gost/gost/pkg/handler/forward/local"
+	_ "github.com/go-gost/gost/pkg/handler/forward/remote"
 	_ "github.com/go-gost/gost/pkg/handler/http"
 	_ "github.com/go-gost/gost/pkg/handler/relay"
 	_ "github.com/go-gost/gost/pkg/handler/socks/v4"

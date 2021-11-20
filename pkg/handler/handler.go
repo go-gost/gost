@@ -14,5 +14,5 @@ type Handler interface {
 }
 
 type Forwarder interface {
-	Forward(*chain.NodeGroup, *chain.Chain)
+	Forward(*chain.NodeGroup)
 }

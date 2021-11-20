@@ -45,9 +45,8 @@ func (h *relayHandler) Init(md md.Metadata) (err error) {
 }
 
 // Forward implements handler.Forwarder.
-func (h *relayHandler) Forward(group *chain.NodeGroup, chain *chain.Chain) {
+func (h *relayHandler) Forward(group *chain.NodeGroup) {
 	h.group = group
-	h.chain = chain
 }
 
 func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -134,7 +133,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	if target == "" {
 		resp.Status = relay.StatusBadRequest
 		resp.WriteTo(conn)
-		h.logger.Error("bad request")
+		h.logger.Error("target not specified")
 		return
 	}
 

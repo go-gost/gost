@@ -62,6 +62,13 @@ func (tr *Transport) Connect(ctx context.Context, conn net.Conn, network, addres
 	return tr.connector.Connect(ctx, conn, network, address)
 }
 
+func (tr *Transport) Bind(ctx context.Context, conn net.Conn, network, address string) (connector.Accepter, error) {
+	if binder, ok := tr.connector.(connector.Binder); ok {
+		return binder.Bind(ctx, conn, network, address, connector.MuxBindOption(true))
+	}
+	return nil, connector.ErrBindUnsupported
+}
+
 func (tr *Transport) IsMultiplex() bool {
 	if mux, ok := tr.dialer.(dialer.Multiplexer); ok {
 		return mux.IsMultiplex()

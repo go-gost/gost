@@ -1,8 +1,12 @@
 package metadata
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 type Metadata interface {
+	IsExists(key string) bool
 	Get(key string) interface{}
 	GetBool(key string) bool
 	GetInt(key string) int
@@ -13,6 +17,11 @@ type Metadata interface {
 
 type MapMetadata map[string]interface{}
 
+func (m MapMetadata) IsExists(key string) bool {
+	_, ok := m[key]
+	return ok
+}
+
 func (m MapMetadata) Get(key string) interface{} {
 	if m != nil {
 		return m[key]
@@ -21,22 +30,43 @@ func (m MapMetadata) Get(key string) interface{} {
 }
 
 func (m MapMetadata) GetBool(key string) (v bool) {
-	if m != nil {
-		v, _ = m[key].(bool)
+	if m == nil || !m.IsExists(key) {
+		return
+	}
+	switch vv := m[key].(type) {
+	case bool:
+		return vv
+	case int:
+		return vv != 0
+	case string:
+		v, _ = strconv.ParseBool(vv)
+		return
 	}
 	return
 }
 
 func (m MapMetadata) GetInt(key string) (v int) {
-	if m != nil {
-		v, _ = m[key].(int)
+	switch vv := m[key].(type) {
+	case bool:
+		if vv {
+			v = 1
+		}
+	case int:
+		return vv
+	case string:
+		v, _ = strconv.Atoi(vv)
+		return
 	}
 	return
 }
 
 func (m MapMetadata) GetFloat(key string) (v float64) {
-	if m != nil {
-		v, _ = m[key].(float64)
+	switch vv := m[key].(type) {
+	case int:
+		return float64(vv)
+	case string:
+		v, _ = strconv.ParseFloat(vv, 64)
+		return
 	}
 	return
 }

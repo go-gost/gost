@@ -14,8 +14,7 @@ const (
 )
 
 type metadata struct {
-	ttl time.Duration
-
+	ttl            time.Duration
 	readBufferSize int
 	readQueueSize  int
 	backlog        int

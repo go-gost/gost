@@ -14,7 +14,8 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("forward", NewHandler)
+	registry.RegisterHandler("tcp", NewHandler)
+	registry.RegisterHandler("udp", NewHandler)
 }
 
 type forwardHandler struct {
@@ -43,9 +44,8 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 }
 
 // Forward implements handler.Forwarder.
-func (h *forwardHandler) Forward(group *chain.NodeGroup, chain *chain.Chain) {
+func (h *forwardHandler) Forward(group *chain.NodeGroup) {
 	h.group = group
-	h.chain = chain
 }
 
 func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {

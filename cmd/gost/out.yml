@@ -1,0 +1,47 @@
+services:
+- name: service-0
+  url: tcp://:8080/:8081?abc=def&true=true&n=123
+  addr: :8080
+  chain: chain-0
+  listener:
+    type: tcp
+    metadata:
+      abc: def
+      "n": "123"
+      "true": "true"
+  handler:
+    type: tcp
+    metadata:
+      abc: def
+      "n": "123"
+      "true": "true"
+  forwarder:
+    targets:
+    - :8081
+chains:
+- name: chain-0
+  hops:
+  - name: hop-0
+    nodes:
+    - name: node-0
+      url: auto://:1081?n=123t
+      addr: :1081
+      dialer:
+        type: auto
+        metadata:
+          "n": 123t
+      connector:
+        type: auto
+        metadata:
+          "n": 123t
+  - name: hop-1
+    nodes:
+    - name: node-0
+      url: auto://:1082
+      addr: :1082
+      dialer:
+        type: auto
+        metadata: {}
+      connector:
+        type: auto
+        metadata: {}

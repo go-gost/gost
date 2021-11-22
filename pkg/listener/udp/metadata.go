@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	defaultTTL            = 60 * time.Second
-	defaultReadBufferSize = 4096
+	defaultTTL            = 5 * time.Second
+	defaultReadBufferSize = 1024
 	defaultReadQueueSize  = 128
 	defaultBacklog        = 128
 )

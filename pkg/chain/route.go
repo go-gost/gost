@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/util/udp"
 	"github.com/go-gost/gost/pkg/connector"
+	"github.com/go-gost/gost/pkg/logger"
 )
 
 var (
@@ -96,9 +98,9 @@ func (r *Route) dialDirect(ctx context.Context, network, address string) (net.Co
 	return d.DialContext(ctx, network, address)
 }
 
-func (r *Route) Bind(ctx context.Context, network, address string) (connector.Accepter, error) {
+func (r *Route) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	if r.IsEmpty() {
-		return r.bindLocal(ctx, network, address)
+		return r.bindLocal(ctx, network, address, opts...)
 	}
 
 	conn, err := r.Connect(ctx)
@@ -106,29 +108,13 @@ func (r *Route) Bind(ctx context.Context, network, address string) (connector.Ac
 		return nil, err
 	}
 
-	accepter, err := r.Last().transport.Bind(ctx, conn, network, address)
+	ln, err := r.Last().transport.Bind(ctx, conn, network, address, opts...)
 	if err != nil {
 		conn.Close()
 		return nil, err
 	}
 
-	return accepter, nil
-}
-
-func (r *Route) bindLocal(ctx context.Context, network, address string) (connector.Accepter, error) {
-	switch network {
-	case "tcp", "tcp4", "tcp6":
-		addr, err := net.ResolveTCPAddr(network, address)
-		if err != nil {
-			return nil, err
-		}
-		return net.ListenTCP(network, addr)
-	case "udp", "udp4", "udp6":
-		return nil, nil
-	default:
-		err := fmt.Errorf("network %s unsupported", network)
-		return nil, err
-	}
+	return ln, nil
 }
 
 func (r *Route) IsEmpty() bool {
@@ -154,4 +140,40 @@ func (r *Route) Path() (path []*Node) {
 		path = append(path, node)
 	}
 	return
+}
+
+func (r *Route) bindLocal(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
+	options := connector.BindOptions{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		addr, err := net.ResolveTCPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return net.ListenTCP(network, addr)
+	case "udp", "udp4", "udp6":
+		addr, err := net.ResolveUDPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		conn, err := net.ListenUDP(network, addr)
+		if err != nil {
+			return nil, err
+		}
+		logger := logger.Default().WithFields(map[string]interface{}{
+			"network": network,
+			"address": address,
+		})
+		ln := udp.NewListener(conn, addr,
+			options.Backlog, options.UDPDataQueueSize, options.UDPDataBufferSize,
+			options.UDPConnTTL, logger)
+		return ln, err
+	default:
+		err := fmt.Errorf("network %s unsupported", network)
+		return nil, err
+	}
 }

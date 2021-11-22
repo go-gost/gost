@@ -13,7 +13,7 @@ import (
 )
 
 // Bind implements connector.Binder.
-func (c *socks5Connector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (connector.Accepter, error) {
+func (c *socks5Connector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	c.logger = c.logger.WithFields(map[string]interface{}{
 		"network": network,
 		"address": address,
@@ -32,7 +32,7 @@ func (c *socks5Connector) Bind(ctx context.Context, conn net.Conn, network, addr
 		}
 		return c.bindTCP(ctx, conn, network, address)
 	case "udp", "udp4", "udp6":
-		return c.bindUDP(ctx, conn, network, address)
+		return c.bindUDP(ctx, conn, network, address, &options)
 	default:
 		err := fmt.Errorf("network %s is unsupported", network)
 		c.logger.Error(err)
@@ -40,21 +40,20 @@ func (c *socks5Connector) Bind(ctx context.Context, conn net.Conn, network, addr
 	}
 }
 
-func (c *socks5Connector) bindTCP(ctx context.Context, conn net.Conn, network, address string) (connector.Accepter, error) {
+func (c *socks5Connector) bindTCP(ctx context.Context, conn net.Conn, network, address string) (net.Listener, error) {
 	laddr, err := c.bind(conn, gosocks5.CmdBind, network, address)
 	if err != nil {
 		return nil, err
 	}
 
-	return &tcpAccepter{
+	return &tcpListener{
 		addr:   laddr,
 		conn:   conn,
 		logger: c.logger,
-		done:   make(chan struct{}),
 	}, nil
 }
 
-func (c *socks5Connector) muxBindTCP(ctx context.Context, conn net.Conn, network, address string) (connector.Accepter, error) {
+func (c *socks5Connector) muxBindTCP(ctx context.Context, conn net.Conn, network, address string) (net.Listener, error) {
 	laddr, err := c.bind(conn, socks.CmdMuxBind, network, address)
 	if err != nil {
 		return nil, err
@@ -65,42 +64,33 @@ func (c *socks5Connector) muxBindTCP(ctx context.Context, conn net.Conn, network
 		return nil, err
 	}
 
-	return &tcpMuxAccepter{
+	return &tcpMuxListener{
 		addr:    laddr,
 		session: session,
 		logger:  c.logger,
 	}, nil
 }
 
-func (c *socks5Connector) bindUDP(ctx context.Context, conn net.Conn, network, address string) (connector.Accepter, error) {
+func (c *socks5Connector) bindUDP(ctx context.Context, conn net.Conn, network, address string, opts *connector.BindOptions) (net.Listener, error) {
 	laddr, err := c.bind(conn, socks.CmdUDPTun, network, address)
 	if err != nil {
 		return nil, err
 	}
 
-	accepter := &udpAccepter{
-		addr:           laddr,
-		conn:           socks.UDPTunClientPacketConn(conn),
-		cqueue:         make(chan net.Conn, c.md.backlog),
-		connPool:       udp.NewConnPool(c.md.ttl).WithLogger(c.logger),
-		readQueueSize:  c.md.readQueueSize,
-		readBufferSize: c.md.readBufferSize,
-		closed:         make(chan struct{}),
-		logger:         c.logger,
-	}
-	go accepter.acceptLoop()
+	ln := udp.NewListener(
+		socks.UDPTunClientPacketConn(conn),
+		laddr,
+		opts.Backlog,
+		opts.UDPDataQueueSize, opts.UDPDataBufferSize,
+		opts.UDPConnTTL,
+		c.logger)
 
-	return accepter, nil
+	return ln, nil
 }
 
 func (l *socks5Connector) bind(conn net.Conn, cmd uint8, network, address string) (net.Addr, error) {
-	laddr, err := net.ResolveTCPAddr(network, address)
-	if err != nil {
-		return nil, err
-	}
-
 	addr := gosocks5.Addr{}
-	addr.ParseFrom(laddr.String())
+	addr.ParseFrom(address)
 	req := gosocks5.NewRequest(cmd, &addr)
 	if err := req.Write(conn); err != nil {
 		return nil, err
@@ -116,7 +106,7 @@ func (l *socks5Connector) bind(conn net.Conn, cmd uint8, network, address string
 	l.logger.Debug(reply)
 
 	if reply.Rep != gosocks5.Succeeded {
-		return nil, fmt.Errorf("bind on %s/%s failed", laddr, laddr.Network())
+		return nil, fmt.Errorf("bind on %s/%s failed", address, network)
 	}
 
 	var baddr net.Addr
@@ -133,5 +123,5 @@ func (l *socks5Connector) bind(conn net.Conn, cmd uint8, network, address string
 	}
 	l.logger.Debugf("bind on %s/%s OK", baddr, baddr.Network())
 
-	return laddr, nil
+	return baddr, nil
 }

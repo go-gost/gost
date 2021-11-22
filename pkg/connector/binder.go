@@ -17,7 +17,7 @@ type Accepter interface {
 }
 
 type Binder interface {
-	Bind(ctx context.Context, conn net.Conn, network, address string, opts ...BindOption) (Accepter, error)
+	Bind(ctx context.Context, conn net.Conn, network, address string, opts ...BindOption) (net.Listener, error)
 }
 
 type AcceptError struct {

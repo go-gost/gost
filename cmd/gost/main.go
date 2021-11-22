@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	log = logger.NewLogger()
+	log = logger.Default()
 
 	cfgFile       string
 	outputCfgFile string

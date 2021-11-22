@@ -2,8 +2,6 @@ package logger
 
 import (
 	"io"
-
-	"github.com/sirupsen/logrus"
 )
 
 // LogFormat is format type
@@ -69,41 +67,5 @@ func FormatLoggerOption(format LogFormat) LoggerOption {
 func LevelLoggerOption(level LogLevel) LoggerOption {
 	return func(opts *LoggerOptions) {
 		opts.Level = level
-	}
-}
-
-func NewLogger(opts ...LoggerOption) Logger {
-	var options LoggerOptions
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	log := logrus.New()
-	if options.Output != nil {
-		log.SetOutput(options.Output)
-	}
-
-	switch options.Format {
-	case TextFormat:
-		log.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp: true,
-		})
-	default:
-		log.SetFormatter(&logrus.JSONFormatter{
-			DisableHTMLEscape: true,
-			// PrettyPrint:       true,
-		})
-	}
-
-	switch options.Level {
-	case DebugLevel, InfoLevel, WarnLevel, ErrorLevel, FatalLevel:
-		lvl, _ := logrus.ParseLevel(string(options.Level))
-		log.SetLevel(lvl)
-	default:
-		log.SetLevel(logrus.InfoLevel)
-	}
-
-	return &logger{
-		logger: logrus.NewEntry(log),
 	}
 }

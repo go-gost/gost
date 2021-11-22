@@ -17,13 +17,13 @@ func init() {
 }
 
 type rtcpListener struct {
-	addr     string
-	laddr    net.Addr
-	chain    *chain.Chain
-	accepter connector.Accepter
-	md       metadata
-	logger   logger.Logger
-	closed   chan struct{}
+	addr   string
+	laddr  net.Addr
+	chain  *chain.Chain
+	ln     net.Listener
+	md     metadata
+	logger logger.Logger
+	closed chan struct{}
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -58,6 +58,34 @@ func (l *rtcpListener) Init(md md.Metadata) (err error) {
 	return
 }
 
+func (l *rtcpListener) Accept() (conn net.Conn, err error) {
+	select {
+	case <-l.closed:
+		return nil, net.ErrClosed
+	default:
+	}
+
+	if l.ln == nil {
+		r := (&chain.Router{}).
+			WithChain(l.chain).
+			WithRetry(l.md.retryCount).
+			WithLogger(l.logger)
+		l.ln, err = r.Bind(context.Background(), "tcp", l.laddr.String(),
+			connector.MuxBindOption(true),
+		)
+		if err != nil {
+			return nil, connector.NewAcceptError(err)
+		}
+	}
+	conn, err = l.ln.Accept()
+	if err != nil {
+		l.ln.Close()
+		l.ln = nil
+		return nil, connector.NewAcceptError(err)
+	}
+	return
+}
+
 func (l *rtcpListener) Addr() net.Addr {
 	return l.laddr
 }
@@ -67,27 +95,11 @@ func (l *rtcpListener) Close() error {
 	case <-l.closed:
 	default:
 		close(l.closed)
+		if l.ln != nil {
+			l.ln.Close()
+			l.ln = nil
+		}
 	}
 
 	return nil
-}
-
-func (l *rtcpListener) Accept() (conn net.Conn, err error) {
-	if l.accepter == nil {
-		r := (&chain.Router{}).
-			WithChain(l.chain).
-			WithRetry(l.md.retryCount).
-			WithLogger(l.logger)
-		l.accepter, err = r.Bind(context.Background(), "tcp", l.laddr.String())
-		if err != nil {
-			return nil, connector.NewAcceptError(err)
-		}
-	}
-	conn, err = l.accepter.Accept()
-	if err != nil {
-		l.accepter.Close()
-		l.accepter = nil
-		return nil, connector.NewAcceptError(err)
-	}
-	return
 }

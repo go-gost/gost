@@ -60,35 +60,6 @@ func (r *Router) Dial(ctx context.Context, network, address string) (conn net.Co
 	return
 }
 
-func (r *Router) Bind(ctx context.Context, network, address string) (accepter connector.Accepter, err error) {
-	count := r.retries + 1
-	if count <= 0 {
-		count = 1
-	}
-	r.logger.Debugf("bind: %s/%s", address, network)
-
-	for i := 0; i < count; i++ {
-		route := r.chain.GetRouteFor(network, address)
-
-		if r.logger.IsLevelEnabled(logger.DebugLevel) {
-			buf := bytes.Buffer{}
-			for _, node := range route.Path() {
-				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
-			}
-			fmt.Fprintf(&buf, "%s", address)
-			r.logger.Debugf("route(retry=%d): %s", i, buf.String())
-		}
-
-		accepter, err = route.Bind(ctx, network, address)
-		if err == nil {
-			break
-		}
-		r.logger.Errorf("route(retry=%d): %s", i, err)
-	}
-
-	return
-}
-
 func (r *Router) Connect(ctx context.Context) (conn net.Conn, err error) {
 	count := r.retries + 1
 	if count <= 0 {
@@ -107,6 +78,35 @@ func (r *Router) Connect(ctx context.Context) (conn net.Conn, err error) {
 		}
 
 		conn, err = route.Connect(ctx)
+		if err == nil {
+			break
+		}
+		r.logger.Errorf("route(retry=%d): %s", i, err)
+	}
+
+	return
+}
+
+func (r *Router) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (ln net.Listener, err error) {
+	count := r.retries + 1
+	if count <= 0 {
+		count = 1
+	}
+	r.logger.Debugf("bind: %s/%s", address, network)
+
+	for i := 0; i < count; i++ {
+		route := r.chain.GetRouteFor(network, address)
+
+		if r.logger.IsLevelEnabled(logger.DebugLevel) {
+			buf := bytes.Buffer{}
+			for _, node := range route.Path() {
+				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
+			}
+			fmt.Fprintf(&buf, "%s", address)
+			r.logger.Debugf("route(retry=%d): %s", i, buf.String())
+		}
+
+		ln, err = route.Bind(ctx, network, address, opts...)
 		if err == nil {
 			break
 		}

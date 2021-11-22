@@ -1,6 +1,8 @@
 package connector
 
 import (
+	"time"
+
 	"github.com/go-gost/gost/pkg/logger"
 )
 
@@ -22,7 +24,11 @@ type ConnectOptions struct {
 type ConnectOption func(opts *ConnectOptions)
 
 type BindOptions struct {
-	Mux bool
+	Mux               bool
+	Backlog           int
+	UDPDataQueueSize  int
+	UDPDataBufferSize int
+	UDPConnTTL        time.Duration
 }
 
 type BindOption func(opts *BindOptions)
@@ -30,5 +36,29 @@ type BindOption func(opts *BindOptions)
 func MuxBindOption(mux bool) BindOption {
 	return func(opts *BindOptions) {
 		opts.Mux = mux
+	}
+}
+
+func BacklogBindOption(backlog int) BindOption {
+	return func(opts *BindOptions) {
+		opts.Backlog = backlog
+	}
+}
+
+func UDPDataQueueSizeBindOption(size int) BindOption {
+	return func(opts *BindOptions) {
+		opts.UDPDataQueueSize = size
+	}
+}
+
+func UDPDataBufferSizeBindOption(size int) BindOption {
+	return func(opts *BindOptions) {
+		opts.UDPDataBufferSize = size
+	}
+}
+
+func UDPConnTTLBindOption(ttl time.Duration) BindOption {
+	return func(opts *BindOptions) {
+		opts.UDPConnTTL = ttl
 	}
 }

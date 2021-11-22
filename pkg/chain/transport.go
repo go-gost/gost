@@ -62,9 +62,9 @@ func (tr *Transport) Connect(ctx context.Context, conn net.Conn, network, addres
 	return tr.connector.Connect(ctx, conn, network, address)
 }
 
-func (tr *Transport) Bind(ctx context.Context, conn net.Conn, network, address string) (connector.Accepter, error) {
+func (tr *Transport) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	if binder, ok := tr.connector.(connector.Binder); ok {
-		return binder.Bind(ctx, conn, network, address, connector.MuxBindOption(true))
+		return binder.Bind(ctx, conn, network, address, opts...)
 	}
 	return nil, connector.ErrBindUnsupported
 }

@@ -1,6 +1,7 @@
 package ss
 
 import (
+	"strings"
 	"time"
 
 	"github.com/go-gost/gost/pkg/common/util/ss"
@@ -16,18 +17,22 @@ type metadata struct {
 
 func (c *ssuConnector) parseMetadata(md md.Metadata) (err error) {
 	const (
-		method         = "method"
-		password       = "password"
+		user           = "user"
 		key            = "key"
 		connectTimeout = "timeout"
 		udpBufferSize  = "udpBufferSize" // udp buffer size
 	)
 
-	c.md.cipher, err = ss.ShadowCipher(
-		md.GetString(method),
-		md.GetString(password),
-		md.GetString(key),
-	)
+	var method, password string
+	if v := md.GetString(user); v != "" {
+		ss := strings.SplitN(v, ":", 2)
+		if len(ss) == 1 {
+			method = ss[0]
+		} else {
+			method, password = ss[0], ss[1]
+		}
+	}
+	c.md.cipher, err = ss.ShadowCipher(method, password, md.GetString(key))
 	if err != nil {
 		return
 	}

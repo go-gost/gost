@@ -89,8 +89,8 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 			feature := f.(*relay.UserAuthFeature)
 			user, pass = feature.Username, feature.Password
 		}
-		if f.Type() == relay.FeatureTargetAddr {
-			feature := f.(*relay.TargetAddrFeature)
+		if f.Type() == relay.FeatureAddr {
+			feature := f.(*relay.AddrFeature)
 			target = net.JoinHostPort(feature.Host, strconv.Itoa(int(feature.Port)))
 		}
 	}

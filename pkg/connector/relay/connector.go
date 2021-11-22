@@ -3,7 +3,6 @@ package relay
 import (
 	"context"
 	"net"
-	"strconv"
 	"time"
 
 	"github.com/go-gost/gost/pkg/connector"
@@ -72,29 +71,12 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 	}
 
 	if address != "" {
-		host, port, _ := net.SplitHostPort(address)
-		nport, _ := strconv.ParseUint(port, 10, 16)
-		if host == "" {
-			host = net.IPv4zero.String()
+		af := &relay.AddrFeature{}
+		if err := af.ParseFrom(address); err != nil {
+			return nil, err
 		}
 
-		if nport > 0 {
-			var atype uint8
-			ip := net.ParseIP(host)
-			if ip == nil {
-				atype = relay.AddrDomain
-			} else if ip.To4() == nil {
-				atype = relay.AddrIPv6
-			} else {
-				atype = relay.AddrIPv4
-			}
-
-			req.Features = append(req.Features, &relay.TargetAddrFeature{
-				AType: atype,
-				Host:  host,
-				Port:  uint16(nport),
-			})
-		}
+		req.Features = append(req.Features, af)
 	}
 
 	return conn, nil

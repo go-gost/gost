@@ -28,7 +28,7 @@ func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 		certFile          = "certFile"
 		keyFile           = "keyFile"
 		caFile            = "caFile"
-		authsKey          = "auths"
+		users             = "users"
 		readTimeout       = "readTimeout"
 		timeout           = "timeout"
 		retryCount        = "retry"
@@ -49,7 +49,7 @@ func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 		h.logger.Warn("parse tls config: ", err)
 	}
 
-	if v, _ := md.Get(authsKey).([]interface{}); len(v) > 0 {
+	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
 		for _, auth := range v {
 			if s, _ := auth.(string); s != "" {

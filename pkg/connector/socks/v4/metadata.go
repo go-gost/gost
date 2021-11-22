@@ -16,11 +16,11 @@ type metadata struct {
 func (c *socks4Connector) parseMetadata(md md.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
-		auth           = "auth"
+		user           = "user"
 		disable4a      = "disable4a"
 	)
 
-	if v := md.GetString(auth); v != "" {
+	if v := md.GetString(user); v != "" {
 		c.md.User = url.User(v)
 	}
 	c.md.connectTimeout = md.GetDuration(connectTimeout)

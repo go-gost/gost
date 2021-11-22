@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-gost/gost/pkg/config"
+	"github.com/go-gost/gost/pkg/registry"
 )
 
 // normConfig normalizes the config.
@@ -41,8 +42,36 @@ func normService(svc *config.ServiceConfig) {
 			md[k] = v[0]
 		}
 	}
+	if u.User != nil {
+		md["users"] = []interface{}{u.User.String()}
+	}
 
 	svc.Addr = u.Host
+
+	if h := registry.GetHandler(handler); h == nil {
+		handler = "auto"
+	}
+	if ln := registry.GetListener(listener); ln == nil {
+		listener = "tcp"
+		if handler == "ssu" {
+			listener = "udp"
+		}
+	}
+
+	if remotes := strings.Trim(u.EscapedPath(), "/"); remotes != "" {
+		svc.Forwarder = &config.ForwarderConfig{
+			Targets: strings.Split(remotes, ","),
+		}
+		if handler != "relay" {
+			if listener == "tcp" || listener == "udp" ||
+				listener == "rtcp" || listener == "rudp" {
+				handler = listener
+			} else {
+				handler = "tcp"
+			}
+		}
+	}
+
 	svc.Handler = &config.HandlerConfig{
 		Type:     handler,
 		Metadata: md,
@@ -50,12 +79,6 @@ func normService(svc *config.ServiceConfig) {
 	svc.Listener = &config.ListenerConfig{
 		Type:     listener,
 		Metadata: md,
-	}
-
-	if remotes := strings.Trim(u.EscapedPath(), "/"); remotes != "" {
-		svc.Forwarder = &config.ForwarderConfig{
-			Targets: strings.Split(remotes, ","),
-		}
 	}
 }
 
@@ -85,8 +108,22 @@ func normChain(chain *config.ChainConfig) {
 					md[k] = v[0]
 				}
 			}
+			if u.User != nil {
+				md["user"] = []interface{}{u.User.String()}
+			}
 
 			node.Addr = u.Host
+
+			if c := registry.GetConnector(connector); c == nil {
+				connector = "http"
+			}
+			if d := registry.GetDialer(dialer); d == nil {
+				dialer = "tcp"
+				if connector == "ssu" {
+					dialer = "udp"
+				}
+			}
+
 			node.Connector = &config.ConnectorConfig{
 				Type:     connector,
 				Metadata: md,

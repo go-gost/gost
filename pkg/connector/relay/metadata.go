@@ -16,12 +16,12 @@ type metadata struct {
 
 func (c *relayConnector) parseMetadata(md md.Metadata) (err error) {
 	const (
-		auth           = "auth"
+		user           = "user"
 		connectTimeout = "connectTimeout"
 		nodelay        = "nodelay"
 	)
 
-	if v := md.GetString(auth); v != "" {
+	if v := md.GetString(user); v != "" {
 		ss := strings.SplitN(v, ":", 2)
 		if len(ss) == 1 {
 			c.md.user = url.User(ss[0])

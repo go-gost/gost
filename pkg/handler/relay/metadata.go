@@ -16,12 +16,12 @@ type metadata struct {
 
 func (h *relayHandler) parseMetadata(md md.Metadata) (err error) {
 	const (
-		authsKey    = "auths"
+		users       = "users"
 		readTimeout = "readTimeout"
 		retryCount  = "retry"
 	)
 
-	if v, _ := md.Get(authsKey).([]interface{}); len(v) > 0 {
+	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
 		for _, auth := range v {
 			if s, _ := auth.(string); s != "" {

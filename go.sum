@@ -119,6 +119,10 @@ github.com/go-gost/relay v0.1.1-0.20211028021513-03c783f893bc h1:F8wBeQYP8JvzIG/
 github.com/go-gost/relay v0.1.1-0.20211028021513-03c783f893bc/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
 github.com/go-gost/relay v0.1.1-0.20211117133957-4b109438dc89 h1:1EtXLpAYeGVcptB0Jt8AeRe+GQnbTjbqeYA3L02pCIY=
 github.com/go-gost/relay v0.1.1-0.20211117133957-4b109438dc89/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
+github.com/go-gost/relay v0.1.1-0.20211122140942-99db08018413 h1:vF0HQWLlwu2GTZQgS9HJlOWUhnEZy8np/fCbWizI/08=
+github.com/go-gost/relay v0.1.1-0.20211122140942-99db08018413/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
+github.com/go-gost/relay v0.1.1-0.20211122150329-54ee406ea49d h1:rzGVzkSvxuDZg8PoYmOR+tvcAg9Dr8whgV19kzuO4YA=
+github.com/go-gost/relay v0.1.1-0.20211122150329-54ee406ea49d/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
 github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 h1:p104kn46Q8WdvHunIJ9dAyjPVtrBPhSr3KT2yUst43I=
 github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0/go.mod h1:fyg7847qk6SyHyPtNmDHnmrv/HOrqktSC+C9fM+CJOE=
 github.com/gobwas/glob v0.2.3 h1:A4xDbljILXROh+kObIiy5kIaPYD8e96x1tgBhUI5J+Y=

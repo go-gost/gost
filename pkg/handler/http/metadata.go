@@ -16,16 +16,16 @@ type metadata struct {
 
 func (h *httpHandler) parseMetadata(md md.Metadata) error {
 	const (
-		proxyAgentKey  = "proxyAgent"
-		authsKey       = "auths"
+		proxyAgent     = "proxyAgent"
+		users          = "users"
 		probeResistKey = "probeResist"
-		knockKey       = "knock"
+		knock          = "knock"
 		retryCount     = "retry"
 	)
 
-	h.md.proxyAgent = md.GetString(proxyAgentKey)
+	h.md.proxyAgent = md.GetString(proxyAgent)
 
-	if v, _ := md.Get(authsKey).([]interface{}); len(v) > 0 {
+	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
 		for _, auth := range v {
 			if s, _ := auth.(string); s != "" {
@@ -45,7 +45,7 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 			h.md.probeResist = &probeResist{
 				Type:  ss[0],
 				Value: ss[1],
-				Knock: md.GetString(knockKey),
+				Knock: md.GetString(knock),
 			}
 		}
 	}

@@ -38,7 +38,10 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 
 	for _, svc := range cfg.Services {
 		serviceLogger := log.WithFields(map[string]interface{}{
-			"service": svc.Name,
+			"kind":     "service",
+			"service":  svc.Name,
+			"listener": svc.Listener.Type,
+			"handler":  svc.Handler.Type,
 		})
 
 		listenerLogger := serviceLogger.WithFields(map[string]interface{}{

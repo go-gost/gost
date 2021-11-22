@@ -1,6 +1,7 @@
 package ss
 
 import (
+	"strings"
 	"time"
 
 	"github.com/go-gost/gost/pkg/common/util/ss"
@@ -17,19 +18,27 @@ type metadata struct {
 
 func (h *ssuHandler) parseMetadata(md md.Metadata) (err error) {
 	const (
-		method      = "method"
-		password    = "password"
+		users       = "users"
 		key         = "key"
 		readTimeout = "readTimeout"
 		retryCount  = "retry"
 		bufferSize  = "bufferSize"
 	)
 
-	h.md.cipher, err = ss.ShadowCipher(
-		md.GetString(method),
-		md.GetString(password),
-		md.GetString(key),
-	)
+	var method, password string
+	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
+		for _, auth := range v {
+			if s, _ := auth.(string); s != "" {
+				ss := strings.SplitN(s, ":", 2)
+				if len(ss) == 1 {
+					method = ss[0]
+				} else {
+					method, password = ss[0], ss[1]
+				}
+			}
+		}
+	}
+	h.md.cipher, err = ss.ShadowCipher(method, password, md.GetString(key))
 	if err != nil {
 		return
 	}

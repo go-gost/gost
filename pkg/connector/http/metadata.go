@@ -22,7 +22,7 @@ func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
 		userAgent      = "userAgent"
-		auth           = "auth"
+		user           = "user"
 	)
 
 	c.md.connectTimeout = md.GetDuration(connectTimeout)
@@ -31,7 +31,7 @@ func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
 		c.md.UserAgent = defaultUserAgent
 	}
 
-	if v := md.GetString(auth); v != "" {
+	if v := md.GetString(user); v != "" {
 		ss := strings.SplitN(v, ":", 2)
 		if len(ss) == 1 {
 			c.md.User = url.User(ss[0])

@@ -35,7 +35,6 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 
 	return &ssHandler{
-		chain:  options.Chain,
 		bypass: options.Bypass,
 		logger: options.Logger,
 	}
@@ -43,6 +42,11 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 func (h *ssHandler) Init(md md.Metadata) (err error) {
 	return h.parseMetadata(md)
+}
+
+// implements chain.Chainable interface
+func (h *ssHandler) WithChain(chain *chain.Chain) {
+	h.chain = chain
 }
 
 func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {

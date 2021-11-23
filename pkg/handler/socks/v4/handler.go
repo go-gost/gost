@@ -33,7 +33,6 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 
 	return &socks4Handler{
-		chain:  options.Chain,
 		bypass: options.Bypass,
 		logger: options.Logger,
 	}
@@ -41,6 +40,11 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 func (h *socks4Handler) Init(md md.Metadata) (err error) {
 	return h.parseMetadata(md)
+}
+
+// implements chain.Chainable interface
+func (h *socks4Handler) WithChain(chain *chain.Chain) {
+	h.chain = chain
 }
 
 func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {

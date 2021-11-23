@@ -53,8 +53,8 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			listener.LoggerOption(listenerLogger),
 		)
 
-		if chainable, ok := ln.(listener.Chainable); ok {
-			chainable.Chain(chains[svc.Chain])
+		if chainable, ok := ln.(chain.Chainable); ok {
+			chainable.WithChain(chains[svc.Chain])
 		}
 
 		if err := ln.Init(metadata.MapMetadata(svc.Listener.Metadata)); err != nil {
@@ -67,10 +67,13 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 
 		h := registry.GetHandler(svc.Handler.Type)(
-			handler.ChainOption(chains[svc.Chain]),
 			handler.BypassOption(bypasses[svc.Bypass]),
 			handler.LoggerOption(handlerLogger),
 		)
+
+		if chainable, ok := h.(chain.Chainable); ok {
+			chainable.WithChain(chains[svc.Chain])
+		}
 
 		if forwarder, ok := h.(handler.Forwarder); ok {
 			forwarder.Forward(forwarderFromConfig(svc.Forwarder))
@@ -162,6 +165,8 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 
 	var out io.Writer = os.Stderr
 	switch cfg.Output {
+	case "none":
+		return logger.Nop()
 	case "stdout", "":
 		out = os.Stdout
 	case "stderr":

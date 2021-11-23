@@ -1,5 +1,5 @@
 log:
-  output: stderr # stderr, stdout, /path/to/file
+  output: stderr # none, stderr, stdout, /path/to/file
   level: debug # debug, info, warn, error, fatal
   format: json # text, json
 

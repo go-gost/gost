@@ -38,8 +38,8 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-// implements listener.Chainable interface
-func (l *rtcpListener) Chain(chain *chain.Chain) {
+// implements chain.Chainable interface
+func (l *rtcpListener) WithChain(chain *chain.Chain) {
 	l.chain = chain
 }
 

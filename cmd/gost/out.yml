@@ -1,47 +1,40 @@
 services:
 - name: service-0
-  url: tcp://:8080/:8081?abc=def&true=true&n=123
-  addr: :8080
+  url: ss://abc:123@:18338/:18338
+  addr: :18338
   chain: chain-0
   listener:
     type: tcp
     metadata:
-      abc: def
-      "n": "123"
-      "true": "true"
+      users:
+      - abc:123
   handler:
     type: tcp
     metadata:
-      abc: def
-      "n": "123"
-      "true": "true"
+      users:
+      - abc:123
   forwarder:
     targets:
-    - :8081
+    - :18338
 chains:
 - name: chain-0
   hops:
   - name: hop-0
     nodes:
     - name: node-0
-      url: auto://:1081?n=123t
-      addr: :1081
+      url: socks://abc:123@:11080?type=abc&key=value
+      addr: :11080
       dialer:
-        type: auto
+        type: tcp
         metadata:
-          "n": 123t
+          key: value
+          type: abc
+          user:
+          - abc:123
       connector:
-        type: auto
+        type: socks
         metadata:
-          "n": 123t
-  - name: hop-1
-    nodes:
-    - name: node-0
-      url: auto://:1082
-      addr: :1082
-      dialer:
-        type: auto
-        metadata: {}
-      connector:
-        type: auto
-        metadata: {}
+          key: value
+          type: abc
+          user:
+          - abc:123

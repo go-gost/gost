@@ -41,7 +41,6 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 
 	return &httpHandler{
-		chain:  options.Chain,
 		bypass: options.Bypass,
 		logger: options.Logger,
 	}
@@ -49,6 +48,11 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 func (h *httpHandler) Init(md md.Metadata) error {
 	return h.parseMetadata(md)
+}
+
+// implements chain.Chainable interface
+func (h *httpHandler) WithChain(chain *chain.Chain) {
+	h.chain = chain
 }
 
 func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {

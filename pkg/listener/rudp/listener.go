@@ -38,8 +38,8 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-// implements listener.Chainable interface
-func (l *rudpListener) Chain(chain *chain.Chain) {
+// implements chain.Chainable interface
+func (l *rudpListener) WithChain(chain *chain.Chain) {
 	l.chain = chain
 }
 

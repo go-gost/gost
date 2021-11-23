@@ -33,7 +33,6 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 
 	return &forwardHandler{
-		chain:  options.Chain,
 		bypass: options.Bypass,
 		logger: options.Logger,
 	}
@@ -41,6 +40,11 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 func (h *forwardHandler) Init(md md.Metadata) (err error) {
 	return h.parseMetadata(md)
+}
+
+// implements chain.Chainable interface
+func (h *forwardHandler) WithChain(chain *chain.Chain) {
+	h.chain = chain
 }
 
 // Forward implements handler.Forwarder.

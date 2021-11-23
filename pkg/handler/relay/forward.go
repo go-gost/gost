@@ -2,6 +2,7 @@ package relay
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -17,7 +18,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	}
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
-		"dst": target.Addr(),
+		"dst": fmt.Sprintf("%s/%s", target.Addr(), network),
 	})
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())

@@ -90,17 +90,19 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 	h.logger.Debug(req)
 	conn.SetReadDeadline(time.Time{})
 
+	address := req.Addr.String()
+
 	switch req.Cmd {
 	case gosocks5.CmdConnect:
-		h.handleConnect(ctx, conn, req.Addr.String())
+		h.handleConnect(ctx, conn, "tcp", address)
 	case gosocks5.CmdBind:
-		h.handleBind(ctx, conn, req)
+		h.handleBind(ctx, conn, "tcp", address)
 	case socks.CmdMuxBind:
-		h.handleMuxBind(ctx, conn, req)
+		h.handleMuxBind(ctx, conn, "tcp", address)
 	case gosocks5.CmdUdp:
-		h.handleUDP(ctx, conn, req)
+		h.handleUDP(ctx, conn)
 	case socks.CmdUDPTun:
-		h.handleUDPTun(ctx, conn, req)
+		h.handleUDPTun(ctx, conn, "udp", address)
 	default:
 		h.logger.Errorf("unknown cmd: %d", req.Cmd)
 		resp := gosocks5.NewReply(gosocks5.CmdUnsupported, nil)

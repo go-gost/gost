@@ -2,24 +2,22 @@ package v5
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/util/mux"
 	"github.com/go-gost/gost/pkg/handler"
 )
 
-func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, req *gosocks5.Request) {
-	addr := req.Addr.String()
-
+func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string) {
 	h.logger = h.logger.WithFields(map[string]interface{}{
-		"dst": addr,
+		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "mbind",
 	})
 
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
+	h.logger.Infof("%s >> %s", conn.RemoteAddr(), address)
 
 	if !h.md.enableBind {
 		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
@@ -29,46 +27,11 @@ func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, req *g
 		return
 	}
 
-	if h.chain.IsEmpty() {
-		h.muxBindLocal(ctx, conn, addr)
-		return
-	}
-
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	cc, err := r.Connect(ctx)
-	if err != nil {
-		resp := gosocks5.NewReply(gosocks5.Failure, nil)
-		resp.Write(conn)
-		h.logger.Debug(resp)
-		return
-	}
-	defer cc.Close()
-
-	// forward request
-	if err := req.Write(cc); err != nil {
-		h.logger.Error(err)
-		resp := gosocks5.NewReply(gosocks5.NetUnreachable, nil)
-		resp.Write(conn)
-		h.logger.Debug(resp)
-		return
-	}
-
-	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(t),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	h.muxBindLocal(ctx, conn, network, address)
 }
 
-func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, addr string) {
-	bindAddr, _ := net.ResolveTCPAddr("tcp", addr)
-	ln, err := net.ListenTCP("tcp", bindAddr) // strict mode: if the port already in use, it will return error
+func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network, address string) {
+	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
 		h.logger.Error(err)
 		reply := gosocks5.NewReply(gosocks5.Failure, nil)
@@ -80,7 +43,7 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, addr st
 	}
 
 	socksAddr := gosocks5.Addr{}
-	socksAddr.ParseFrom(ln.Addr().String())
+	err = socksAddr.ParseFrom(ln.Addr().String())
 	if err != nil {
 		h.logger.Warn(err)
 	}
@@ -97,9 +60,10 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, addr st
 	h.logger.Debug(reply)
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
-		"bind": socksAddr.String(),
+		"bind": fmt.Sprintf("%s/%s", ln.Addr(), ln.Addr().Network()),
 	})
-	h.logger.Debugf("bind on %s OK", &socksAddr)
+
+	h.logger.Debugf("bind on %s OK", ln.Addr())
 
 	h.serveMuxBind(ctx, conn, ln)
 }

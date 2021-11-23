@@ -2,6 +2,7 @@ package forward
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -68,8 +69,13 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
+	network := "tcp"
+	if _, ok := conn.(net.PacketConn); ok {
+		network = "udp"
+	}
+
 	h.logger = h.logger.WithFields(map[string]interface{}{
-		"dst": target.Addr(),
+		"dst": fmt.Sprintf("%s/%s", target.Addr(), network),
 	})
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
@@ -78,11 +84,6 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 	r := (&chain.Router{}).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
-
-	network := "tcp"
-	if _, ok := conn.(net.PacketConn); ok {
-		network = "udp"
-	}
 
 	cc, err := r.Dial(ctx, network, target.Addr())
 	if err != nil {

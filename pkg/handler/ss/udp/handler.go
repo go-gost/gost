@@ -43,7 +43,7 @@ func (h *ssuHandler) Init(md md.Metadata) (err error) {
 	return h.parseMetadata(md)
 }
 
-// implements chain.Chainable interface
+// WithChain implements chain.Chainable interface
 func (h *ssuHandler) WithChain(chain *chain.Chain) {
 	h.chain = chain
 }

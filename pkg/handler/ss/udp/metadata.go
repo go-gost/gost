@@ -55,7 +55,7 @@ func (h *ssuHandler) parseMetadata(md md.Metadata) (err error) {
 			h.md.bufferSize = 65 * 1024 // max buffer size
 		}
 	} else {
-		h.md.bufferSize = 4096 // default buffer size
+		h.md.bufferSize = 1024 // default buffer size
 	}
 	return
 }

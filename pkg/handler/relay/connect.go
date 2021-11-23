@@ -2,6 +2,7 @@ package relay
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -11,12 +12,24 @@ import (
 	"github.com/go-gost/relay"
 )
 
-func (h *relayHandler) handleProxy(ctx context.Context, conn net.Conn, network, address string) {
+func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string) {
+	h.logger = h.logger.WithFields(map[string]interface{}{
+		"dst": fmt.Sprintf("%s/%s", address, network),
+		"cmd": "connect",
+	})
+
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), address)
 
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,
+	}
+
+	if address == "" {
+		resp.Status = relay.StatusBadRequest
+		resp.WriteTo(conn)
+		h.logger.Error("target not specified")
+		return
 	}
 
 	if h.bypass != nil && h.bypass.Contains(address) {

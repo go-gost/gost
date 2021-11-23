@@ -43,7 +43,7 @@ func (h *relayHandler) Init(md md.Metadata) (err error) {
 	return h.parseMetadata(md)
 }
 
-// implements chain.Chainable interface
+// WithChain implements chain.Chainable interface
 func (h *relayHandler) WithChain(chain *chain.Chain) {
 	h.chain = chain
 }
@@ -87,7 +87,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	var user, pass string
-	var target string
+	var address string
 	for _, f := range req.Features {
 		if f.Type() == relay.FeatureUserAuth {
 			feature := f.(*relay.UserAuthFeature)
@@ -95,15 +95,12 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 		}
 		if f.Type() == relay.FeatureAddr {
 			feature := f.(*relay.AddrFeature)
-			target = net.JoinHostPort(feature.Host, strconv.Itoa(int(feature.Port)))
+			address = net.JoinHostPort(feature.Host, strconv.Itoa(int(feature.Port)))
 		}
 	}
 
 	if user != "" {
 		h.logger = h.logger.WithFields(map[string]interface{}{"user": user})
-	}
-	if target != "" {
-		h.logger = h.logger.WithFields(map[string]interface{}{"dst": target})
 	}
 
 	resp := relay.Response{
@@ -123,7 +120,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	if h.group != nil {
-		if target != "" {
+		if address != "" {
 			resp.Status = relay.StatusForbidden
 			resp.WriteTo(conn)
 			h.logger.Error("forbidden")
@@ -134,13 +131,11 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	if target == "" {
-		resp.Status = relay.StatusBadRequest
-		resp.WriteTo(conn)
-		h.logger.Error("target not specified")
-		return
+	switch req.Flags & relay.CmdMask {
+	case relay.CONNECT:
+		h.handleConnect(ctx, conn, network, address)
+	case relay.BIND:
+		h.handleBind(ctx, conn, network, address)
+	case relay.ASSOCIATE:
 	}
-
-	// proxy mode
-	h.handleProxy(ctx, conn, network, target)
 }

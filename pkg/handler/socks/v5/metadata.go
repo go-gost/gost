@@ -80,7 +80,7 @@ func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 			h.md.udpBufferSize = 65 * 1024 // max buffer size
 		}
 	} else {
-		h.md.udpBufferSize = 4096 // default buffer size
+		h.md.udpBufferSize = 1024 // default buffer size
 	}
 
 	h.md.compatibilityMode = md.GetBool(compatibilityMode)

@@ -3,6 +3,7 @@ package v5
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -14,7 +15,7 @@ import (
 	"github.com/go-gost/gost/pkg/common/util/socks"
 )
 
-func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosocks5.Request) {
+func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn) {
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"cmd": "udp",
 	})
@@ -49,9 +50,9 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, req *gosoc
 	h.logger.Debug(reply)
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
-		"bind": saddr.String(),
+		"bind": fmt.Sprintf("%s/%s", relay.LocalAddr(), relay.LocalAddr().Network()),
 	})
-	h.logger.Debugf("bind on %s OK", &saddr)
+	h.logger.Debugf("bind on %s OK", relay.LocalAddr())
 
 	if h.chain.IsEmpty() {
 		// serve as standard socks5 udp relay.

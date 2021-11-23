@@ -2,6 +2,7 @@ package v5
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -10,18 +11,18 @@ import (
 	"github.com/go-gost/gost/pkg/handler"
 )
 
-func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr string) {
+func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, network, address string) {
 	h.logger = h.logger.WithFields(map[string]interface{}{
-		"dst": addr,
+		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "connect",
 	})
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
+	h.logger.Infof("%s >> %s", conn.RemoteAddr(), address)
 
-	if h.bypass != nil && h.bypass.Contains(addr) {
+	if h.bypass != nil && h.bypass.Contains(address) {
 		resp := gosocks5.NewReply(gosocks5.NotAllowed, nil)
 		resp.Write(conn)
 		h.logger.Debug(resp)
-		h.logger.Info("bypass: ", addr)
+		h.logger.Info("bypass: ", address)
 		return
 	}
 
@@ -29,7 +30,7 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr s
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
-	cc, err := r.Dial(ctx, "tcp", addr)
+	cc, err := r.Dial(ctx, network, address)
 	if err != nil {
 		resp := gosocks5.NewReply(gosocks5.NetUnreachable, nil)
 		resp.Write(conn)
@@ -47,11 +48,11 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, addr s
 	h.logger.Debug(resp)
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
+	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), address)
 	handler.Transport(conn, cc)
 	h.logger.
 		WithFields(map[string]interface{}{
 			"duration": time.Since(t),
 		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), addr)
+		Infof("%s >-< %s", conn.RemoteAddr(), address)
 }

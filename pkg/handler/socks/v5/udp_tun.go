@@ -2,17 +2,16 @@ package v5
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/common/util/socks"
-	"github.com/go-gost/gost/pkg/handler"
 )
 
-func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, req *gosocks5.Request) {
+func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network, address string) {
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"cmd": "udp-tun",
 	})
@@ -25,76 +24,41 @@ func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, req *go
 		return
 	}
 
-	if h.chain.IsEmpty() {
-		addr := req.Addr.String()
-
-		bindAddr, _ := net.ResolveUDPAddr("udp", addr)
-		relay, err := net.ListenUDP("udp", bindAddr)
-		if err != nil {
-			h.logger.Error(err)
-			return
-		}
-		defer relay.Close()
-
-		saddr, _ := gosocks5.NewAddr(relay.LocalAddr().String())
-		saddr.Host, _, _ = net.SplitHostPort(conn.LocalAddr().String())
-		saddr.Type = 0
-		reply := gosocks5.NewReply(gosocks5.Succeeded, saddr)
-		if err := reply.Write(conn); err != nil {
-			h.logger.Error(err)
-			return
-		}
-		h.logger.Debug(reply)
-
-		h.logger = h.logger.WithFields(map[string]interface{}{
-			"bind": saddr.String(),
-		})
-
-		t := time.Now()
-		h.logger.Infof("%s <-> %s", conn.RemoteAddr(), saddr)
-		h.tunnelServerUDP(
-			socks.UDPTunServerConn(conn),
-			relay,
-		)
-		h.logger.
-			WithFields(map[string]interface{}{
-				"duration": time.Since(t),
-			}).
-			Infof("%s >-< %s", conn.RemoteAddr(), saddr)
-
-		return
-	}
-
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	cc, err := r.Connect(ctx)
+	bindAddr, _ := net.ResolveUDPAddr(network, address)
+	pc, err := net.ListenUDP(network, bindAddr)
 	if err != nil {
 		h.logger.Error(err)
-		reply := gosocks5.NewReply(gosocks5.Failure, nil)
-		reply.Write(conn)
-		h.logger.Debug(reply)
 		return
 	}
-	defer cc.Close()
+	defer pc.Close()
 
-	// forward request
-	if err := req.Write(cc); err != nil {
+	saddr, _ := gosocks5.NewAddr(pc.LocalAddr().String())
+	saddr.Host, _, _ = net.SplitHostPort(conn.LocalAddr().String())
+	saddr.Type = 0
+	reply := gosocks5.NewReply(gosocks5.Succeeded, saddr)
+	if err := reply.Write(conn); err != nil {
 		h.logger.Error(err)
-		reply := gosocks5.NewReply(gosocks5.Failure, nil)
-		reply.Write(conn)
-		h.logger.Debug(reply)
+		return
 	}
+	h.logger.Debug(reply)
+
+	h.logger = h.logger.WithFields(map[string]interface{}{
+		"bind": fmt.Sprintf("%s/%s", pc.LocalAddr(), pc.LocalAddr().Network()),
+	})
+
+	h.logger.Debugf("bind on %s OK", pc.LocalAddr())
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), cc.RemoteAddr())
-	handler.Transport(conn, cc)
+	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), pc.LocalAddr())
+	h.tunnelServerUDP(
+		socks.UDPTunServerConn(conn),
+		pc,
+	)
 	h.logger.
 		WithFields(map[string]interface{}{
 			"duration": time.Since(t),
 		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), cc.RemoteAddr())
+		Infof("%s >-< %s", conn.RemoteAddr(), pc.LocalAddr())
 }
 
 func (h *socks5Handler) tunnelServerUDP(tunnel, c net.PacketConn) (err error) {

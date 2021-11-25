@@ -102,16 +102,16 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	cc := handler.NewBufferReaderConn(conn, br)
+	conn = handler.NewBufferReaderConn(conn, br)
 	switch b[0] {
 	case gosocks4.Ver4: // socks4
-		h.socks4Handler.Handle(ctx, cc)
+		h.socks4Handler.Handle(ctx, conn)
 	case gosocks5.Ver5: // socks5
-		h.socks5Handler.Handle(ctx, cc)
+		h.socks5Handler.Handle(ctx, conn)
 	case relay.Version1: // relay
-		h.relayHandler.Handle(ctx, cc)
+		h.relayHandler.Handle(ctx, conn)
 	default: // http
-		h.httpHandler.Handle(ctx, cc)
+		h.httpHandler.Handle(ctx, conn)
 	}
 
 }

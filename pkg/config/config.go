@@ -31,6 +31,12 @@ type ProfilingConfig struct {
 	Enabled bool
 }
 
+type TLSConfig struct {
+	Cert string
+	Key  string
+	CA   string
+}
+
 type SelectorConfig struct {
 	Strategy    string
 	MaxFails    int
@@ -59,12 +65,12 @@ type ForwarderConfig struct {
 
 type DialerConfig struct {
 	Type     string
-	Metadata map[string]interface{}
+	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
 type ConnectorConfig struct {
 	Type     string
-	Metadata map[string]interface{}
+	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
 type ServiceConfig struct {
@@ -102,6 +108,7 @@ type NodeConfig struct {
 type Config struct {
 	Log       *LogConfig       `yaml:",omitempty"`
 	Profiling *ProfilingConfig `yaml:",omitempty"`
+	TLS       *TLSConfig       `yaml:",omitempty"`
 	Services  []*ServiceConfig
 	Chains    []*ChainConfig  `yaml:",omitempty"`
 	Bypasses  []*BypassConfig `yaml:",omitempty"`

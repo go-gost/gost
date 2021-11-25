@@ -1,40 +1,27 @@
+log:
+  level: debug
 services:
 - name: service-0
-  url: ss://abc:123@:18338/:18338
-  addr: :18338
+  url: udp://:10053/192.168.8.8:53,192.168.8.1:53
+  addr: :10053
   chain: chain-0
   listener:
-    type: tcp
-    metadata:
-      users:
-      - abc:123
+    type: udp
   handler:
-    type: tcp
-    metadata:
-      users:
-      - abc:123
+    type: udp
   forwarder:
     targets:
-    - :18338
+    - 192.168.8.8:53
+    - 192.168.8.1:53
 chains:
 - name: chain-0
   hops:
   - name: hop-0
     nodes:
     - name: node-0
-      url: socks://abc:123@:11080?type=abc&key=value
-      addr: :11080
+      url: relay://:8420
+      addr: :8420
       dialer:
         type: tcp
-        metadata:
-          key: value
-          type: abc
-          user:
-          - abc:123
       connector:
-        type: socks
-        metadata:
-          key: value
-          type: abc
-          user:
-          - abc:123
+        type: relay

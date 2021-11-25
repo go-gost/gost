@@ -5,7 +5,6 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/common/util"
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -53,19 +52,5 @@ func (l *tlsListener) Init(md md.Metadata) (err error) {
 	)
 
 	l.Listener = ln
-	return
-}
-
-func (l *tlsListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = tls_util.LoadTLSConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-	)
-	if err != nil {
-		return
-	}
-
-	l.md.keepAlivePeriod = md.GetDuration(keepAlivePeriod)
 	return
 }

@@ -9,6 +9,7 @@ require (
 	github.com/go-gost/gosocks4 v0.0.1
 	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09
 	github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7
+	github.com/go-gost/tls-dissector v0.0.2-0.20211125135007-2b5d5bd9c07e
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/snappy v0.0.3
 	github.com/google/gopacket v1.1.19 // indirect

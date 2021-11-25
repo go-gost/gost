@@ -42,11 +42,11 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			"service":  svc.Name,
 			"listener": svc.Listener.Type,
 			"handler":  svc.Handler.Type,
+			"chain":    svc.Chain,
 		})
 
 		listenerLogger := serviceLogger.WithFields(map[string]interface{}{
 			"kind": "listener",
-			"type": svc.Listener.Type,
 		})
 		ln := registry.GetListener(svc.Listener.Type)(
 			listener.AddrOption(svc.Addr),
@@ -63,7 +63,6 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 
 		handlerLogger := serviceLogger.WithFields(map[string]interface{}{
 			"kind": "handler",
-			"type": svc.Handler.Type,
 		})
 
 		h := registry.GetHandler(svc.Handler.Type)(
@@ -89,7 +88,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			WithLogger(serviceLogger)
 		services = append(services, s)
 
-		serviceLogger.Infof("listening on: %s/%s", s.Addr().String(), s.Addr().Network())
+		serviceLogger.Infof("listening on %s/%s", s.Addr().String(), s.Addr().Network())
 	}
 
 	return
@@ -100,18 +99,22 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 		return nil
 	}
 
-	c := &chain.Chain{}
+	chainLogger := log.WithFields(map[string]interface{}{
+		"kind":  "chain",
+		"chain": cfg.Name,
+	})
 
+	c := &chain.Chain{}
 	selector := selectorFromConfig(cfg.Selector)
 	for _, hop := range cfg.Hops {
 		group := &chain.NodeGroup{}
 		for _, v := range hop.Nodes {
-
-			connectorLogger := log.WithFields(map[string]interface{}{
-				"kind": "connector",
-				"type": v.Connector.Type,
-				"hop":  hop.Name,
-				"node": v.Name,
+			connectorLogger := chainLogger.WithFields(map[string]interface{}{
+				"kind":      "connector",
+				"connector": v.Connector.Type,
+				"dialer":    v.Dialer.Type,
+				"hop":       hop.Name,
+				"node":      v.Name,
 			})
 			cr := registry.GetConnector(v.Connector.Type)(
 				connector.LoggerOption(connectorLogger),
@@ -120,11 +123,12 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 				connectorLogger.Fatal("init: ", err)
 			}
 
-			dialerLogger := log.WithFields(map[string]interface{}{
-				"kind": "dialer",
-				"type": v.Dialer.Type,
-				"hop":  hop.Name,
-				"node": v.Name,
+			dialerLogger := chainLogger.WithFields(map[string]interface{}{
+				"kind":      "dialer",
+				"connector": v.Connector.Type,
+				"dialer":    v.Dialer.Type,
+				"hop":       hop.Name,
+				"node":      v.Name,
 			})
 			d := registry.GetDialer(v.Dialer.Type)(
 				dialer.LoggerOption(dialerLogger),

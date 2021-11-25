@@ -84,18 +84,18 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
-	c, err := r.Dial(ctx, "udp", "")
+	c, err := r.Dial(ctx, "udp", "") // UDP association
 	if err != nil {
 		h.logger.Error(err)
 		return
 	}
+	defer c.Close()
 
 	cc, ok := c.(net.PacketConn)
 	if !ok {
-		h.logger.Errorf("%s: not a packet connection")
+		h.logger.Errorf("wrong connection type")
 		return
 	}
-	defer cc.Close()
 
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())

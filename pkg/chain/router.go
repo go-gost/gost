@@ -36,7 +36,7 @@ func (r *Router) Dial(ctx context.Context, network, address string) (conn net.Co
 	if count <= 0 {
 		count = 1
 	}
-	r.logger.Debugf("dial: %s/%s", address, network)
+	r.logger.Debugf("dial %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
 		route := r.chain.GetRouteFor(network, address)
@@ -47,41 +47,14 @@ func (r *Router) Dial(ctx context.Context, network, address string) (conn net.Co
 				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
 			}
 			fmt.Fprintf(&buf, "%s", address)
-			r.logger.Debugf("route(retry=%d): %s", i, buf.String())
+			r.logger.Debugf("route(retry=%d) %s", i, buf.String())
 		}
 
 		conn, err = route.Dial(ctx, network, address)
 		if err == nil {
 			break
 		}
-		r.logger.Errorf("route(retry=%d): %s", i, err)
-	}
-
-	return
-}
-
-func (r *Router) Connect(ctx context.Context) (conn net.Conn, err error) {
-	count := r.retries + 1
-	if count <= 0 {
-		count = 1
-	}
-
-	for i := 0; i < count; i++ {
-		route := r.chain.GetRoute()
-
-		if r.logger.IsLevelEnabled(logger.DebugLevel) {
-			buf := bytes.Buffer{}
-			for _, node := range route.Path() {
-				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
-			}
-			r.logger.Debugf("route(retry=%d): %s", i, buf.String())
-		}
-
-		conn, err = route.Connect(ctx)
-		if err == nil {
-			break
-		}
-		r.logger.Errorf("route(retry=%d): %s", i, err)
+		r.logger.Errorf("route(retry=%d) %s", i, err)
 	}
 
 	return
@@ -92,7 +65,7 @@ func (r *Router) Bind(ctx context.Context, network, address string, opts ...conn
 	if count <= 0 {
 		count = 1
 	}
-	r.logger.Debugf("bind: %s/%s", address, network)
+	r.logger.Debugf("bind on %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
 		route := r.chain.GetRouteFor(network, address)
@@ -103,14 +76,14 @@ func (r *Router) Bind(ctx context.Context, network, address string, opts ...conn
 				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
 			}
 			fmt.Fprintf(&buf, "%s", address)
-			r.logger.Debugf("route(retry=%d): %s", i, buf.String())
+			r.logger.Debugf("route(retry=%d) %s", i, buf.String())
 		}
 
 		ln, err = route.Bind(ctx, network, address, opts...)
 		if err == nil {
 			break
 		}
-		r.logger.Errorf("route(retry=%d): %s", i, err)
+		r.logger.Errorf("route(retry=%d) %s", i, err)
 	}
 
 	return

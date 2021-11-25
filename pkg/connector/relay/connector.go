@@ -2,9 +2,11 @@ package relay
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -43,23 +45,30 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect: %s/%s", address, network)
+	c.logger.Infof("connect %s/%s", address, network)
 
 	if c.md.connectTimeout > 0 {
 		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
 		defer conn.SetDeadline(time.Time{})
 	}
 
-	var udpMode bool
-	if network == "udp" || network == "udp4" || network == "udp6" {
-		udpMode = true
-	}
-
 	req := relay.Request{
 		Version: relay.Version1,
+		Flags:   relay.CONNECT,
 	}
-	if udpMode {
+	if network == "udp" || network == "udp4" || network == "udp6" {
 		req.Flags |= relay.FUDP
+
+		// UDP association
+		if address == "" {
+			baddr, err := c.bind(conn, relay.FUDP|relay.BIND, network, address)
+			if err != nil {
+				return nil, err
+			}
+			c.logger.Debugf("associate on %s OK", baddr)
+
+			return socks.UDPTunClientConn(conn, nil), nil
+		}
 	}
 
 	if c.md.user != nil {
@@ -76,7 +85,43 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 			return nil, err
 		}
 
-		req.Features = append(req.Features, af)
+		// forward mode if port is 0.
+		if af.Port > 0 {
+			req.Features = append(req.Features, af)
+		}
+	}
+
+	if c.md.noDelay {
+		if _, err := req.WriteTo(conn); err != nil {
+			return nil, err
+		}
+	}
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		cc := &tcpConn{
+			Conn: conn,
+		}
+		if !c.md.noDelay {
+			if _, err := req.WriteTo(&cc.wbuf); err != nil {
+				return nil, err
+			}
+		}
+		conn = cc
+	case "udp", "udp4", "udp6":
+		cc := &udpConn{
+			Conn: conn,
+		}
+		if !c.md.noDelay {
+			if _, err := req.WriteTo(&cc.wbuf); err != nil {
+				return nil, err
+			}
+		}
+		conn = cc
+	default:
+		err := fmt.Errorf("network %s is unsupported", network)
+		c.logger.Error(err)
+		return nil, err
 	}
 
 	return conn, nil

@@ -109,7 +109,7 @@ func normChain(chain *config.ChainConfig) {
 				}
 			}
 			if u.User != nil {
-				md["user"] = []interface{}{u.User.String()}
+				md["user"] = u.User.String()
 			}
 
 			node.Addr = u.Host

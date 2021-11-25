@@ -17,6 +17,7 @@ import (
 func init() {
 	registry.RegisterHandler("tcp", NewHandler)
 	registry.RegisterHandler("udp", NewHandler)
+	registry.RegisterHandler("forward", NewHandler)
 }
 
 type forwardHandler struct {
@@ -40,7 +41,15 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 }
 
 func (h *forwardHandler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
+	if err = h.parseMetadata(md); err != nil {
+		return
+	}
+
+	if h.group == nil {
+		// dummy node used by relay connector.
+		h.group = chain.NewNodeGroup(chain.NewNode("dummy", ":0"))
+	}
+	return nil
 }
 
 // WithChain implements chain.Chainable interface

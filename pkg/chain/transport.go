@@ -49,8 +49,12 @@ func (tr *Transport) dialOptions() []dialer.DialOption {
 }
 
 func (tr *Transport) Handshake(ctx context.Context, conn net.Conn) (net.Conn, error) {
+	var err error
 	if hs, ok := tr.dialer.(dialer.Handshaker); ok {
-		return hs.Handshake(ctx, conn)
+		conn, err = hs.Handshake(ctx, conn)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if hs, ok := tr.connector.(connector.Handshaker); ok {
 		return hs.Handshake(ctx, conn)

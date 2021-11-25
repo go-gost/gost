@@ -4,26 +4,17 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"math"
 	"net"
-	"sync"
-
-	"github.com/go-gost/relay"
 )
 
 type tcpConn struct {
 	net.Conn
 	wbuf bytes.Buffer
-	once sync.Once
 }
 
 func (c *tcpConn) Read(b []byte) (n int, err error) {
-	c.once.Do(func() {
-		err = readResponse(c.Conn)
-	})
-
 	if err != nil {
 		return
 	}
@@ -44,17 +35,9 @@ func (c *tcpConn) Write(b []byte) (n int, err error) {
 type udpConn struct {
 	net.Conn
 	wbuf bytes.Buffer
-	once sync.Once
 }
 
 func (c *udpConn) Read(b []byte) (n int, err error) {
-	c.once.Do(func() {
-		err = readResponse(c.Conn)
-	})
-	if err != nil {
-		return
-	}
-
 	var bb [2]byte
 	_, err = io.ReadFull(c.Conn, bb[:])
 	if err != nil {
@@ -95,37 +78,4 @@ func (c *udpConn) Write(b []byte) (n int, err error) {
 		return
 	}
 	return c.Conn.Write(b)
-}
-
-func readResponse(r io.Reader) (err error) {
-	resp := relay.Response{}
-	_, err = resp.ReadFrom(r)
-	if err != nil {
-		return
-	}
-
-	if resp.Version != relay.Version1 {
-		err = relay.ErrBadVersion
-		return
-	}
-
-	if resp.Status != relay.StatusOK {
-		err = fmt.Errorf("status %d", resp.Status)
-		return
-	}
-	return nil
-}
-
-type bindConn struct {
-	net.Conn
-	localAddr  net.Addr
-	remoteAddr net.Addr
-}
-
-func (c *bindConn) LocalAddr() net.Addr {
-	return c.localAddr
-}
-
-func (c *bindConn) RemoteAddr() net.Addr {
-	return c.remoteAddr
 }

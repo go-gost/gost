@@ -23,7 +23,7 @@ func (r *Route) AddNode(node *Node) {
 	r.nodes = append(r.nodes, node)
 }
 
-func (r *Route) Connect(ctx context.Context) (conn net.Conn, err error) {
+func (r *Route) connect(ctx context.Context) (conn net.Conn, err error) {
 	if r.IsEmpty() {
 		return nil, ErrEmptyRoute
 	}
@@ -72,7 +72,7 @@ func (r *Route) Dial(ctx context.Context, network, address string) (net.Conn, er
 		return r.dialDirect(ctx, network, address)
 	}
 
-	conn, err := r.Connect(ctx)
+	conn, err := r.connect(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (r *Route) Bind(ctx context.Context, network, address string, opts ...conne
 		return r.bindLocal(ctx, network, address, opts...)
 	}
 
-	conn, err := r.Connect(ctx)
+	conn, err := r.connect(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/chain"
-	util_relay "github.com/go-gost/gost/pkg/common/util/relay"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/relay"
 )
@@ -51,12 +50,36 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	}
 	defer cc.Close()
 
-	if _, err := resp.WriteTo(conn); err != nil {
-		h.logger.Error(err)
+	if h.md.noDelay {
+		if _, err := resp.WriteTo(conn); err != nil {
+			h.logger.Error(err)
+			return
+		}
 	}
 
-	if network == "udp" {
-		conn = util_relay.UDPTunConn(conn)
+	switch network {
+	case "udp", "udp4", "udp6":
+		rc := &udpConn{
+			Conn: conn,
+		}
+		if !h.md.noDelay {
+			// cache the header
+			if _, err := resp.WriteTo(&rc.wbuf); err != nil {
+				return
+			}
+		}
+		conn = rc
+	default:
+		rc := &tcpConn{
+			Conn: conn,
+		}
+		if !h.md.noDelay {
+			// cache the header
+			if _, err := resp.WriteTo(&rc.wbuf); err != nil {
+				return
+			}
+		}
+		conn = rc
 	}
 
 	t := time.Now()

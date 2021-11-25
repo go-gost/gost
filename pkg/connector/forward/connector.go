@@ -40,7 +40,7 @@ func (c *forwardConnector) Connect(ctx context.Context, conn net.Conn, network, 
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect: %s/%s", address, network)
+	c.logger.Infof("connect %s/%s", address, network)
 
 	return conn, nil
 }

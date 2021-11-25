@@ -91,7 +91,12 @@ func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, a
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect: %s/%s", address, network)
+	c.logger.Infof("connect %s/%s", address, network)
+
+	if c.md.connectTimeout > 0 {
+		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
+		defer conn.SetDeadline(time.Time{})
+	}
 
 	switch network {
 	case "udp", "udp4", "udp6":
@@ -112,11 +117,6 @@ func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, a
 	if err := addr.ParseFrom(address); err != nil {
 		c.logger.Error(err)
 		return nil, err
-	}
-
-	if c.md.connectTimeout > 0 {
-		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
-		defer conn.SetDeadline(time.Time{})
 	}
 
 	req := gosocks5.NewRequest(gosocks5.CmdConnect, &addr)

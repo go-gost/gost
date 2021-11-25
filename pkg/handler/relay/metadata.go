@@ -14,6 +14,7 @@ type metadata struct {
 	retryCount    int
 	enableBind    bool
 	udpBufferSize int
+	noDelay       bool
 }
 
 func (h *relayHandler) parseMetadata(md md.Metadata) (err error) {
@@ -23,6 +24,7 @@ func (h *relayHandler) parseMetadata(md md.Metadata) (err error) {
 		retryCount    = "retry"
 		enableBind    = "bind"
 		udpBufferSize = "udpBufferSize"
+		noDelay       = "nodelay"
 	)
 
 	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
@@ -42,6 +44,7 @@ func (h *relayHandler) parseMetadata(md md.Metadata) (err error) {
 	h.md.readTimeout = md.GetDuration(readTimeout)
 	h.md.retryCount = md.GetInt(retryCount)
 	h.md.enableBind = md.GetBool(enableBind)
+	h.md.noDelay = md.GetBool(noDelay)
 	h.md.udpBufferSize = md.GetInt(udpBufferSize)
 	if h.md.udpBufferSize > 0 {
 		if h.md.udpBufferSize < 512 {

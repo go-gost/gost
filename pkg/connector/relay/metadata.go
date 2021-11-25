@@ -11,14 +11,14 @@ import (
 type metadata struct {
 	connectTimeout time.Duration
 	user           *url.Userinfo
-	nodelay        bool
+	noDelay        bool
 }
 
 func (c *relayConnector) parseMetadata(md md.Metadata) (err error) {
 	const (
 		user           = "user"
 		connectTimeout = "connectTimeout"
-		nodelay        = "nodelay"
+		noDelay        = "nodelay"
 	)
 
 	if v := md.GetString(user); v != "" {
@@ -30,7 +30,7 @@ func (c *relayConnector) parseMetadata(md md.Metadata) (err error) {
 		}
 	}
 	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.nodelay = md.GetBool(nodelay)
+	c.md.noDelay = md.GetBool(noDelay)
 
 	return
 }

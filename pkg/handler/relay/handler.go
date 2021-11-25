@@ -123,7 +123,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 		if address != "" {
 			resp.Status = relay.StatusForbidden
 			resp.WriteTo(conn)
-			h.logger.Error("forbidden")
+			h.logger.Error("forward mode, connect is forbidden")
 			return
 		}
 		// forward mode
@@ -132,7 +132,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	switch req.Flags & relay.CmdMask {
-	case relay.CONNECT:
+	case 0, relay.CONNECT:
 		h.handleConnect(ctx, conn, network, address)
 	case relay.BIND:
 		h.handleBind(ctx, conn, network, address)

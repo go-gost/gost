@@ -48,7 +48,7 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect: %s/%s", address, network)
+	c.logger.Infof("connect %s/%s", address, network)
 
 	switch network {
 	case "tcp", "tcp4", "tcp6":

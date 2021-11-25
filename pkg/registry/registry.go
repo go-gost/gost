@@ -5,6 +5,7 @@ import (
 	"github.com/go-gost/gost/pkg/dialer"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/listener"
+	"github.com/go-gost/gost/pkg/logger"
 )
 
 type NewListener func(opts ...listener.Option) listener.Listener
@@ -20,6 +21,9 @@ var (
 )
 
 func RegisterListener(name string, newf NewListener) {
+	if listeners[name] != nil {
+		logger.Default().Fatalf("register duplicate listener: %s", name)
+	}
 	listeners[name] = newf
 }
 
@@ -28,6 +32,9 @@ func GetListener(name string) NewListener {
 }
 
 func RegisterHandler(name string, newf NewHandler) {
+	if handlers[name] != nil {
+		logger.Default().Fatalf("register duplicate handler: %s", name)
+	}
 	handlers[name] = newf
 }
 
@@ -36,6 +43,9 @@ func GetHandler(name string) NewHandler {
 }
 
 func RegisterDialer(name string, newf NewDialer) {
+	if dialers[name] != nil {
+		logger.Default().Fatalf("register duplicate dialer: %s", name)
+	}
 	dialers[name] = newf
 }
 
@@ -44,6 +54,9 @@ func GetDialer(name string) NewDialer {
 }
 
 func RegiserConnector(name string, newf NewConnector) {
+	if connectors[name] != nil {
+		logger.Default().Fatalf("register duplicate connector: %s", name)
+	}
 	connectors[name] = newf
 }
 

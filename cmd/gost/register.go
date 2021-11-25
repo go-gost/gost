@@ -4,6 +4,7 @@ import (
 	// Register connectors
 	_ "github.com/go-gost/gost/pkg/connector/forward"
 	_ "github.com/go-gost/gost/pkg/connector/http"
+	_ "github.com/go-gost/gost/pkg/connector/relay"
 	_ "github.com/go-gost/gost/pkg/connector/socks/v4"
 	_ "github.com/go-gost/gost/pkg/connector/socks/v5"
 	_ "github.com/go-gost/gost/pkg/connector/ss"

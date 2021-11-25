@@ -4,16 +4,19 @@ import (
 	"bufio"
 	"context"
 	"net"
+	"time"
 
 	"github.com/go-gost/gosocks4"
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/handler"
 	http_handler "github.com/go-gost/gost/pkg/handler/http"
+	relay_handler "github.com/go-gost/gost/pkg/handler/relay"
 	socks4_handler "github.com/go-gost/gost/pkg/handler/socks/v4"
 	socks5_handler "github.com/go-gost/gost/pkg/handler/socks/v5"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/relay"
 )
 
 func init() {
@@ -24,6 +27,7 @@ type autoHandler struct {
 	httpHandler   handler.Handler
 	socks4Handler handler.Handler
 	socks5Handler handler.Handler
+	relayHandler  handler.Handler
 	log           logger.Logger
 }
 
@@ -53,6 +57,10 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	v = append(opts,
 		handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "socks5"})))
 	h.socks5Handler = socks5_handler.NewHandler(v...)
+
+	v = append(opts,
+		handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "relay"})))
+	h.relayHandler = relay_handler.NewHandler(v...)
 	return h
 }
 
@@ -66,6 +74,9 @@ func (h *autoHandler) Init(md md.Metadata) error {
 	if err := h.socks5Handler.Init(md); err != nil {
 		return err
 	}
+	if err := h.relayHandler.Init(md); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -74,6 +85,14 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
+
+	start := time.Now()
+	h.log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	defer func() {
+		h.log.WithFields(map[string]interface{}{
+			"duration": time.Since(start),
+		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
+	}()
 
 	br := bufio.NewReader(conn)
 	b, err := br.Peek(1)
@@ -89,6 +108,8 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
 		h.socks4Handler.Handle(ctx, cc)
 	case gosocks5.Ver5: // socks5
 		h.socks5Handler.Handle(ctx, cc)
+	case relay.Version1: // relay
+		h.relayHandler.Handle(ctx, cc)
 	default: // http
 		h.httpHandler.Handle(ctx, cc)
 	}

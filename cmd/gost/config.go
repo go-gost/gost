@@ -57,6 +57,9 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			chainable.WithChain(chains[svc.Chain])
 		}
 
+		if svc.Listener.Metadata == nil {
+			svc.Listener.Metadata = make(map[string]interface{})
+		}
 		if err := ln.Init(metadata.MapMetadata(svc.Listener.Metadata)); err != nil {
 			listenerLogger.Fatal("init: ", err)
 		}
@@ -78,6 +81,9 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			forwarder.Forward(forwarderFromConfig(svc.Forwarder))
 		}
 
+		if svc.Handler.Metadata == nil {
+			svc.Handler.Metadata = make(map[string]interface{})
+		}
 		if err := h.Init(metadata.MapMetadata(svc.Handler.Metadata)); err != nil {
 			handlerLogger.Fatal("init: ", err)
 		}
@@ -119,6 +125,10 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 			cr := registry.GetConnector(v.Connector.Type)(
 				connector.LoggerOption(connectorLogger),
 			)
+
+			if v.Connector.Metadata == nil {
+				v.Connector.Metadata = make(map[string]interface{})
+			}
 			if err := cr.Init(metadata.MapMetadata(v.Connector.Metadata)); err != nil {
 				connectorLogger.Fatal("init: ", err)
 			}
@@ -133,6 +143,10 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 			d := registry.GetDialer(v.Dialer.Type)(
 				dialer.LoggerOption(dialerLogger),
 			)
+
+			if v.Dialer.Metadata == nil {
+				v.Dialer.Metadata = make(map[string]interface{})
+			}
 			if err := d.Init(metadata.MapMetadata(v.Dialer.Metadata)); err != nil {
 				dialerLogger.Fatal("init: ", err)
 			}

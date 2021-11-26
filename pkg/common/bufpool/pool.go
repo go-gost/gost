@@ -82,15 +82,14 @@ var (
 	}
 )
 
-// Get returns a buffer size range from (0, 65]KB,
-// panic if size > 65KB.
+// Get returns a buffer size.
 func Get(size int) []byte {
 	for i := range pools {
 		if size <= pools[i].size {
-			return pools[i].pool.Get().([]byte)
+			return pools[i].pool.Get().([]byte)[:size]
 		}
 	}
-	panic("size too large (max=65KB)")
+	return make([]byte, size)
 }
 
 func Put(b []byte) {

@@ -7,6 +7,7 @@ import (
 
 type Metadata interface {
 	IsExists(key string) bool
+	Set(key string, value interface{})
 	Get(key string) interface{}
 	GetBool(key string) bool
 	GetInt(key string) int
@@ -20,6 +21,10 @@ type MapMetadata map[string]interface{}
 func (m MapMetadata) IsExists(key string) bool {
 	_, ok := m[key]
 	return ok
+}
+
+func (m MapMetadata) Set(key string, value interface{}) {
+	m[key] = value
 }
 
 func (m MapMetadata) Get(key string) interface{} {

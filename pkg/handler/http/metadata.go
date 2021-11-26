@@ -12,6 +12,7 @@ type metadata struct {
 	proxyAgent    string
 	retryCount    int
 	probeResist   *probeResist
+	sni           bool
 }
 
 func (h *httpHandler) parseMetadata(md md.Metadata) error {
@@ -21,6 +22,7 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 		probeResistKey = "probeResist"
 		knock          = "knock"
 		retryCount     = "retry"
+		sni            = "sni"
 	)
 
 	h.md.proxyAgent = md.GetString(proxyAgent)
@@ -50,6 +52,7 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 		}
 	}
 	h.md.retryCount = md.GetInt(retryCount)
+	h.md.sni = md.GetBool(sni)
 
 	return nil
 }

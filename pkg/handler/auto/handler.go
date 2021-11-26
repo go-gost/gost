@@ -9,10 +9,6 @@ import (
 	"github.com/go-gost/gosocks4"
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/handler"
-	http_handler "github.com/go-gost/gost/pkg/handler/http"
-	relay_handler "github.com/go-gost/gost/pkg/handler/relay"
-	socks4_handler "github.com/go-gost/gost/pkg/handler/socks/v4"
-	socks5_handler "github.com/go-gost/gost/pkg/handler/socks/v5"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
@@ -46,37 +42,52 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 		log: log,
 	}
 
-	v := append(opts,
-		handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "http"})))
-	h.httpHandler = http_handler.NewHandler(v...)
+	if f := registry.GetHandler("http"); f != nil {
+		v := append(opts,
+			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "http"})))
+		h.httpHandler = f(v...)
+	}
+	if f := registry.GetHandler("socks4"); f != nil {
+		v := append(opts,
+			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "socks4"})))
+		h.socks4Handler = f(v...)
+	}
+	if f := registry.GetHandler("socks5"); f != nil {
+		v := append(opts,
+			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "socks5"})))
+		h.socks5Handler = f(v...)
+	}
+	if f := registry.GetHandler("relay"); f != nil {
+		v := append(opts,
+			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "relay"})))
+		h.relayHandler = f(v...)
+	}
 
-	v = append(opts,
-		handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "socks4"})))
-	h.socks4Handler = socks4_handler.NewHandler(v...)
-
-	v = append(opts,
-		handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "socks5"})))
-	h.socks5Handler = socks5_handler.NewHandler(v...)
-
-	v = append(opts,
-		handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "relay"})))
-	h.relayHandler = relay_handler.NewHandler(v...)
 	return h
 }
 
 func (h *autoHandler) Init(md md.Metadata) error {
-	if err := h.httpHandler.Init(md); err != nil {
-		return err
+	if h.httpHandler != nil {
+		if err := h.httpHandler.Init(md); err != nil {
+			return err
+		}
 	}
-	if err := h.socks4Handler.Init(md); err != nil {
-		return err
+	if h.socks4Handler != nil {
+		if err := h.socks4Handler.Init(md); err != nil {
+			return err
+		}
 	}
-	if err := h.socks5Handler.Init(md); err != nil {
-		return err
+	if h.socks5Handler != nil {
+		if err := h.socks5Handler.Init(md); err != nil {
+			return err
+		}
 	}
-	if err := h.relayHandler.Init(md); err != nil {
-		return err
+	if h.relayHandler != nil {
+		if err := h.relayHandler.Init(md); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -105,13 +116,21 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
 	conn = handler.NewBufferReaderConn(conn, br)
 	switch b[0] {
 	case gosocks4.Ver4: // socks4
-		h.socks4Handler.Handle(ctx, conn)
+		if h.socks4Handler != nil {
+			h.socks4Handler.Handle(ctx, conn)
+		}
 	case gosocks5.Ver5: // socks5
-		h.socks5Handler.Handle(ctx, conn)
+		if h.socks5Handler != nil {
+			h.socks5Handler.Handle(ctx, conn)
+		}
 	case relay.Version1: // relay
-		h.relayHandler.Handle(ctx, conn)
+		if h.relayHandler != nil {
+			h.relayHandler.Handle(ctx, conn)
+		}
 	default: // http
-		h.httpHandler.Handle(ctx, conn)
+		if h.httpHandler != nil {
+			h.httpHandler.Handle(ctx, conn)
+		}
 	}
 
 }

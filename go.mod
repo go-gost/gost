@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
+	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/coreos/go-iptables v0.5.0 // indirect
 	github.com/ginuerzh/tls-dissector v0.0.2-0.20201202075250-98fa925912da
 	github.com/go-gost/gosocks4 v0.0.1

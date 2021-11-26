@@ -1,7 +1,7 @@
 package sni
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
@@ -13,8 +13,8 @@ import (
 
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
+	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/handler"
-	http_handler "github.com/go-gost/gost/pkg/handler/http"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
@@ -49,9 +49,11 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 		logger: log,
 	}
 
-	v := append(opts,
-		handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "http"})))
-	h.httpHandler = http_handler.NewHandler(v...)
+	if f := registry.GetHandler("http"); f != nil {
+		v := append(opts,
+			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "http"})))
+		h.httpHandler = f(v...)
+	}
 
 	return h
 }
@@ -60,8 +62,13 @@ func (h *sniHandler) Init(md md.Metadata) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
-	if err = h.httpHandler.Init(md); err != nil {
-		return
+	if h.httpHandler != nil {
+		if md != nil {
+			md.Set("sni", true)
+		}
+		if err = h.httpHandler.Init(md); err != nil {
+			return
+		}
 	}
 
 	return nil
@@ -88,22 +95,36 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
-	br := bufio.NewReader(conn)
-	hdr, err := br.Peek(dissector.RecordHeaderLen)
-	if err != nil {
+	var hdr [dissector.RecordHeaderLen]byte
+	if _, err := io.ReadFull(conn, hdr[:]); err != nil {
 		h.logger.Error(err)
 		return
 	}
 
-	conn = handler.NewBufferReaderConn(conn, br)
-
 	if hdr[0] != dissector.Handshake {
 		// We assume it is an HTTP request
-		h.httpHandler.Handle(ctx, conn)
+		conn = &cacheConn{
+			Conn: conn,
+			buf:  hdr[:],
+		}
+
+		if h.httpHandler != nil {
+			h.httpHandler.Handle(ctx, conn)
+		}
 		return
 	}
 
-	host, err := h.decodeHost(conn)
+	length := binary.BigEndian.Uint16(hdr[3:5])
+
+	buf := bufpool.Get(int(length) + dissector.RecordHeaderLen)
+	defer bufpool.Put(buf)
+	if _, err := io.ReadFull(conn, buf[dissector.RecordHeaderLen:]); err != nil {
+		h.logger.Error(err)
+		return
+	}
+	copy(buf, hdr[:])
+
+	buf, host, err := h.decodeHost(bytes.NewReader(buf))
 	if err != nil {
 		h.logger.Error(err)
 		return
@@ -130,6 +151,11 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 	defer cc.Close()
 
+	if _, err := cc.Write(buf); err != nil {
+		h.logger.Error(err)
+		return
+	}
+
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), target)
 	handler.Transport(conn, cc)
@@ -140,27 +166,51 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 		Infof("%s >-< %s", conn.RemoteAddr(), target)
 }
 
-func (h *sniHandler) decodeHost(r io.Reader) (host string, err error) {
+func (h *sniHandler) decodeHost(r io.Reader) (opaque []byte, host string, err error) {
 	record, err := dissector.ReadRecord(r)
 	if err != nil {
 		return
 	}
-	clientHello := &dissector.ClientHelloMsg{}
+	clientHello := dissector.ClientHelloMsg{}
 	if err = clientHello.Decode(record.Opaque); err != nil {
 		return
 	}
 
+	var extensions []dissector.Extension
 	for _, ext := range clientHello.Extensions {
 		if ext.Type() == 0xFFFE {
 			b, _ := ext.Encode()
-			return h.decodeServerName(string(b))
+			if v, err := h.decodeServerName(string(b)); err == nil {
+				host = v
+			}
+			continue
 		}
+		extensions = append(extensions, ext)
+	}
+	clientHello.Extensions = extensions
 
+	for _, ext := range clientHello.Extensions {
 		if ext.Type() == dissector.ExtServerName {
 			snExtension := ext.(*dissector.ServerNameExtension)
-			host = snExtension.Name
+			if host == "" {
+				host = snExtension.Name
+			} else {
+				snExtension.Name = host
+			}
+			break
 		}
 	}
+
+	record.Opaque, err = clientHello.Encode()
+	if err != nil {
+		return
+	}
+
+	buf := &bytes.Buffer{}
+	if _, err = record.WriteTo(buf); err != nil {
+		return
+	}
+	opaque = buf.Bytes()
 	return
 }
 

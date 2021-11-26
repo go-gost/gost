@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
@@ -59,12 +60,10 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
-
 	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
 		h.logger.WithFields(map[string]interface{}{
@@ -85,6 +84,10 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
 func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request) {
 	if req == nil {
 		return
+	}
+
+	if h.md.sni && !req.URL.IsAbs() && govalidator.IsDNSName(req.Host) {
+		req.URL.Scheme = "http"
 	}
 
 	// Try to get the actual host.

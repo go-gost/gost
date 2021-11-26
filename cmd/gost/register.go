@@ -20,6 +20,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/handler/forward/local"
 	_ "github.com/go-gost/gost/pkg/handler/forward/remote"
 	_ "github.com/go-gost/gost/pkg/handler/http"
+	_ "github.com/go-gost/gost/pkg/handler/redirect"
 	_ "github.com/go-gost/gost/pkg/handler/relay"
 	_ "github.com/go-gost/gost/pkg/handler/sni"
 	_ "github.com/go-gost/gost/pkg/handler/socks/v4"

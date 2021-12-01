@@ -136,6 +136,5 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 		h.handleConnect(ctx, conn, network, address)
 	case relay.BIND:
 		h.handleBind(ctx, conn, network, address)
-	case relay.ASSOCIATE:
 	}
 }

@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/common/bufpool"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/util/socks"
+	"github.com/go-gost/gost/pkg/handler"
 )
 
 func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn) {
@@ -26,7 +27,7 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	relay, err := net.ListenUDP("udp", nil)
+	cc, err := net.ListenUDP("udp", nil)
 	if err != nil {
 		h.logger.Error(err)
 		reply := gosocks5.NewReply(gosocks5.Failure, nil)
@@ -34,10 +35,10 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn) {
 		h.logger.Debug(reply)
 		return
 	}
-	defer relay.Close()
+	defer cc.Close()
 
 	saddr := gosocks5.Addr{}
-	saddr.ParseFrom(relay.LocalAddr().String())
+	saddr.ParseFrom(cc.LocalAddr().String())
 	saddr.Type = 0
 	saddr.Host, _, _ = net.SplitHostPort(conn.LocalAddr().String()) // replace the IP to the out-going interface's
 	reply := gosocks5.NewReply(gosocks5.Succeeded, &saddr)
@@ -48,99 +49,39 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn) {
 	h.logger.Debug(reply)
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
-		"bind": fmt.Sprintf("%s/%s", relay.LocalAddr(), relay.LocalAddr().Network()),
+		"bind": fmt.Sprintf("%s/%s", cc.LocalAddr(), cc.LocalAddr().Network()),
 	})
-	h.logger.Debugf("bind on %s OK", relay.LocalAddr())
+	h.logger.Debugf("bind on %s OK", cc.LocalAddr())
 
-	peer, err := net.ListenUDP("udp", nil)
+	// obtain a udp connection
+	r := (&chain.Router{}).
+		WithChain(h.chain).
+		WithRetry(h.md.retryCount).
+		WithLogger(h.logger)
+	c, err := r.Dial(ctx, "udp", "") // UDP association
 	if err != nil {
 		h.logger.Error(err)
 		return
 	}
-	defer peer.Close()
+	defer c.Close()
 
-	go h.relayUDP(
-		socks.UDPConn(relay, h.md.udpBufferSize),
-		peer,
-	)
+	pc, ok := c.(net.PacketConn)
+	if !ok {
+		h.logger.Errorf("wrong connection type")
+		return
+	}
+
+	relay := handler.NewUDPRelay(socks.UDPConn(cc, h.md.udpBufferSize), pc).
+		WithBypass(h.bypass).
+		WithLogger(h.logger)
+	relay.SetBufferSize(h.md.udpBufferSize)
+
+	go relay.Run()
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), relay.LocalAddr())
+	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
 	io.Copy(ioutil.Discard, conn)
 	h.logger.
 		WithFields(map[string]interface{}{"duration": time.Since(t)}).
-		Infof("%s >-< %s", conn.RemoteAddr(), relay.LocalAddr())
-}
-
-func (h *socks5Handler) relayUDP(c, peer net.PacketConn) (err error) {
-	bufSize := h.md.udpBufferSize
-	errc := make(chan error, 2)
-
-	go func() {
-		for {
-			err := func() error {
-				b := bufpool.Get(bufSize)
-				defer bufpool.Put(b)
-
-				n, raddr, err := c.ReadFrom(b)
-				if err != nil {
-					return err
-				}
-
-				if h.bypass != nil && h.bypass.Contains(raddr.String()) {
-					h.logger.Warn("bypass: ", raddr)
-					return nil
-				}
-
-				if _, err := peer.WriteTo(b[:n], raddr); err != nil {
-					return err
-				}
-
-				h.logger.Debugf("%s >>> %s data: %d",
-					peer.LocalAddr(), raddr, n)
-
-				return nil
-			}()
-
-			if err != nil {
-				errc <- err
-				return
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			err := func() error {
-				b := bufpool.Get(bufSize)
-				defer bufpool.Put(b)
-
-				n, raddr, err := peer.ReadFrom(b)
-				if err != nil {
-					return err
-				}
-
-				if h.bypass != nil && h.bypass.Contains(raddr.String()) {
-					h.logger.Warn("bypass: ", raddr)
-					return nil
-				}
-
-				if _, err := c.WriteTo(b[:n], raddr); err != nil {
-					return err
-				}
-
-				h.logger.Debugf("%s <<< %s data: %d",
-					peer.LocalAddr(), raddr, n)
-
-				return nil
-			}()
-
-			if err != nil {
-				errc <- err
-				return
-			}
-		}
-	}()
-
-	return <-errc
+		Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
 }

@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -50,19 +51,6 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 	})
 	c.logger.Infof("connect %s/%s", address, network)
 
-	switch network {
-	case "tcp", "tcp4", "tcp6":
-		if _, ok := conn.(net.PacketConn); ok {
-			err := fmt.Errorf("tcp over udp is unsupported")
-			c.logger.Error(err)
-			return nil, err
-		}
-	default:
-		err := fmt.Errorf("network %s is unsupported", network)
-		c.logger.Error(err)
-		return nil, err
-	}
-
 	req := &http.Request{
 		Method:     http.MethodConnect,
 		URL:        &url.URL{Host: address},
@@ -81,6 +69,21 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		p, _ := user.Password()
 		req.Header.Set("Proxy-Authorization",
 			"Basic "+base64.StdEncoding.EncodeToString([]byte(u+":"+p)))
+	}
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		if _, ok := conn.(net.PacketConn); ok {
+			err := fmt.Errorf("tcp over udp is unsupported")
+			c.logger.Error(err)
+			return nil, err
+		}
+	case "udp", "udp4", "udp6":
+		req.Header.Set("X-Gost-Protocol", "udp")
+	default:
+		err := fmt.Errorf("network %s is unsupported", network)
+		c.logger.Error(err)
+		return nil, err
 	}
 
 	if c.logger.IsLevelEnabled(logger.DebugLevel) {
@@ -111,6 +114,11 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s", resp.Status)
+	}
+
+	if network == "udp" {
+		addr, _ := net.ResolveUDPAddr(network, address)
+		return socks.UDPTunClientConn(conn, addr), nil
 	}
 
 	return conn, nil

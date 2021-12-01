@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	ws_util "github.com/go-gost/gost/pkg/common/util/ws"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -16,18 +15,19 @@ import (
 
 func init() {
 	registry.RegisterListener("ws", NewListener)
-	registry.RegisterListener("wss", NewListener)
+	registry.RegisterListener("wss", NewTLSListener)
 }
 
 type wsListener struct {
-	saddr    string
-	md       metadata
-	addr     net.Addr
-	upgrader *websocket.Upgrader
-	srv      *http.Server
-	connChan chan net.Conn
-	errChan  chan error
-	logger   logger.Logger
+	saddr      string
+	md         metadata
+	addr       net.Addr
+	upgrader   *websocket.Upgrader
+	srv        *http.Server
+	tlsEnabled bool
+	connChan   chan net.Conn
+	errChan    chan error
+	logger     logger.Logger
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -38,6 +38,18 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	return &wsListener{
 		saddr:  options.Addr,
 		logger: options.Logger,
+	}
+}
+
+func NewTLSListener(opts ...listener.Option) listener.Listener {
+	options := &listener.Options{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	return &wsListener{
+		saddr:      options.Addr,
+		tlsEnabled: true,
+		logger:     options.Logger,
 	}
 }
 
@@ -113,19 +125,6 @@ func (l *wsListener) Close() error {
 
 func (l *wsListener) Addr() net.Addr {
 	return l.addr
-}
-
-func (l *wsListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = tls_util.LoadTLSConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-	)
-	if err != nil {
-		return
-	}
-
-	return
 }
 
 func (l *wsListener) upgrade(w http.ResponseWriter, r *http.Request) {

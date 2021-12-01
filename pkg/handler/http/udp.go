@@ -1,36 +1,54 @@
-package v5
+package http
 
 import (
 	"context"
 	"net"
+	"net/http"
+	"net/http/httputil"
 	"time"
 
-	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/logger"
 )
 
-func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network, address string) {
+func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, network, address string) {
 	h.logger = h.logger.WithFields(map[string]interface{}{
-		"cmd": "udp-tun",
+		"cmd": "udp",
 	})
 
+	resp := &http.Response{
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Header:     http.Header{},
+	}
+	if h.md.proxyAgent != "" {
+		resp.Header.Add("Proxy-Agent", h.md.proxyAgent)
+	}
+
 	if !h.md.enableUDP {
-		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
-		reply.Write(conn)
-		h.logger.Debug(reply)
+		resp.StatusCode = http.StatusForbidden
+		resp.Write(conn)
+
+		if h.logger.IsLevelEnabled(logger.DebugLevel) {
+			dump, _ := httputil.DumpResponse(resp, false)
+			h.logger.Debug(string(dump))
+		}
 		h.logger.Error("UDP relay is diabled")
+
 		return
 	}
 
-	// dummy bind
-	reply := gosocks5.NewReply(gosocks5.Succeeded, nil)
-	if err := reply.Write(conn); err != nil {
+	resp.StatusCode = http.StatusOK
+	if h.logger.IsLevelEnabled(logger.DebugLevel) {
+		dump, _ := httputil.DumpResponse(resp, false)
+		h.logger.Debug(string(dump))
+	}
+	if err := resp.Write(conn); err != nil {
 		h.logger.Error(err)
 		return
 	}
-	h.logger.Debug(reply)
 
 	// obtain a udp connection
 	r := (&chain.Router{}).
@@ -53,7 +71,6 @@ func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network
 	relay := handler.NewUDPRelay(socks.UDPTunServerConn(conn), pc).
 		WithBypass(h.bypass).
 		WithLogger(h.logger)
-	relay.SetBufferSize(h.md.udpBufferSize)
 
 	t := time.Now()
 	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), pc.LocalAddr())

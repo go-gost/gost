@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/auth"
-	util_tls "github.com/go-gost/gost/pkg/common/util/tls"
+	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	md "github.com/go-gost/gost/pkg/metadata"
 )
 
@@ -23,7 +23,7 @@ type metadata struct {
 	compatibilityMode bool
 }
 
-func (h *socks5Handler) parseMetadata(md md.Metadata) error {
+func (h *socks5Handler) parseMetadata(md md.Metadata) (err error) {
 	const (
 		certFile          = "certFile"
 		keyFile           = "keyFile"
@@ -39,14 +39,19 @@ func (h *socks5Handler) parseMetadata(md md.Metadata) error {
 		compatibilityMode = "comp"
 	)
 
-	var err error
-	h.md.tlsConfig, err = util_tls.LoadTLSConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-	)
-	if err != nil {
-		h.logger.Warn("parse tls config: ", err)
+	if md.GetString(certFile) != "" ||
+		md.GetString(keyFile) != "" ||
+		md.GetString(caFile) != "" {
+		h.md.tlsConfig, err = tls_util.LoadTLSConfig(
+			md.GetString(certFile),
+			md.GetString(keyFile),
+			md.GetString(caFile),
+		)
+		if err != nil {
+			return
+		}
+	} else {
+		h.md.tlsConfig = tls_util.DefaultConfig
 	}
 
 	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {

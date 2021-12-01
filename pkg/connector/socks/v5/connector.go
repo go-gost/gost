@@ -167,11 +167,5 @@ func (c *socks5Connector) connectUDP(ctx context.Context, conn net.Conn, network
 		return nil, errors.New("get socks5 UDP tunnel failure")
 	}
 
-	baddr, err := net.ResolveUDPAddr("udp", reply.Addr.String())
-	if err != nil {
-		return nil, err
-	}
-	c.logger.Debugf("associate on %s OK", baddr)
-
 	return socks.UDPTunClientConn(conn, addr), nil
 }

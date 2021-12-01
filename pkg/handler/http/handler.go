@@ -90,6 +90,11 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		req.URL.Scheme = "http"
 	}
 
+	network := req.Header.Get("X-Gost-Protocol")
+	if network != "udp" {
+		network = "tcp"
+	}
+
 	// Try to get the actual host.
 	// Compatible with GOST 2.x.
 	if v := req.Header.Get("Gost-Target"); v != "" {
@@ -168,6 +173,11 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		return
 	}
 
+	if network == "udp" {
+		h.handleUDP(ctx, conn, network, req.Host)
+		return
+	}
+
 	if req.Method == "PRI" ||
 		(req.Method != http.MethodConnect && req.URL.Scheme != "http") {
 		resp.StatusCode = http.StatusBadRequest
@@ -187,7 +197,7 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		WithChain(h.chain).
 		WithRetry(h.md.retryCount).
 		WithLogger(h.logger)
-	cc, err := r.Dial(ctx, "tcp", addr)
+	cc, err := r.Dial(ctx, network, addr)
 	if err != nil {
 		resp.StatusCode = http.StatusServiceUnavailable
 		resp.Write(conn)
@@ -209,13 +219,13 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 			h.logger.Debug(string(dump))
 		}
 		if err = resp.Write(conn); err != nil {
-			h.logger.Warn(err)
+			h.logger.Error(err)
 			return
 		}
 	} else {
 		req.Header.Del("Proxy-Connection")
 		if err = req.Write(cc); err != nil {
-			h.logger.Warn(err)
+			h.logger.Error(err)
 			return
 		}
 	}

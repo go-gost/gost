@@ -13,6 +13,7 @@ type metadata struct {
 	retryCount    int
 	probeResist   *probeResist
 	sni           bool
+	enableUDP     bool
 }
 
 func (h *httpHandler) parseMetadata(md md.Metadata) error {
@@ -23,6 +24,7 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 		knock          = "knock"
 		retryCount     = "retry"
 		sni            = "sni"
+		enableUDP      = "udp"
 	)
 
 	h.md.proxyAgent = md.GetString(proxyAgent)
@@ -53,6 +55,7 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 	}
 	h.md.retryCount = md.GetInt(retryCount)
 	h.md.sni = md.GetBool(sni)
+	h.md.enableUDP = md.GetBool(enableUDP)
 
 	return nil
 }

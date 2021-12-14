@@ -39,19 +39,13 @@ func (h *socks5Handler) parseMetadata(md md.Metadata) (err error) {
 		compatibilityMode = "comp"
 	)
 
-	if md.GetString(certFile) != "" ||
-		md.GetString(keyFile) != "" ||
-		md.GetString(caFile) != "" {
-		h.md.tlsConfig, err = tls_util.LoadTLSConfig(
-			md.GetString(certFile),
-			md.GetString(keyFile),
-			md.GetString(caFile),
-		)
-		if err != nil {
-			return
-		}
-	} else {
-		h.md.tlsConfig = tls_util.DefaultConfig
+	h.md.tlsConfig, err = tls_util.LoadServerConfig(
+		md.GetString(certFile),
+		md.GetString(keyFile),
+		md.GetString(caFile),
+	)
+	if err != nil {
+		return
 	}
 
 	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {

@@ -2,7 +2,6 @@ package config
 
 import (
 	"io"
-	"os"
 	"time"
 
 	"github.com/spf13/viper"
@@ -138,14 +137,8 @@ func (c *Config) ReadFile(file string) error {
 	return v.Unmarshal(c)
 }
 
-func (c *Config) WriteFile(file string) error {
-	f, err := os.Create(file)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	enc := yaml.NewEncoder(f)
+func (c *Config) Write(w io.Writer) error {
+	enc := yaml.NewEncoder(w)
 	defer enc.Close()
 
 	return enc.Encode(c)

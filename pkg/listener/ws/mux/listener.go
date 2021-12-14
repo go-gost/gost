@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	ws_util "github.com/go-gost/gost/pkg/common/util/ws"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -109,19 +108,6 @@ func (l *mwsListener) Close() error {
 
 func (l *mwsListener) Addr() net.Addr {
 	return l.addr
-}
-
-func (l *mwsListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = tls_util.LoadTLSConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-	)
-	if err != nil {
-		return
-	}
-
-	return
 }
 
 func (l *mwsListener) upgrade(w http.ResponseWriter, r *http.Request) {

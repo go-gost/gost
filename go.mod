@@ -24,7 +24,7 @@ require (
 	github.com/xtaci/smux v1.5.15
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
+	golang.org/x/net v0.0.0-20211209124913-491a49abca63
 	gopkg.in/yaml.v2 v2.4.0
 )
 

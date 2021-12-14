@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/common/util"
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -171,17 +170,4 @@ func (l *h2Listener) upgrade(w http.ResponseWriter, r *http.Request) (*conn, err
 		remoteAddr: remoteAddr,
 		closed:     make(chan struct{}),
 	}, nil
-}
-
-func (l *h2Listener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = tls_util.LoadTLSConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-	)
-	if err != nil {
-		return
-	}
-
-	return
 }

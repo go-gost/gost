@@ -21,19 +21,13 @@ func (l *tlsListener) parseMetadata(md md.Metadata) (err error) {
 		keepAlivePeriod = "keepAlivePeriod"
 	)
 
-	if md.GetString(certFile) != "" ||
-		md.GetString(keyFile) != "" ||
-		md.GetString(caFile) != "" {
-		l.md.tlsConfig, err = tls_util.LoadTLSConfig(
-			md.GetString(certFile),
-			md.GetString(keyFile),
-			md.GetString(caFile),
-		)
-		if err != nil {
-			return
-		}
-	} else {
-		l.md.tlsConfig = tls_util.DefaultConfig
+	l.md.tlsConfig, err = tls_util.LoadServerConfig(
+		md.GetString(certFile),
+		md.GetString(keyFile),
+		md.GetString(caFile),
+	)
+	if err != nil {
+		return
 	}
 
 	l.md.keepAlivePeriod = md.GetDuration(keepAlivePeriod)

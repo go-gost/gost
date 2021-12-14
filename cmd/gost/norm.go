@@ -111,6 +111,7 @@ func normChain(chain *config.ChainConfig) {
 			if u.User != nil {
 				md["user"] = u.User.String()
 			}
+			md["serverName"] = u.Host
 
 			node.Addr = u.Host
 

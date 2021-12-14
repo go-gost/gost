@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-gost/gosocks4"
 	"github.com/go-gost/gosocks5"
+	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -20,6 +21,7 @@ func init() {
 }
 
 type autoHandler struct {
+	chain         *chain.Chain
 	httpHandler   handler.Handler
 	socks4Handler handler.Handler
 	socks5Handler handler.Handler
@@ -66,23 +68,43 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	return h
 }
 
+func (h *autoHandler) WithChain(chain *chain.Chain) {
+	h.chain = chain
+}
+
 func (h *autoHandler) Init(md md.Metadata) error {
 	if h.httpHandler != nil {
+		if chainable, ok := h.httpHandler.(chain.Chainable); ok {
+			chainable.WithChain(h.chain)
+		}
+
 		if err := h.httpHandler.Init(md); err != nil {
 			return err
 		}
 	}
 	if h.socks4Handler != nil {
+		if chainable, ok := h.socks4Handler.(chain.Chainable); ok {
+			chainable.WithChain(h.chain)
+		}
+
 		if err := h.socks4Handler.Init(md); err != nil {
 			return err
 		}
 	}
 	if h.socks5Handler != nil {
+		if chainable, ok := h.socks5Handler.(chain.Chainable); ok {
+			chainable.WithChain(h.chain)
+		}
+
 		if err := h.socks5Handler.Init(md); err != nil {
 			return err
 		}
 	}
 	if h.relayHandler != nil {
+		if chainable, ok := h.relayHandler.(chain.Chainable); ok {
+			chainable.WithChain(h.chain)
+		}
+
 		if err := h.relayHandler.Init(md); err != nil {
 			return err
 		}

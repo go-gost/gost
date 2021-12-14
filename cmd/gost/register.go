@@ -4,6 +4,7 @@ import (
 	// Register connectors
 	_ "github.com/go-gost/gost/pkg/connector/forward"
 	_ "github.com/go-gost/gost/pkg/connector/http"
+	_ "github.com/go-gost/gost/pkg/connector/http2"
 	_ "github.com/go-gost/gost/pkg/connector/relay"
 	_ "github.com/go-gost/gost/pkg/connector/sni"
 	_ "github.com/go-gost/gost/pkg/connector/socks/v4"
@@ -12,6 +13,8 @@ import (
 	_ "github.com/go-gost/gost/pkg/connector/ss/udp"
 
 	// Register dialers
+	_ "github.com/go-gost/gost/pkg/dialer/ftcp"
+	_ "github.com/go-gost/gost/pkg/dialer/http2"
 	_ "github.com/go-gost/gost/pkg/dialer/tcp"
 	_ "github.com/go-gost/gost/pkg/dialer/udp"
 
@@ -20,6 +23,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/handler/forward/local"
 	_ "github.com/go-gost/gost/pkg/handler/forward/remote"
 	_ "github.com/go-gost/gost/pkg/handler/http"
+	_ "github.com/go-gost/gost/pkg/handler/http2"
 	_ "github.com/go-gost/gost/pkg/handler/redirect"
 	_ "github.com/go-gost/gost/pkg/handler/relay"
 	_ "github.com/go-gost/gost/pkg/handler/sni"

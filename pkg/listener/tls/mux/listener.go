@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"net"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -123,18 +122,5 @@ func (l *mtlsListener) Accept() (conn net.Conn, err error) {
 			err = listener.ErrClosed
 		}
 	}
-	return
-}
-
-func (l *mtlsListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = tls_util.LoadTLSConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-	)
-	if err != nil {
-		return
-	}
-
 	return
 }

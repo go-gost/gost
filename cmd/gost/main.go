@@ -1,15 +1,14 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/logger"
 )
@@ -69,7 +68,18 @@ func main() {
 	log = logFromConfig(cfg.Log)
 
 	if outputCfgFile != "" {
-		if err := cfg.WriteFile(outputCfgFile); err != nil {
+		var w io.Writer
+		if outputCfgFile == "-" {
+			w = os.Stdout
+		} else {
+			f, err := os.Create(outputCfgFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer f.Close()
+			w = f
+		}
+		if err := cfg.Write(w); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
@@ -86,29 +96,7 @@ func main() {
 		}()
 	}
 
-	tlsCfg := cfg.TLS
-	if tlsCfg == nil {
-		tlsCfg = &config.TLSConfig{
-			Cert: "cert.pem",
-			Key:  "key.pem",
-			CA:   "ca.crt",
-		}
-	}
-	tlsConfig, err := tls_util.LoadTLSConfig(tlsCfg.Cert, tlsCfg.Key, tlsCfg.CA)
-	if err != nil {
-		// generate random self-signed certificate.
-		cert, err := tls_util.GenCertificate()
-		if err != nil {
-			log.Fatal(err)
-		}
-		tlsConfig = &tls.Config{
-			Certificates: []tls.Certificate{cert},
-		}
-		log.Warn("load TLS certificate files failed, use random generated certificate")
-	} else {
-		log.Debug("load TLS certificate files OK")
-	}
-	tls_util.DefaultConfig = tlsConfig
+	buildDefaultTLSConfig(cfg.TLS)
 
 	services := buildService(cfg)
 	for _, svc := range services {

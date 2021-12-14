@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-gost/gost/pkg/common/util"
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
+	http2_util "github.com/go-gost/gost/pkg/internal/http2"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -19,13 +19,13 @@ func init() {
 }
 
 type http2Listener struct {
-	saddr    string
-	md       metadata
-	server   *http.Server
-	addr     net.Addr
-	connChan chan *conn
-	errChan  chan error
-	logger   logger.Logger
+	saddr   string
+	md      metadata
+	server  *http.Server
+	addr    net.Addr
+	cqueue  chan net.Conn
+	errChan chan error
+	logger  logger.Logger
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -61,22 +61,17 @@ func (l *http2Listener) Init(md md.Metadata) (err error) {
 
 	ln = tls.NewListener(
 		&util.TCPKeepAliveListener{
-			TCPListener:     ln.(*net.TCPListener),
-			KeepAlivePeriod: l.md.keepAlivePeriod,
+			TCPListener: ln.(*net.TCPListener),
 		},
 		l.md.tlsConfig,
 	)
 
-	queueSize := l.md.connQueueSize
-	if queueSize <= 0 {
-		queueSize = defaultQueueSize
-	}
-	l.connChan = make(chan *conn, queueSize)
+	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)
 
 	go func() {
 		if err := l.server.Serve(ln); err != nil {
-			// log.Log("[http2]", err)
+			l.logger.Error(err)
 		}
 	}()
 
@@ -86,7 +81,7 @@ func (l *http2Listener) Init(md md.Metadata) (err error) {
 func (l *http2Listener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
-	case conn = <-l.connChan:
+	case conn = <-l.cqueue:
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed
@@ -111,30 +106,13 @@ func (l *http2Listener) Close() (err error) {
 }
 
 func (l *http2Listener) handleFunc(w http.ResponseWriter, r *http.Request) {
-	conn := &conn{
-		r:      r,
-		w:      w,
-		closed: make(chan struct{}),
-	}
+	conn := http2_util.NewServerConn(w, r)
 	select {
-	case l.connChan <- conn:
+	case l.cqueue <- conn:
 	default:
-		// log.Logf("[http2] %s - %s: connection queue is full", r.RemoteAddr, l.server.Addr)
+		l.logger.Warnf("connection queue is full, client %s discarded", r.RemoteAddr)
 		return
 	}
 
-	<-conn.closed
-}
-
-func (l *http2Listener) parseMetadata(md md.Metadata) (err error) {
-	l.md.tlsConfig, err = tls_util.LoadTLSConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-	)
-	if err != nil {
-		return
-	}
-
-	return
+	<-conn.Done()
 }

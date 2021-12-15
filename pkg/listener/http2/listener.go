@@ -19,13 +19,13 @@ func init() {
 }
 
 type http2Listener struct {
-	saddr   string
-	md      metadata
 	server  *http.Server
+	saddr   string
 	addr    net.Addr
 	cqueue  chan net.Conn
 	errChan chan error
 	logger  logger.Logger
+	md      metadata
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {

@@ -80,20 +80,6 @@ func (d *http2Dialer) Dial(ctx context.Context, address string, opts ...dialer.D
 				ExpectContinueTimeout: 1 * time.Second,
 			},
 		}
-		/*
-			client = &http.Client{
-				Transport: &http2.Transport{
-					TLSClientConfig: d.md.tlsConfig,
-					DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
-						conn, err := d.dial(ctx, network, addr, options)
-						if err != nil {
-							return nil, err
-						}
-						return tls_util.WrapTLSClient(conn, cfg, time.Duration(0))
-					},
-				},
-			}
-		*/
 		d.clients[address] = client
 	}
 

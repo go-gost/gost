@@ -7,6 +7,11 @@ profiling:
   addr: ":6060"
   enabled: true
 
+# tls:
+#  cert: "cert.pem"
+#  key: "key.pem"
+#  ca: "root.ca"
+
 services:
 - name: http+tcp
   url: "http://gost:gost@:8000"

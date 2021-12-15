@@ -61,15 +61,14 @@ func (c *http2Connector) Connect(ctx context.Context, conn net.Conn, network, ad
 
 	pr, pw := io.Pipe()
 	req := &http.Request{
-		Method:        http.MethodConnect,
-		URL:           &url.URL{Scheme: "https", Host: conn.RemoteAddr().String()},
-		Host:          address,
-		ProtoMajor:    2,
-		ProtoMinor:    0,
-		Proto:         "HTTP/2.0",
-		Header:        make(http.Header),
-		Body:          pr,
-		ContentLength: -1,
+		Method:     http.MethodConnect,
+		URL:        &url.URL{Scheme: "https", Host: conn.RemoteAddr().String()},
+		Host:       address,
+		ProtoMajor: 2,
+		ProtoMinor: 0,
+		Header:     make(http.Header),
+		Body:       pr,
+		// ContentLength: -1,
 	}
 	if c.md.UserAgent != "" {
 		req.Header.Set("User-Agent", c.md.UserAgent)

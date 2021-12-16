@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	quic_util "github.com/go-gost/gost/pkg/common/util/quic"
+	quic_util "github.com/go-gost/gost/pkg/internal/util/quic"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -17,12 +17,12 @@ func init() {
 }
 
 type quicListener struct {
-	addr     string
-	md       metadata
-	ln       quic.Listener
-	connChan chan net.Conn
-	errChan  chan error
-	logger   logger.Logger
+	addr    string
+	ln      quic.Listener
+	cqueue  chan net.Conn
+	errChan chan error
+	logger  logger.Logger
+	md      metadata
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -46,29 +46,37 @@ func (l *quicListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	var conn net.PacketConn
-	conn, err = net.ListenUDP("udp", laddr)
+	uc, err := net.ListenUDP("udp", laddr)
 	if err != nil {
 		return
 	}
 
+	var conn net.PacketConn = uc
+
 	if l.md.cipherKey != nil {
-		conn = quic_util.QUICCipherConn(conn, l.md.cipherKey)
+		conn = quic_util.CipherPacketConn(uc, l.md.cipherKey)
 	}
 
 	config := &quic.Config{
 		KeepAlive:            l.md.keepAlive,
-		HandshakeIdleTimeout: l.md.HandshakeTimeout,
-		MaxIdleTimeout:       l.md.MaxIdleTimeout,
+		HandshakeIdleTimeout: l.md.handshakeTimeout,
+		MaxIdleTimeout:       l.md.maxIdleTimeout,
+		Versions: []quic.VersionNumber{
+			quic.Version1,
+			quic.VersionDraft29,
+		},
 	}
 
-	ln, err := quic.Listen(conn, l.md.tlsConfig, config)
+	tlsCfg := l.md.tlsConfig
+	tlsCfg.NextProtos = []string{"http/3", "quic/v1"}
+
+	ln, err := quic.Listen(conn, tlsCfg, config)
 	if err != nil {
 		return
 	}
 
 	l.ln = ln
-	l.connChan = make(chan net.Conn, l.md.connQueueSize)
+	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)
 
 	go l.listenLoop()
@@ -79,7 +87,7 @@ func (l *quicListener) Init(md md.Metadata) (err error) {
 func (l *quicListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
-	case conn = <-l.connChan:
+	case conn = <-l.cqueue:
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed
@@ -111,7 +119,7 @@ func (l *quicListener) listenLoop() {
 }
 
 func (l *quicListener) mux(ctx context.Context, session quic.Session) {
-	defer session.CloseWithError(0, "")
+	defer session.CloseWithError(0, "closed")
 
 	for {
 		stream, err := session.AcceptStream(ctx)
@@ -120,19 +128,18 @@ func (l *quicListener) mux(ctx context.Context, session quic.Session) {
 			return
 		}
 
-		conn := quic_util.QUICConn(session, stream)
+		conn := &quicConn{
+			Stream: stream,
+			laddr:  session.LocalAddr(),
+			raddr:  session.RemoteAddr(),
+		}
 		select {
-		case l.connChan <- conn:
+		case l.cqueue <- conn:
 		case <-stream.Context().Done():
 			stream.Close()
 		default:
 			stream.Close()
-			l.logger.Error("connection queue is full")
+			l.logger.Warnf("connection queue is full, client %s discarded", session.RemoteAddr())
 		}
 	}
-}
-
-func (l *quicListener) parseMetadata(md md.Metadata) (err error) {
-
-	return
 }

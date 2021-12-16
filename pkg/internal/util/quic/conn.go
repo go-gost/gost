@@ -7,36 +7,29 @@ import (
 	"errors"
 	"io"
 	"net"
-
-	"github.com/lucas-clemente/quic-go"
 )
 
-type quicConn struct {
-	quic.Session
-	quic.Stream
-}
-
-func QUICConn(session quic.Session, stream quic.Stream) net.Conn {
-	return &quicConn{
-		Session: session,
-		Stream:  stream,
-	}
-}
-
-type quicCipherConn struct {
-	net.PacketConn
+type cipherConn struct {
+	*net.UDPConn
 	key []byte
 }
 
-func QUICCipherConn(conn net.PacketConn, key []byte) net.PacketConn {
-	return &quicCipherConn{
-		PacketConn: conn,
-		key:        key,
+func CipherConn(conn *net.UDPConn, key []byte) net.Conn {
+	return &cipherConn{
+		UDPConn: conn,
+		key:     key,
 	}
 }
 
-func (conn *quicCipherConn) ReadFrom(data []byte) (n int, addr net.Addr, err error) {
-	n, addr, err = conn.PacketConn.ReadFrom(data)
+func CipherPacketConn(conn *net.UDPConn, key []byte) net.PacketConn {
+	return &cipherConn{
+		UDPConn: conn,
+		key:     key,
+	}
+}
+
+func (conn *cipherConn) ReadFrom(data []byte) (n int, addr net.Addr, err error) {
+	n, addr, err = conn.UDPConn.ReadFrom(data)
 	if err != nil {
 		return
 	}
@@ -50,13 +43,13 @@ func (conn *quicCipherConn) ReadFrom(data []byte) (n int, addr net.Addr, err err
 	return len(b), addr, nil
 }
 
-func (conn *quicCipherConn) WriteTo(data []byte, addr net.Addr) (n int, err error) {
+func (conn *cipherConn) WriteTo(data []byte, addr net.Addr) (n int, err error) {
 	b, err := conn.encrypt(data)
 	if err != nil {
 		return
 	}
 
-	_, err = conn.PacketConn.WriteTo(b, addr)
+	_, err = conn.UDPConn.WriteTo(b, addr)
 	if err != nil {
 		return
 	}
@@ -64,7 +57,7 @@ func (conn *quicCipherConn) WriteTo(data []byte, addr net.Addr) (n int, err erro
 	return len(b), nil
 }
 
-func (conn *quicCipherConn) encrypt(data []byte) ([]byte, error) {
+func (conn *cipherConn) encrypt(data []byte) ([]byte, error) {
 	c, err := aes.NewCipher(conn.key)
 	if err != nil {
 		return nil, err
@@ -83,7 +76,7 @@ func (conn *quicCipherConn) encrypt(data []byte) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, data, nil), nil
 }
 
-func (conn *quicCipherConn) decrypt(data []byte) ([]byte, error) {
+func (conn *cipherConn) decrypt(data []byte) ([]byte, error) {
 	c, err := aes.NewCipher(conn.key)
 	if err != nil {
 		return nil, err

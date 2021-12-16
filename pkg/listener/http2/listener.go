@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-gost/gost/pkg/common/util"
-	http2_util "github.com/go-gost/gost/pkg/internal/http2"
+	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"

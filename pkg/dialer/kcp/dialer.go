@@ -114,6 +114,11 @@ func (d *kcpDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 	}
 
 	session, ok := d.sessions[opts.Addr]
+	if session != nil && session.conn != conn {
+		conn.Close()
+		return nil, errors.New("kcp: unrecognized connection")
+	}
+
 	if !ok || session.session == nil {
 		s, err := d.initSession(opts.Addr, conn, config)
 		if err != nil {
@@ -138,7 +143,7 @@ func (d *kcpDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 func (d *kcpDialer) initSession(addr string, conn net.Conn, config *kcp_util.Config) (*muxSession, error) {
 	pc, ok := conn.(net.PacketConn)
 	if !ok {
-		return nil, errors.New("wrong connection type")
+		return nil, errors.New("kcp: wrong connection type")
 	}
 
 	kcpconn, err := kcp.NewConn(addr,

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/connector"
-	http2_util "github.com/go-gost/gost/pkg/internal/http2"
+	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"

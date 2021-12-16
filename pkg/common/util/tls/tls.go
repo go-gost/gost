@@ -17,7 +17,7 @@ var (
 // LoadServerConfig loads the certificate from cert & key files and optional client CA file.
 func LoadServerConfig(certFile, keyFile, caFile string) (*tls.Config, error) {
 	if certFile == "" && keyFile == "" {
-		return DefaultConfig, nil
+		return DefaultConfig.Clone(), nil
 	}
 
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)

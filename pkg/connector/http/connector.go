@@ -59,9 +59,6 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		ProtoMinor: 1,
 		Header:     make(http.Header),
 	}
-	if c.md.UserAgent != "" {
-		req.Header.Set("User-Agent", c.md.UserAgent)
-	}
 	req.Header.Set("Proxy-Connection", "keep-alive")
 
 	if user := c.md.User; user != nil {
@@ -69,6 +66,10 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		p, _ := user.Password()
 		req.Header.Set("Proxy-Authorization",
 			"Basic "+base64.StdEncoding.EncodeToString([]byte(u+":"+p)))
+	}
+
+	for k, v := range c.md.headers {
+		req.Header.Set(k, v)
 	}
 
 	switch network {

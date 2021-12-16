@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-gost/gost/pkg/auth"
@@ -8,17 +9,17 @@ import (
 )
 
 type metadata struct {
-	authenticator auth.Authenticator
-	proxyAgent    string
 	retryCount    int
+	authenticator auth.Authenticator
 	probeResist   *probeResist
 	sni           bool
 	enableUDP     bool
+	headers       map[string]string
 }
 
 func (h *httpHandler) parseMetadata(md md.Metadata) error {
 	const (
-		proxyAgent     = "proxyAgent"
+		headers        = "headers"
 		users          = "users"
 		probeResistKey = "probeResist"
 		knock          = "knock"
@@ -26,8 +27,6 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 		sni            = "sni"
 		enableUDP      = "udp"
 	)
-
-	h.md.proxyAgent = md.GetString(proxyAgent)
 
 	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
@@ -42,6 +41,14 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 			}
 		}
 		h.md.authenticator = authenticator
+	}
+
+	if mm, _ := md.Get(headers).(map[interface{}]interface{}); len(mm) > 0 {
+		m := make(map[string]string)
+		for k, v := range mm {
+			m[fmt.Sprintf("%v", k)] = fmt.Sprintf("%v", v)
+		}
+		h.md.headers = m
 	}
 
 	if v := md.GetString(probeResistKey); v != "" {

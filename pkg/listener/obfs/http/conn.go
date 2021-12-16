@@ -6,23 +6,26 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"sync"
 	"time"
+
+	"github.com/go-gost/gost/pkg/logger"
 )
 
-type conn struct {
+type obfsHTTPConn struct {
 	net.Conn
 	rbuf           bytes.Buffer
 	wbuf           bytes.Buffer
 	handshaked     bool
 	handshakeMutex sync.Mutex
+	logger         logger.Logger
 }
 
-func (c *conn) Handshake() (err error) {
+func (c *obfsHTTPConn) Handshake() (err error) {
 	c.handshakeMutex.Lock()
 	defer c.handshakeMutex.Unlock()
 
@@ -38,18 +41,17 @@ func (c *conn) Handshake() (err error) {
 	return nil
 }
 
-func (c *conn) handshake() (err error) {
+func (c *obfsHTTPConn) handshake() (err error) {
 	br := bufio.NewReader(c.Conn)
 	r, err := http.ReadRequest(br)
 	if err != nil {
 		return
 	}
-	/*
-		if Debug {
-			dump, _ := httputil.DumpRequest(r, false)
-			log.Logf("[ohttp] %s -> %s\n%s", c.RemoteAddr(), c.LocalAddr(), string(dump))
-		}
-	*/
+
+	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+		dump, _ := httputil.DumpRequest(r, false)
+		c.logger.Debug(string(dump))
+	}
 
 	if r.ContentLength > 0 {
 		_, err = io.Copy(&c.rbuf, r.Body)
@@ -61,52 +63,52 @@ func (c *conn) handshake() (err error) {
 		}
 	}
 	if err != nil {
-		// log.Logf("[ohttp] %s -> %s : %v", c.Conn.RemoteAddr(), c.Conn.LocalAddr(), err)
+		c.logger.Error(err)
 		return
 	}
 
-	b := bytes.Buffer{}
+	resp := http.Response{
+		StatusCode: http.StatusOK,
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Header:     make(http.Header),
+	}
+	resp.Header.Set("Server", "nginx/1.18.0")
+	resp.Header.Set("Date", time.Now().Format(time.RFC1123))
 
 	if r.Method != http.MethodGet || r.Header.Get("Upgrade") != "websocket" {
-		b.WriteString("HTTP/1.1 503 Service Unavailable\r\n")
-		b.WriteString("Content-Length: 0\r\n")
-		b.WriteString("Date: " + time.Now().Format(time.RFC1123) + "\r\n")
-		b.WriteString("\r\n")
+		resp.StatusCode = http.StatusBadRequest
 
-		/*
-			if Debug {
-				log.Logf("[ohttp] %s <- %s\n%s", c.RemoteAddr(), c.LocalAddr(), b.String())
-			}
-		*/
+		if c.logger.IsLevelEnabled(logger.DebugLevel) {
+			dump, _ := httputil.DumpResponse(&resp, false)
+			c.logger.Debug(string(dump))
+		}
 
-		b.WriteTo(c.Conn)
+		resp.Write(c.Conn)
 		return errors.New("bad request")
 	}
 
-	b.WriteString("HTTP/1.1 101 Switching Protocols\r\n")
-	b.WriteString("Server: nginx/1.10.0\r\n")
-	b.WriteString("Date: " + time.Now().Format(time.RFC1123) + "\r\n")
-	b.WriteString("Connection: Upgrade\r\n")
-	b.WriteString("Upgrade: websocket\r\n")
-	b.WriteString(fmt.Sprintf("Sec-WebSocket-Accept: %s\r\n", computeAcceptKey(r.Header.Get("Sec-WebSocket-Key"))))
-	b.WriteString("\r\n")
+	resp.StatusCode = http.StatusSwitchingProtocols
+	resp.Header.Set("Connection", "Upgrade")
+	resp.Header.Set("Upgrade", "websocket")
+	resp.Header.Set("Sec-WebSocket-Accept", c.computeAcceptKey(r.Header.Get("Sec-WebSocket-Key")))
 
-	/*
-		if Debug {
-			log.Logf("[ohttp] %s <- %s\n%s", c.RemoteAddr(), c.LocalAddr(), b.String())
-		}
-	*/
+	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+		dump, _ := httputil.DumpResponse(&resp, false)
+		c.logger.Debug(string(dump))
+	}
 
 	if c.rbuf.Len() > 0 {
-		c.wbuf = b // cache the response header if there are extra data in the request body.
+		// cache the response header if there are extra data in the request body.
+		resp.Write(&c.wbuf)
 		return
 	}
 
-	_, err = b.WriteTo(c.Conn)
+	err = resp.Write(c.Conn)
 	return
 }
 
-func (c *conn) Read(b []byte) (n int, err error) {
+func (c *obfsHTTPConn) Read(b []byte) (n int, err error) {
 	if err = c.Handshake(); err != nil {
 		return
 	}
@@ -117,7 +119,7 @@ func (c *conn) Read(b []byte) (n int, err error) {
 	return c.Conn.Read(b)
 }
 
-func (c *conn) Write(b []byte) (n int, err error) {
+func (c *obfsHTTPConn) Write(b []byte) (n int, err error) {
 	if err = c.Handshake(); err != nil {
 		return
 	}
@@ -132,7 +134,7 @@ func (c *conn) Write(b []byte) (n int, err error) {
 
 var keyGUID = []byte("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
 
-func computeAcceptKey(challengeKey string) string {
+func (c *obfsHTTPConn) computeAcceptKey(challengeKey string) string {
 	h := sha1.New()
 	h.Write([]byte(challengeKey))
 	h.Write(keyGUID)

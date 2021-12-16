@@ -3,7 +3,6 @@ package http
 import (
 	"net"
 
-	"github.com/go-gost/gost/pkg/common/util"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -46,14 +45,6 @@ func (l *obfsListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	if l.md.keepAlive {
-		l.Listener = &util.TCPKeepAliveListener{
-			TCPListener:     ln,
-			KeepAlivePeriod: l.md.keepAlivePeriod,
-		}
-		return
-	}
-
 	l.Listener = ln
 	return
 }
@@ -64,12 +55,8 @@ func (l *obfsListener) Accept() (net.Conn, error) {
 		return nil, err
 	}
 
-	return &conn{Conn: c}, nil
-}
-
-func (l *obfsListener) parseMetadata(md md.Metadata) (err error) {
-	l.md.keepAlive = md.GetBool(keepAlive)
-	l.md.keepAlivePeriod = md.GetDuration(keepAlivePeriod)
-
-	return
+	return &obfsHTTPConn{
+		Conn:   c,
+		logger: l.logger,
+	}, nil
 }

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -8,28 +9,20 @@ import (
 	md "github.com/go-gost/gost/pkg/metadata"
 )
 
-const (
-	defaultUserAgent = "Chrome/78.0.3904.106"
-)
-
 type metadata struct {
 	connectTimeout time.Duration
-	UserAgent      string
 	User           *url.Userinfo
+	headers        map[string]string
 }
 
 func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
-		userAgent      = "userAgent"
 		user           = "user"
+		headers        = "headers"
 	)
 
 	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.UserAgent, _ = md.Get(userAgent).(string)
-	if c.md.UserAgent == "" {
-		c.md.UserAgent = defaultUserAgent
-	}
 
 	if v := md.GetString(user); v != "" {
 		ss := strings.SplitN(v, ":", 2)
@@ -38,6 +31,14 @@ func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
 		} else {
 			c.md.User = url.UserPassword(ss[0], ss[1])
 		}
+	}
+
+	if mm, _ := md.Get(headers).(map[interface{}]interface{}); len(mm) > 0 {
+		m := make(map[string]string)
+		for k, v := range mm {
+			m[fmt.Sprintf("%v", k)] = fmt.Sprintf("%v", v)
+		}
+		c.md.headers = m
 	}
 
 	return

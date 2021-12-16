@@ -23,8 +23,8 @@ func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, network, add
 		ProtoMinor: 1,
 		Header:     http.Header{},
 	}
-	if h.md.proxyAgent != "" {
-		resp.Header.Add("Proxy-Agent", h.md.proxyAgent)
+	for k, v := range h.md.headers {
+		resp.Header.Set(k, v)
 	}
 
 	if !h.md.enableUDP {

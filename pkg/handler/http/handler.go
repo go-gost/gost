@@ -136,8 +136,8 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		Header:     http.Header{},
 	}
 
-	if h.md.proxyAgent != "" {
-		resp.Header.Add("Proxy-Agent", h.md.proxyAgent)
+	for k, v := range h.md.headers {
+		resp.Header.Set(k, v)
 	}
 
 	/*

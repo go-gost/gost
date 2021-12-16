@@ -1,17 +1,17 @@
 package http
 
-import "time"
+import (
+	md "github.com/go-gost/gost/pkg/metadata"
+)
 
 const (
 	keepAlive       = "keepAlive"
 	keepAlivePeriod = "keepAlivePeriod"
 )
 
-const (
-	defaultKeepAlivePeriod = 180 * time.Second
-)
-
 type metadata struct {
-	keepAlive       bool
-	keepAlivePeriod time.Duration
+}
+
+func (l *obfsListener) parseMetadata(md md.Metadata) (err error) {
+	return
 }

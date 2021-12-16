@@ -34,7 +34,8 @@ func (c *tcpConn) Write(b []byte) (n int, err error) {
 	n = len(b) // force byte length consistent
 	if c.wbuf.Len() > 0 {
 		c.wbuf.Write(b) // append the data to the cached header
-		_, err = c.wbuf.WriteTo(c.Conn)
+		_, err = c.Conn.Write(c.wbuf.Bytes())
+		c.wbuf.Reset()
 		return
 	}
 	_, err = c.Conn.Write(b)

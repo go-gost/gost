@@ -16,6 +16,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/dialer/ftcp"
 	_ "github.com/go-gost/gost/pkg/dialer/http2"
 	_ "github.com/go-gost/gost/pkg/dialer/http2/h2"
+	_ "github.com/go-gost/gost/pkg/dialer/kcp"
 	_ "github.com/go-gost/gost/pkg/dialer/tcp"
 	_ "github.com/go-gost/gost/pkg/dialer/udp"
 

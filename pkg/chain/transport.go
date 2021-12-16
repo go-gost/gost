@@ -9,6 +9,7 @@ import (
 )
 
 type Transport struct {
+	addr      string
 	route     *Route
 	dialer    dialer.Dialer
 	connector connector.Connector
@@ -51,7 +52,8 @@ func (tr *Transport) dialOptions() []dialer.DialOption {
 func (tr *Transport) Handshake(ctx context.Context, conn net.Conn) (net.Conn, error) {
 	var err error
 	if hs, ok := tr.dialer.(dialer.Handshaker); ok {
-		conn, err = hs.Handshake(ctx, conn)
+		conn, err = hs.Handshake(ctx, conn,
+			dialer.AddrHandshakeOption(tr.addr))
 		if err != nil {
 			return nil, err
 		}
@@ -82,5 +84,10 @@ func (tr *Transport) IsMultiplex() bool {
 
 func (tr *Transport) WithRoute(r *Route) *Transport {
 	tr.route = r
+	return tr
+}
+
+func (tr *Transport) WithAddr(addr string) *Transport {
+	tr.addr = addr
 	return tr
 }

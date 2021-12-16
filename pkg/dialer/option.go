@@ -30,3 +30,15 @@ func DialFuncDialOption(dialf func(ctx context.Context, addr string) (net.Conn, 
 		opts.DialFunc = dialf
 	}
 }
+
+type HandshakeOptions struct {
+	Addr string
+}
+
+type HandshakeOption func(opts *HandshakeOptions)
+
+func AddrHandshakeOption(addr string) HandshakeOption {
+	return func(opts *HandshakeOptions) {
+		opts.Addr = addr
+	}
+}

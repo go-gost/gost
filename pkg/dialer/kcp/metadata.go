@@ -2,24 +2,21 @@ package kcp
 
 import (
 	"encoding/json"
+	"time"
 
 	kcp_util "github.com/go-gost/gost/pkg/common/util/kcp"
 	md "github.com/go-gost/gost/pkg/metadata"
 )
 
-const (
-	defaultBacklog = 128
-)
-
 type metadata struct {
-	config  *kcp_util.Config
-	backlog int
+	handshakeTimeout time.Duration
+	config           *kcp_util.Config
 }
 
-func (l *kcpListener) parseMetadata(md md.Metadata) (err error) {
+func (d *kcpDialer) parseMetadata(md md.Metadata) (err error) {
 	const (
-		backlog = "backlog"
-		config  = "config"
+		config           = "config"
+		handshakeTimeout = "handshakeTimeout"
 	)
 
 	if mm, _ := md.Get(config).(map[interface{}]interface{}); len(mm) > 0 {
@@ -37,17 +34,13 @@ func (l *kcpListener) parseMetadata(md md.Metadata) (err error) {
 		if err := json.Unmarshal(b, cfg); err != nil {
 			return err
 		}
-		l.md.config = cfg
+		d.md.config = cfg
 	}
 
-	if l.md.config == nil {
-		l.md.config = kcp_util.DefaultConfig
+	if d.md.config == nil {
+		d.md.config = kcp_util.DefaultConfig
 	}
 
-	l.md.backlog = md.GetInt(backlog)
-	if l.md.backlog <= 0 {
-		l.md.backlog = defaultBacklog
-	}
-
+	d.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
 	return
 }

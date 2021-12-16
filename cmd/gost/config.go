@@ -153,7 +153,8 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 
 			tr := (&chain.Transport{}).
 				WithConnector(cr).
-				WithDialer(d)
+				WithDialer(d).
+				WithAddr(v.Addr)
 
 			node := chain.NewNode(v.Name, v.Addr).
 				WithTransport(tr).

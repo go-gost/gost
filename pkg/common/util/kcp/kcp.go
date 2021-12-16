@@ -12,7 +12,7 @@ type kcpCompStreamConn struct {
 	r *snappy.Reader
 }
 
-func KCPCompStreamConn(conn net.Conn) net.Conn {
+func CompStreamConn(conn net.Conn) net.Conn {
 	return &kcpCompStreamConn{
 		Conn: conn,
 		w:    snappy.NewBufferedWriter(conn),

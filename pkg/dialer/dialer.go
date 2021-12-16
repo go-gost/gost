@@ -14,7 +14,7 @@ type Dialer interface {
 }
 
 type Handshaker interface {
-	Handshake(ctx context.Context, conn net.Conn) (net.Conn, error)
+	Handshake(ctx context.Context, conn net.Conn, opts ...HandshakeOption) (net.Conn, error)
 }
 
 type Multiplexer interface {

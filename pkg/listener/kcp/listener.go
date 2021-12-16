@@ -19,12 +19,12 @@ func init() {
 }
 
 type kcpListener struct {
-	addr     string
-	md       metadata
-	ln       *kcp.Listener
-	connChan chan net.Conn
-	errChan  chan error
-	logger   logger.Logger
+	addr    string
+	ln      *kcp.Listener
+	cqueue  chan net.Conn
+	errChan chan error
+	logger  logger.Logger
+	md      metadata
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -44,11 +44,7 @@ func (l *kcpListener) Init(md md.Metadata) (err error) {
 	}
 
 	config := l.md.config
-	if config == nil {
-		config = DefaultConfig
-	}
 	config.Init()
-	l.md.config = config
 
 	var ln *kcp.Listener
 
@@ -59,10 +55,10 @@ func (l *kcpListener) Init(md md.Metadata) (err error) {
 			return
 		}
 		ln, err = kcp.ServeConn(
-			blockCrypt(config.Key, config.Crypt, Salt), config.DataShard, config.ParityShard, conn)
+			kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt), config.DataShard, config.ParityShard, conn)
 	} else {
 		ln, err = kcp.ListenWithOptions(l.addr,
-			blockCrypt(config.Key, config.Crypt, Salt), config.DataShard, config.ParityShard)
+			kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt), config.DataShard, config.ParityShard)
 	}
 	if err != nil {
 		return
@@ -81,7 +77,7 @@ func (l *kcpListener) Init(md md.Metadata) (err error) {
 	}
 
 	l.ln = ln
-	l.connChan = make(chan net.Conn, l.md.connQueueSize)
+	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)
 
 	go l.listenLoop()
@@ -92,7 +88,7 @@ func (l *kcpListener) Init(md md.Metadata) (err error) {
 func (l *kcpListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
-	case conn = <-l.connChan:
+	case conn = <-l.cqueue:
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed
@@ -142,7 +138,7 @@ func (l *kcpListener) mux(conn net.Conn) {
 	smuxConfig.KeepAliveInterval = time.Duration(l.md.config.KeepAlive) * time.Second
 
 	if !l.md.config.NoComp {
-		conn = kcp_util.KCPCompStreamConn(conn)
+		conn = kcp_util.CompStreamConn(conn)
 	}
 
 	mux, err := smux.Server(conn, smuxConfig)
@@ -155,17 +151,17 @@ func (l *kcpListener) mux(conn net.Conn) {
 	for {
 		stream, err := mux.AcceptStream()
 		if err != nil {
-			l.logger.Error("accept stream:", err)
+			l.logger.Error("accept stream: ", err)
 			return
 		}
 
 		select {
-		case l.connChan <- stream:
+		case l.cqueue <- stream:
 		case <-stream.GetDieCh():
 			stream.Close()
 		default:
 			stream.Close()
-			l.logger.Error("connection queue is full")
+			l.logger.Warnf("connection queue is full, client %s discarded", stream.RemoteAddr())
 		}
 	}
 }

@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	// Salt is the default salt for KCP cipher.
-	Salt = "kcp-go"
+	// DefaultSalt is the default salt for KCP cipher.
+	DefaultSalt = "kcp-go"
 )
 
 var (
@@ -78,7 +78,7 @@ func (c *Config) Init() {
 	}
 }
 
-func blockCrypt(key, crypt, salt string) (block kcp.BlockCrypt) {
+func BlockCrypt(key, crypt, salt string) (block kcp.BlockCrypt) {
 	pass := pbkdf2.Key([]byte(key), []byte(salt), 4096, 32, sha1.New)
 
 	switch crypt {

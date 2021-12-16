@@ -40,33 +40,10 @@ func (d *tcpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 		opt(&options)
 	}
 
-	dial := options.DialFunc
-	if dial != nil {
-		conn, err := dial(ctx, addr)
-		if err != nil {
-			d.logger.Error(err)
-		} else {
-			d.logger.WithFields(map[string]interface{}{
-				"src": conn.LocalAddr().String(),
-				"dst": addr,
-			}).Debug("dial with dial func")
-		}
-		return conn, err
-	}
-
 	var netd net.Dialer
 	conn, err := netd.DialContext(ctx, "tcp", addr)
 	if err != nil {
 		d.logger.Error(err)
-	} else {
-		d.logger.WithFields(map[string]interface{}{
-			"src": conn.LocalAddr().String(),
-			"dst": addr,
-		}).Debug("dial direct")
 	}
 	return conn, err
-}
-
-func (d *tcpDialer) parseMetadata(md md.Metadata) (err error) {
-	return
 }

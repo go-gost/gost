@@ -22,6 +22,7 @@ type obfsHTTPConn struct {
 	wbuf           bytes.Buffer
 	handshaked     bool
 	handshakeMutex sync.Mutex
+	header         http.Header
 	logger         logger.Logger
 }
 
@@ -71,9 +72,11 @@ func (c *obfsHTTPConn) handshake() (err error) {
 		StatusCode: http.StatusOK,
 		ProtoMajor: 1,
 		ProtoMinor: 1,
-		Header:     make(http.Header),
+		Header:     c.header,
 	}
-	resp.Header.Set("Server", "nginx/1.18.0")
+	if resp.Header == nil {
+		resp.Header = http.Header{}
+	}
 	resp.Header.Set("Date", time.Now().Format(time.RFC1123))
 
 	if r.Method != http.MethodGet || r.Header.Get("Upgrade") != "websocket" {

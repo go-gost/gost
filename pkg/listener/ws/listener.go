@@ -4,8 +4,9 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+	"net/http/httputil"
 
-	ws_util "github.com/go-gost/gost/pkg/common/util/ws"
+	ws_util "github.com/go-gost/gost/pkg/internal/util/ws"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -20,14 +21,14 @@ func init() {
 
 type wsListener struct {
 	saddr      string
-	md         metadata
 	addr       net.Addr
 	upgrader   *websocket.Upgrader
 	srv        *http.Server
 	tlsEnabled bool
-	connChan   chan net.Conn
+	cqueue     chan net.Conn
 	errChan    chan error
 	logger     logger.Logger
+	md         metadata
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -48,8 +49,8 @@ func NewTLSListener(opts ...listener.Option) listener.Listener {
 	}
 	return &wsListener{
 		saddr:      options.Addr,
-		tlsEnabled: true,
 		logger:     options.Logger,
+		tlsEnabled: true,
 	}
 }
 
@@ -62,35 +63,26 @@ func (l *wsListener) Init(md md.Metadata) (err error) {
 		HandshakeTimeout:  l.md.handshakeTimeout,
 		ReadBufferSize:    l.md.readBufferSize,
 		WriteBufferSize:   l.md.writeBufferSize,
-		CheckOrigin:       func(r *http.Request) bool { return true },
 		EnableCompression: l.md.enableCompression,
+		CheckOrigin:       func(r *http.Request) bool { return true },
 	}
 
-	path := l.md.path
-	if path == "" {
-		path = defaultPath
-	}
 	mux := http.NewServeMux()
-	mux.Handle(path, http.HandlerFunc(l.upgrade))
+	mux.Handle(l.md.path, http.HandlerFunc(l.upgrade))
 	l.srv = &http.Server{
 		Addr:              l.saddr,
-		TLSConfig:         l.md.tlsConfig,
 		Handler:           mux,
 		ReadHeaderTimeout: l.md.readHeaderTimeout,
 	}
 
-	queueSize := l.md.connQueueSize
-	if queueSize <= 0 {
-		queueSize = defaultQueueSize
-	}
-	l.connChan = make(chan net.Conn, queueSize)
+	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)
 
 	ln, err := net.Listen("tcp", l.saddr)
 	if err != nil {
 		return
 	}
-	if l.md.tlsConfig != nil {
+	if l.tlsEnabled {
 		ln = tls.NewListener(ln, l.md.tlsConfig)
 	}
 
@@ -110,7 +102,7 @@ func (l *wsListener) Init(md md.Metadata) (err error) {
 func (l *wsListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
-	case conn = <-l.connChan:
+	case conn = <-l.cqueue:
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed
@@ -128,16 +120,25 @@ func (l *wsListener) Addr() net.Addr {
 }
 
 func (l *wsListener) upgrade(w http.ResponseWriter, r *http.Request) {
-	conn, err := l.upgrader.Upgrade(w, r, l.md.responseHeader)
+	if l.logger.IsLevelEnabled(logger.DebugLevel) {
+		log := l.logger.WithFields(map[string]interface{}{
+			"local":  l.addr.String(),
+			"remote": r.RemoteAddr,
+		})
+		dump, _ := httputil.DumpRequest(r, false)
+		log.Debug(string(dump))
+	}
+
+	conn, err := l.upgrader.Upgrade(w, r, l.md.header)
 	if err != nil {
 		l.logger.Error(err)
 		return
 	}
 
 	select {
-	case l.connChan <- ws_util.WebsocketServerConn(conn):
+	case l.cqueue <- ws_util.Conn(conn):
 	default:
 		conn.Close()
-		l.logger.Warn("connection queue is full")
+		l.logger.Warnf("connection queue is full, client %s discarded", conn.RemoteAddr())
 	}
 }

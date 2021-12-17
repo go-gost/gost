@@ -133,11 +133,10 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 	resp := &http.Response{
 		ProtoMajor: 1,
 		ProtoMinor: 1,
-		Header:     http.Header{},
+		Header:     h.md.header,
 	}
-
-	for k, v := range h.md.headers {
-		resp.Header.Set(k, v)
+	if resp.Header == nil {
+		resp.Header = http.Header{}
 	}
 
 	/*

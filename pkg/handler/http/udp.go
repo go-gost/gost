@@ -21,10 +21,10 @@ func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, network, add
 	resp := &http.Response{
 		ProtoMajor: 1,
 		ProtoMinor: 1,
-		Header:     http.Header{},
+		Header:     h.md.header,
 	}
-	for k, v := range h.md.headers {
-		resp.Header.Set(k, v)
+	if resp.Header == nil {
+		resp.Header = http.Header{}
 	}
 
 	if !h.md.enableUDP {

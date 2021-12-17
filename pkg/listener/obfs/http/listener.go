@@ -57,6 +57,7 @@ func (l *obfsListener) Accept() (net.Conn, error) {
 
 	return &obfsHTTPConn{
 		Conn:   c,
+		header: l.md.header,
 		logger: l.logger,
 	}, nil
 }

@@ -54,6 +54,18 @@ func (l *mtlsListener) Init(md md.Metadata) (err error) {
 	return
 }
 
+func (l *mtlsListener) Accept() (conn net.Conn, err error) {
+	var ok bool
+	select {
+	case conn = <-l.cqueue:
+	case err, ok = <-l.errChan:
+		if !ok {
+			err = listener.ErrClosed
+		}
+	}
+	return
+}
+
 func (l *mtlsListener) listenLoop() {
 	for {
 		conn, err := l.Listener.Accept()
@@ -67,6 +79,8 @@ func (l *mtlsListener) listenLoop() {
 }
 
 func (l *mtlsListener) mux(conn net.Conn) {
+	defer conn.Close()
+
 	smuxConfig := smux.DefaultConfig()
 	smuxConfig.KeepAliveDisabled = l.md.muxKeepAliveDisabled
 	if l.md.muxKeepAliveInterval > 0 {
@@ -94,7 +108,7 @@ func (l *mtlsListener) mux(conn net.Conn) {
 	for {
 		stream, err := session.AcceptStream()
 		if err != nil {
-			l.logger.Error("accept stream:", err)
+			l.logger.Error("accept stream: ", err)
 			return
 		}
 
@@ -107,16 +121,4 @@ func (l *mtlsListener) mux(conn net.Conn) {
 			l.logger.Warnf("connection queue is full, client %s discarded", stream.RemoteAddr())
 		}
 	}
-}
-
-func (l *mtlsListener) Accept() (conn net.Conn, err error) {
-	var ok bool
-	select {
-	case conn = <-l.cqueue:
-	case err, ok = <-l.errChan:
-		if !ok {
-			err = listener.ErrClosed
-		}
-	}
-	return
 }

@@ -2,6 +2,7 @@ package ws
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,35 +11,40 @@ import (
 )
 
 const (
-	defaultPath      = "/ws"
-	defaultQueueSize = 128
+	defaultPath    = "/ws"
+	defaultBacklog = 128
 )
 
 type metadata struct {
-	path              string
-	tlsConfig         *tls.Config
+	path      string
+	backlog   int
+	tlsConfig *tls.Config
+
 	handshakeTimeout  time.Duration
 	readHeaderTimeout time.Duration
 	readBufferSize    int
 	writeBufferSize   int
 	enableCompression bool
-	responseHeader    http.Header
-	connQueueSize     int
+
+	header http.Header
 }
 
 func (l *wsListener) parseMetadata(md md.Metadata) (err error) {
 	const (
-		path              = "path"
-		certFile          = "certFile"
-		keyFile           = "keyFile"
-		caFile            = "caFile"
+		certFile = "certFile"
+		keyFile  = "keyFile"
+		caFile   = "caFile"
+
+		path    = "path"
+		backlog = "backlog"
+
 		handshakeTimeout  = "handshakeTimeout"
 		readHeaderTimeout = "readHeaderTimeout"
 		readBufferSize    = "readBufferSize"
 		writeBufferSize   = "writeBufferSize"
 		enableCompression = "enableCompression"
-		responseHeader    = "responseHeader"
-		connQueueSize     = "connQueueSize"
+
+		header = "header"
 	)
 
 	l.md.tlsConfig, err = tls_util.LoadServerConfig(
@@ -51,15 +57,28 @@ func (l *wsListener) parseMetadata(md md.Metadata) (err error) {
 	}
 
 	l.md.path = md.GetString(path)
-	l.md.connQueueSize = md.GetInt(connQueueSize)
-	if l.md.connQueueSize <= 0 {
-		l.md.connQueueSize = defaultQueueSize
+	if l.md.path == "" {
+		l.md.path = defaultPath
 	}
-	l.md.enableCompression = md.GetBool(enableCompression)
-	l.md.readBufferSize = md.GetInt(readBufferSize)
-	l.md.writeBufferSize = md.GetInt(writeBufferSize)
+
+	l.md.backlog = md.GetInt(backlog)
+	if l.md.backlog <= 0 {
+		l.md.backlog = defaultBacklog
+	}
+
 	l.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
 	l.md.readHeaderTimeout = md.GetDuration(readHeaderTimeout)
+	l.md.readBufferSize = md.GetInt(readBufferSize)
+	l.md.writeBufferSize = md.GetInt(writeBufferSize)
+	l.md.enableCompression = md.GetBool(enableCompression)
+
+	if mm, _ := md.Get(header).(map[interface{}]interface{}); len(mm) > 0 {
+		h := http.Header{}
+		for k, v := range mm {
+			h.Add(fmt.Sprintf("%v", k), fmt.Sprintf("%v", v))
+		}
+		l.md.header = h
+	}
 
 	return
 }

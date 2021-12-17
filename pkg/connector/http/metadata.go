@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -12,14 +13,14 @@ import (
 type metadata struct {
 	connectTimeout time.Duration
 	User           *url.Userinfo
-	headers        map[string]string
+	header         http.Header
 }
 
 func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
 		user           = "user"
-		headers        = "headers"
+		header         = "header"
 	)
 
 	c.md.connectTimeout = md.GetDuration(connectTimeout)
@@ -33,12 +34,12 @@ func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
 		}
 	}
 
-	if mm, _ := md.Get(headers).(map[interface{}]interface{}); len(mm) > 0 {
-		m := make(map[string]string)
+	if mm, _ := md.Get(header).(map[interface{}]interface{}); len(mm) > 0 {
+		h := http.Header{}
 		for k, v := range mm {
-			m[fmt.Sprintf("%v", k)] = fmt.Sprintf("%v", v)
+			h.Add(fmt.Sprintf("%v", k), fmt.Sprintf("%v", v))
 		}
-		c.md.headers = m
+		c.md.header = h
 	}
 
 	return

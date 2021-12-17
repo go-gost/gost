@@ -56,9 +56,9 @@ func (d *obfsHTTPDialer) Handshake(ctx context.Context, conn net.Conn, options .
 	}
 
 	return &obfsHTTPConn{
-		Conn:    conn,
-		host:    host,
-		headers: d.md.headers,
-		logger:  d.logger,
+		Conn:   conn,
+		host:   host,
+		header: d.md.header,
+		logger: d.logger,
 	}, nil
 }

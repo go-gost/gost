@@ -12,7 +12,7 @@ type websocketConn struct {
 	rb []byte
 }
 
-func WebsocketServerConn(conn *websocket.Conn) net.Conn {
+func Conn(conn *websocket.Conn) net.Conn {
 	return &websocketConn{
 		Conn: conn,
 	}

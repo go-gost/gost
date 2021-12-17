@@ -23,7 +23,7 @@ type obfsHTTPConn struct {
 	headerDrained  bool
 	handshaked     bool
 	handshakeMutex sync.Mutex
-	headers        map[string]string
+	header         http.Header
 	logger         logger.Logger
 }
 
@@ -50,15 +50,15 @@ func (c *obfsHTTPConn) handshake() (err error) {
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		URL:        &url.URL{Scheme: "http", Host: c.host},
-		Header:     make(http.Header),
+		Header:     c.header,
+	}
+	if r.Header == nil {
+		r.Header = http.Header{}
 	}
 	r.Header.Set("Connection", "Upgrade")
 	r.Header.Set("Upgrade", "websocket")
 	key, _ := c.generateChallengeKey()
 	r.Header.Set("Sec-WebSocket-Key", key)
-	for k, v := range c.headers {
-		r.Header.Set(k, v)
-	}
 
 	// cache the request header
 	if err = r.Write(&c.wbuf); err != nil {

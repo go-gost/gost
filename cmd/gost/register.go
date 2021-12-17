@@ -24,6 +24,8 @@ import (
 	_ "github.com/go-gost/gost/pkg/dialer/tls"
 	_ "github.com/go-gost/gost/pkg/dialer/tls/mux"
 	_ "github.com/go-gost/gost/pkg/dialer/udp"
+	_ "github.com/go-gost/gost/pkg/dialer/ws"
+	_ "github.com/go-gost/gost/pkg/dialer/ws/mux"
 
 	// Register handlers
 	_ "github.com/go-gost/gost/pkg/handler/auto"

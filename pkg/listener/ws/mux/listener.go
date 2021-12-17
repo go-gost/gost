@@ -4,8 +4,9 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+	"net/http/httputil"
 
-	ws_util "github.com/go-gost/gost/pkg/common/util/ws"
+	ws_util "github.com/go-gost/gost/pkg/internal/util/ws"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -16,18 +17,19 @@ import (
 
 func init() {
 	registry.RegisterListener("mws", NewListener)
-	registry.RegisterListener("mwss", NewListener)
+	registry.RegisterListener("mwss", NewTLSListener)
 }
 
 type mwsListener struct {
-	saddr    string
-	md       metadata
-	addr     net.Addr
-	upgrader *websocket.Upgrader
-	srv      *http.Server
-	connChan chan net.Conn
-	errChan  chan error
-	logger   logger.Logger
+	saddr      string
+	addr       net.Addr
+	upgrader   *websocket.Upgrader
+	srv        *http.Server
+	cqueue     chan net.Conn
+	errChan    chan error
+	logger     logger.Logger
+	md         metadata
+	tlsEnabled bool
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -36,7 +38,20 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(options)
 	}
 	return &mwsListener{
+		saddr:  options.Addr,
 		logger: options.Logger,
+	}
+}
+
+func NewTLSListener(opts ...listener.Option) listener.Listener {
+	options := &listener.Options{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	return &mwsListener{
+		saddr:      options.Addr,
+		logger:     options.Logger,
+		tlsEnabled: true,
 	}
 }
 
@@ -49,8 +64,8 @@ func (l *mwsListener) Init(md md.Metadata) (err error) {
 		HandshakeTimeout:  l.md.handshakeTimeout,
 		ReadBufferSize:    l.md.readBufferSize,
 		WriteBufferSize:   l.md.writeBufferSize,
-		CheckOrigin:       func(r *http.Request) bool { return true },
 		EnableCompression: l.md.enableCompression,
+		CheckOrigin:       func(r *http.Request) bool { return true },
 	}
 
 	path := l.md.path
@@ -61,19 +76,18 @@ func (l *mwsListener) Init(md md.Metadata) (err error) {
 	mux.Handle(path, http.HandlerFunc(l.upgrade))
 	l.srv = &http.Server{
 		Addr:              l.saddr,
-		TLSConfig:         l.md.tlsConfig,
 		Handler:           mux,
 		ReadHeaderTimeout: l.md.readHeaderTimeout,
 	}
 
-	l.connChan = make(chan net.Conn, l.md.connQueueSize)
+	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)
 
 	ln, err := net.Listen("tcp", l.saddr)
 	if err != nil {
 		return
 	}
-	if l.md.tlsConfig != nil {
+	if l.tlsEnabled {
 		ln = tls.NewListener(ln, l.md.tlsConfig)
 	}
 
@@ -93,7 +107,7 @@ func (l *mwsListener) Init(md md.Metadata) (err error) {
 func (l *mwsListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
-	case conn = <-l.connChan:
+	case conn = <-l.cqueue:
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed
@@ -111,20 +125,31 @@ func (l *mwsListener) Addr() net.Addr {
 }
 
 func (l *mwsListener) upgrade(w http.ResponseWriter, r *http.Request) {
-	conn, err := l.upgrader.Upgrade(w, r, l.md.responseHeader)
+	if l.logger.IsLevelEnabled(logger.DebugLevel) {
+		log := l.logger.WithFields(map[string]interface{}{
+			"local":  l.addr.String(),
+			"remote": r.RemoteAddr,
+		})
+		dump, _ := httputil.DumpRequest(r, false)
+		log.Debug(string(dump))
+	}
+
+	conn, err := l.upgrader.Upgrade(w, r, l.md.header)
 	if err != nil {
 		l.logger.Error(err)
 		return
 	}
 
-	l.mux(ws_util.WebsocketServerConn(conn))
+	l.mux(ws_util.Conn(conn))
 }
 
 func (l *mwsListener) mux(conn net.Conn) {
+	defer conn.Close()
+
 	smuxConfig := smux.DefaultConfig()
 	smuxConfig.KeepAliveDisabled = l.md.muxKeepAliveDisabled
-	if l.md.muxKeepAlivePeriod > 0 {
-		smuxConfig.KeepAliveInterval = l.md.muxKeepAlivePeriod
+	if l.md.muxKeepAliveInterval > 0 {
+		smuxConfig.KeepAliveInterval = l.md.muxKeepAliveInterval
 	}
 	if l.md.muxKeepAliveTimeout > 0 {
 		smuxConfig.KeepAliveTimeout = l.md.muxKeepAliveTimeout
@@ -148,17 +173,17 @@ func (l *mwsListener) mux(conn net.Conn) {
 	for {
 		stream, err := session.AcceptStream()
 		if err != nil {
-			l.logger.Error("accept stream:", err)
+			l.logger.Error("accept stream: ", err)
 			return
 		}
 
 		select {
-		case l.connChan <- stream:
+		case l.cqueue <- stream:
 		case <-stream.GetDieCh():
 			stream.Close()
 		default:
 			stream.Close()
-			l.logger.Error("connection queue is full")
+			l.logger.Warnf("connection queue is full, client %s discarded", stream.RemoteAddr())
 		}
 	}
 }

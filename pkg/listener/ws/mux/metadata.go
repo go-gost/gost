@@ -2,6 +2,7 @@ package mux
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,45 +11,48 @@ import (
 )
 
 const (
-	defaultPath      = "/ws"
-	defaultQueueSize = 128
+	defaultPath    = "/ws"
+	defaultBacklog = 128
 )
 
 type metadata struct {
-	path              string
-	tlsConfig         *tls.Config
+	path      string
+	backlog   int
+	tlsConfig *tls.Config
+	header    http.Header
+
 	handshakeTimeout  time.Duration
 	readHeaderTimeout time.Duration
 	readBufferSize    int
 	writeBufferSize   int
 	enableCompression bool
-	responseHeader    http.Header
 
 	muxKeepAliveDisabled bool
-	muxKeepAlivePeriod   time.Duration
+	muxKeepAliveInterval time.Duration
 	muxKeepAliveTimeout  time.Duration
 	muxMaxFrameSize      int
 	muxMaxReceiveBuffer  int
 	muxMaxStreamBuffer   int
-	connQueueSize        int
 }
 
 func (l *mwsListener) parseMetadata(md md.Metadata) (err error) {
 	const (
-		path              = "path"
-		certFile          = "certFile"
-		keyFile           = "keyFile"
-		caFile            = "caFile"
+		path    = "path"
+		backlog = "backlog"
+		header  = "header"
+
+		certFile = "certFile"
+		keyFile  = "keyFile"
+		caFile   = "caFile"
+
 		handshakeTimeout  = "handshakeTimeout"
 		readHeaderTimeout = "readHeaderTimeout"
 		readBufferSize    = "readBufferSize"
 		writeBufferSize   = "writeBufferSize"
 		enableCompression = "enableCompression"
-		responseHeader    = "responseHeader"
-		connQueueSize     = "connQueueSize"
 
 		muxKeepAliveDisabled = "muxKeepAliveDisabled"
-		muxKeepAlivePeriod   = "muxKeepAlivePeriod"
+		muxKeepAliveInterval = "muxKeepAliveInterval"
 		muxKeepAliveTimeout  = "muxKeepAliveTimeout"
 		muxMaxFrameSize      = "muxMaxFrameSize"
 		muxMaxReceiveBuffer  = "muxMaxReceiveBuffer"
@@ -64,5 +68,35 @@ func (l *mwsListener) parseMetadata(md md.Metadata) (err error) {
 		return
 	}
 
+	l.md.path = md.GetString(path)
+	if l.md.path == "" {
+		l.md.path = defaultPath
+	}
+
+	l.md.backlog = md.GetInt(backlog)
+	if l.md.backlog <= 0 {
+		l.md.backlog = defaultBacklog
+	}
+
+	l.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
+	l.md.readHeaderTimeout = md.GetDuration(readHeaderTimeout)
+	l.md.readBufferSize = md.GetInt(readBufferSize)
+	l.md.writeBufferSize = md.GetInt(writeBufferSize)
+	l.md.enableCompression = md.GetBool(enableCompression)
+
+	l.md.muxKeepAliveDisabled = md.GetBool(muxKeepAliveDisabled)
+	l.md.muxKeepAliveInterval = md.GetDuration(muxKeepAliveInterval)
+	l.md.muxKeepAliveTimeout = md.GetDuration(muxKeepAliveTimeout)
+	l.md.muxMaxFrameSize = md.GetInt(muxMaxFrameSize)
+	l.md.muxMaxReceiveBuffer = md.GetInt(muxMaxReceiveBuffer)
+	l.md.muxMaxStreamBuffer = md.GetInt(muxMaxStreamBuffer)
+
+	if mm, _ := md.Get(header).(map[interface{}]interface{}); len(mm) > 0 {
+		h := http.Header{}
+		for k, v := range mm {
+			h.Add(fmt.Sprintf("%v", k), fmt.Sprintf("%v", v))
+		}
+		l.md.header = h
+	}
 	return
 }

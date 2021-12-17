@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/go-gost/gost/pkg/auth"
@@ -14,12 +15,12 @@ type metadata struct {
 	probeResist   *probeResist
 	sni           bool
 	enableUDP     bool
-	headers       map[string]string
+	header        http.Header
 }
 
 func (h *httpHandler) parseMetadata(md md.Metadata) error {
 	const (
-		headers        = "headers"
+		header         = "header"
 		users          = "users"
 		probeResistKey = "probeResist"
 		knock          = "knock"
@@ -43,12 +44,12 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 		h.md.authenticator = authenticator
 	}
 
-	if mm, _ := md.Get(headers).(map[interface{}]interface{}); len(mm) > 0 {
-		m := make(map[string]string)
+	if mm, _ := md.Get(header).(map[interface{}]interface{}); len(mm) > 0 {
+		hd := http.Header{}
 		for k, v := range mm {
-			m[fmt.Sprintf("%v", k)] = fmt.Sprintf("%v", v)
+			hd.Add(fmt.Sprintf("%v", k), fmt.Sprintf("%v", v))
 		}
-		h.md.headers = m
+		h.md.header = hd
 	}
 
 	if v := md.GetString(probeResistKey); v != "" {

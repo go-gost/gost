@@ -50,8 +50,8 @@ func (d *kcpDialer) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-// IsMultiplex implements dialer.Multiplexer interface.
-func (d *kcpDialer) IsMultiplex() bool {
+// Multiplex implements dialer.Multiplexer interface.
+func (d *kcpDialer) Multiplex() bool {
 	return true
 }
 
@@ -103,7 +103,6 @@ func (d *kcpDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 	for _, option := range options {
 		option(opts)
 	}
-	config := d.md.config
 
 	d.sessionMutex.Lock()
 	defer d.sessionMutex.Unlock()
@@ -120,7 +119,7 @@ func (d *kcpDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 	}
 
 	if !ok || session.session == nil {
-		s, err := d.initSession(opts.Addr, conn, config)
+		s, err := d.initSession(ctx, opts.Addr, conn)
 		if err != nil {
 			d.logger.Error(err)
 			conn.Close()
@@ -140,11 +139,13 @@ func (d *kcpDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 	return cc, nil
 }
 
-func (d *kcpDialer) initSession(addr string, conn net.Conn, config *kcp_util.Config) (*muxSession, error) {
+func (d *kcpDialer) initSession(ctx context.Context, addr string, conn net.Conn) (*muxSession, error) {
 	pc, ok := conn.(net.PacketConn)
 	if !ok {
 		return nil, errors.New("kcp: wrong connection type")
 	}
+
+	config := d.md.config
 
 	kcpconn, err := kcp.NewConn(addr,
 		kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt),

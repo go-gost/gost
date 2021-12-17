@@ -46,8 +46,8 @@ func (d *quicDialer) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-// IsMultiplex implements dialer.Multiplexer interface.
-func (d *quicDialer) IsMultiplex() bool {
+// Multiplex implements dialer.Multiplexer interface.
+func (d *quicDialer) Multiplex() bool {
 	return true
 }
 

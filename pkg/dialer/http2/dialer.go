@@ -45,8 +45,8 @@ func (d *http2Dialer) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-// IsMultiplex implements dialer.Multiplexer interface.
-func (d *http2Dialer) IsMultiplex() bool {
+// Multiplex implements dialer.Multiplexer interface.
+func (d *http2Dialer) Multiplex() bool {
 	return true
 }
 

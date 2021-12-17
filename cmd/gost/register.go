@@ -21,6 +21,8 @@ import (
 	_ "github.com/go-gost/gost/pkg/dialer/obfs/tls"
 	_ "github.com/go-gost/gost/pkg/dialer/quic"
 	_ "github.com/go-gost/gost/pkg/dialer/tcp"
+	_ "github.com/go-gost/gost/pkg/dialer/tls"
+	_ "github.com/go-gost/gost/pkg/dialer/tls/mux"
 	_ "github.com/go-gost/gost/pkg/dialer/udp"
 
 	// Register handlers

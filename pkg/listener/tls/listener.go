@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"net"
 
-	"github.com/go-gost/gost/pkg/common/util"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -17,9 +16,9 @@ func init() {
 
 type tlsListener struct {
 	addr string
-	md   metadata
 	net.Listener
 	logger logger.Logger
+	md     metadata
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -43,14 +42,7 @@ func (l *tlsListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	ln = tls.NewListener(
-		&util.TCPKeepAliveListener{
-			TCPListener:     ln.(*net.TCPListener),
-			KeepAlivePeriod: l.md.keepAlivePeriod,
-		},
-		l.md.tlsConfig,
-	)
+	l.Listener = tls.NewListener(ln, l.md.tlsConfig)
 
-	l.Listener = ln
 	return
 }

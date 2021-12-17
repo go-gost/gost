@@ -65,8 +65,8 @@ func (d *h2Dialer) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-// IsMultiplex implements dialer.Multiplexer interface.
-func (d *h2Dialer) IsMultiplex() bool {
+// Multiplex implements dialer.Multiplexer interface.
+func (d *h2Dialer) Multiplex() bool {
 	return true
 }
 

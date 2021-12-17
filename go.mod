@@ -44,7 +44,7 @@ require (
 	github.com/templexxx/xorsimd v0.4.1 // indirect
 	github.com/tjfoc/gmsm v1.3.2 // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.1
-	github.com/xtaci/smux v1.5.15
+	github.com/xtaci/smux v1.5.16
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/mod v0.4.2 // indirect

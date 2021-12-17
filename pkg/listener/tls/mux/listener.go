@@ -17,11 +17,11 @@ func init() {
 
 type mtlsListener struct {
 	addr string
-	md   metadata
 	net.Listener
-	connChan chan net.Conn
-	errChan  chan error
-	logger   logger.Logger
+	cqueue  chan net.Conn
+	errChan chan error
+	logger  logger.Logger
+	md      metadata
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -46,11 +46,7 @@ func (l *mtlsListener) Init(md md.Metadata) (err error) {
 	}
 	l.Listener = tls.NewListener(ln, l.md.tlsConfig)
 
-	queueSize := l.md.connQueueSize
-	if queueSize <= 0 {
-		queueSize = defaultQueueSize
-	}
-	l.connChan = make(chan net.Conn, queueSize)
+	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)
 
 	go l.listenLoop()
@@ -73,8 +69,8 @@ func (l *mtlsListener) listenLoop() {
 func (l *mtlsListener) mux(conn net.Conn) {
 	smuxConfig := smux.DefaultConfig()
 	smuxConfig.KeepAliveDisabled = l.md.muxKeepAliveDisabled
-	if l.md.muxKeepAlivePeriod > 0 {
-		smuxConfig.KeepAliveInterval = l.md.muxKeepAlivePeriod
+	if l.md.muxKeepAliveInterval > 0 {
+		smuxConfig.KeepAliveInterval = l.md.muxKeepAliveInterval
 	}
 	if l.md.muxKeepAliveTimeout > 0 {
 		smuxConfig.KeepAliveTimeout = l.md.muxKeepAliveTimeout
@@ -103,12 +99,12 @@ func (l *mtlsListener) mux(conn net.Conn) {
 		}
 
 		select {
-		case l.connChan <- stream:
+		case l.cqueue <- stream:
 		case <-stream.GetDieCh():
 			stream.Close()
 		default:
 			stream.Close()
-			l.logger.Error("connection queue is full")
+			l.logger.Warnf("connection queue is full, client %s discarded", stream.RemoteAddr())
 		}
 	}
 }
@@ -116,7 +112,7 @@ func (l *mtlsListener) mux(conn net.Conn) {
 func (l *mtlsListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
-	case conn = <-l.connChan:
+	case conn = <-l.cqueue:
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

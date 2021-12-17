@@ -2,23 +2,20 @@ package tls
 
 import (
 	"crypto/tls"
-	"time"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	md "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
-	tlsConfig       *tls.Config
-	keepAlivePeriod time.Duration
+	tlsConfig *tls.Config
 }
 
 func (l *tlsListener) parseMetadata(md md.Metadata) (err error) {
 	const (
-		certFile        = "certFile"
-		keyFile         = "keyFile"
-		caFile          = "caFile"
-		keepAlivePeriod = "keepAlivePeriod"
+		certFile = "certFile"
+		keyFile  = "keyFile"
+		caFile   = "caFile"
 	)
 
 	l.md.tlsConfig, err = tls_util.LoadServerConfig(
@@ -30,6 +27,5 @@ func (l *tlsListener) parseMetadata(md md.Metadata) (err error) {
 		return
 	}
 
-	l.md.keepAlivePeriod = md.GetDuration(keepAlivePeriod)
 	return
 }

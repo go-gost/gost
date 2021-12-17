@@ -75,9 +75,9 @@ func (tr *Transport) Bind(ctx context.Context, conn net.Conn, network, address s
 	return nil, connector.ErrBindUnsupported
 }
 
-func (tr *Transport) IsMultiplex() bool {
+func (tr *Transport) Multiplex() bool {
 	if mux, ok := tr.dialer.(dialer.Multiplexer); ok {
-		return mux.IsMultiplex()
+		return mux.Multiplex()
 	}
 	return false
 }

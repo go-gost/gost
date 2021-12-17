@@ -18,5 +18,5 @@ type Handshaker interface {
 }
 
 type Multiplexer interface {
-	IsMultiplex() bool
+	Multiplex() bool
 }

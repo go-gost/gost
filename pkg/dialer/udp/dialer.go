@@ -48,7 +48,3 @@ func (d *udpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 		UDPConn: c,
 	}, nil
 }
-
-func (d *udpDialer) parseMetadata(md md.Metadata) (err error) {
-	return
-}

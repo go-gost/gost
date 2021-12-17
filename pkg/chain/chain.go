@@ -31,7 +31,7 @@ func (c *Chain) GetRouteFor(network, address string) (r *Route) {
 			break
 		}
 
-		if node.transport.IsMultiplex() {
+		if node.transport.Multiplex() {
 			tr := node.transport.Copy().
 				WithRoute(r)
 			node = node.Copy().

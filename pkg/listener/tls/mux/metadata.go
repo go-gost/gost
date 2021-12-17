@@ -9,20 +9,20 @@ import (
 )
 
 const (
-	defaultQueueSize = 128
+	defaultBacklog = 128
 )
 
 type metadata struct {
 	tlsConfig *tls.Config
 
 	muxKeepAliveDisabled bool
-	muxKeepAlivePeriod   time.Duration
+	muxKeepAliveInterval time.Duration
 	muxKeepAliveTimeout  time.Duration
 	muxMaxFrameSize      int
 	muxMaxReceiveBuffer  int
 	muxMaxStreamBuffer   int
 
-	connQueueSize int
+	backlog int
 }
 
 func (l *mtlsListener) parseMetadata(md md.Metadata) (err error) {
@@ -31,8 +31,10 @@ func (l *mtlsListener) parseMetadata(md md.Metadata) (err error) {
 		keyFile  = "keyFile"
 		caFile   = "caFile"
 
+		backlog = "backlog"
+
 		muxKeepAliveDisabled = "muxKeepAliveDisabled"
-		muxKeepAlivePeriod   = "muxKeepAlivePeriod"
+		muxKeepAliveInterval = "muxKeepAliveInterval"
 		muxKeepAliveTimeout  = "muxKeepAliveTimeout"
 		muxMaxFrameSize      = "muxMaxFrameSize"
 		muxMaxReceiveBuffer  = "muxMaxReceiveBuffer"
@@ -47,6 +49,18 @@ func (l *mtlsListener) parseMetadata(md md.Metadata) (err error) {
 	if err != nil {
 		return
 	}
+
+	l.md.backlog = md.GetInt(backlog)
+	if l.md.backlog <= 0 {
+		l.md.backlog = defaultBacklog
+	}
+
+	l.md.muxKeepAliveDisabled = md.GetBool(muxKeepAliveDisabled)
+	l.md.muxKeepAliveInterval = md.GetDuration(muxKeepAliveInterval)
+	l.md.muxKeepAliveTimeout = md.GetDuration(muxKeepAliveTimeout)
+	l.md.muxMaxFrameSize = md.GetInt(muxMaxFrameSize)
+	l.md.muxMaxReceiveBuffer = md.GetInt(muxMaxReceiveBuffer)
+	l.md.muxMaxStreamBuffer = md.GetInt(muxMaxStreamBuffer)
 
 	return
 }

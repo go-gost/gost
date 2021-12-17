@@ -16,6 +16,7 @@ import (
 
 func init() {
 	registry.RegisterHandler("red", NewHandler)
+	registry.RegisterHandler("redu", NewHandler)
 	registry.RegisterHandler("redir", NewHandler)
 	registry.RegisterHandler("redirect", NewHandler)
 }
@@ -49,6 +50,8 @@ func (h *redirectHandler) WithChain(chain *chain.Chain) {
 }
 
 func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
+	defer conn.Close()
+
 	start := time.Now()
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
@@ -78,7 +81,6 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 			return
 		}
 	}
-	defer conn.Close()
 
 	h.logger = h.logger.WithFields(map[string]interface{}{
 		"dst": fmt.Sprintf("%s/%s", dstAddr, network),

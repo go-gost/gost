@@ -49,6 +49,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/listener/obfs/http"
 	_ "github.com/go-gost/gost/pkg/listener/obfs/tls"
 	_ "github.com/go-gost/gost/pkg/listener/quic"
+	_ "github.com/go-gost/gost/pkg/listener/redirect/udp"
 	_ "github.com/go-gost/gost/pkg/listener/rtcp"
 	_ "github.com/go-gost/gost/pkg/listener/rudp"
 	_ "github.com/go-gost/gost/pkg/listener/tcp"

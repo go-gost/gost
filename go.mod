@@ -3,6 +3,7 @@ module github.com/go-gost/gost
 go 1.17
 
 require (
+	github.com/LiamHaworth/go-tproxy v0.0.0-20190726054950-ef7efd7f24ed
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/cheekybits/genny v1.0.0 // indirect

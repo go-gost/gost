@@ -10,6 +10,6 @@ import (
 func (h *redirectHandler) getOriginalDstAddr(conn net.Conn) (addr net.Addr, c net.Conn, err error) {
 	defer conn.Close()
 
-	err = errors.New("TCP redirect is not available on Windows platform")
+	err = errors.New("TCP redirect is not available on non-linux platform")
 	return
 }

@@ -3,6 +3,7 @@ package main
 import (
 	// Register connectors
 	_ "github.com/go-gost/gost/pkg/connector/forward"
+	_ "github.com/go-gost/gost/pkg/connector/forward/ssh"
 	_ "github.com/go-gost/gost/pkg/connector/http"
 	_ "github.com/go-gost/gost/pkg/connector/http2"
 	_ "github.com/go-gost/gost/pkg/connector/relay"
@@ -13,6 +14,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/connector/ss/udp"
 
 	// Register dialers
+	_ "github.com/go-gost/gost/pkg/dialer/forward/ssh"
 	_ "github.com/go-gost/gost/pkg/dialer/ftcp"
 	_ "github.com/go-gost/gost/pkg/dialer/http2"
 	_ "github.com/go-gost/gost/pkg/dialer/http2/h2"
@@ -31,6 +33,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/handler/auto"
 	_ "github.com/go-gost/gost/pkg/handler/forward/local"
 	_ "github.com/go-gost/gost/pkg/handler/forward/remote"
+	_ "github.com/go-gost/gost/pkg/handler/forward/ssh"
 	_ "github.com/go-gost/gost/pkg/handler/http"
 	_ "github.com/go-gost/gost/pkg/handler/http2"
 	_ "github.com/go-gost/gost/pkg/handler/redirect"

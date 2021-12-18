@@ -1,4 +1,4 @@
-package forward
+package remote
 
 import (
 	"time"

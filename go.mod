@@ -25,6 +25,7 @@ require (
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/marten-seemann/qtls-go1-16 v0.1.4 // indirect
 	github.com/marten-seemann/qtls-go1-17 v0.1.0 // indirect
+	github.com/milosgajdos/tenus v0.0.3
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/mmcloughlin/avo v0.0.0-20200803215136-443f81d77104 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
@@ -35,6 +36,7 @@ require (
 	github.com/shadowsocks/go-shadowsocks2 v0.1.4
 	github.com/shadowsocks/shadowsocks-go v0.0.0-20200409064450-3e585ff90601
 	github.com/sirupsen/logrus v1.8.1
+	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -58,3 +60,5 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+require github.com/docker/libcontainer v2.2.1+incompatible // indirect

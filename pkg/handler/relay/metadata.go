@@ -27,20 +27,19 @@ func (h *relayHandler) parseMetadata(md md.Metadata) (err error) {
 		noDelay       = "nodelay"
 	)
 
-	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
+	if auths := md.GetStrings(users); len(auths) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
-		for _, auth := range v {
-			if s, _ := auth.(string); s != "" {
-				ss := strings.SplitN(s, ":", 2)
-				if len(ss) == 1 {
-					authenticator.Add(ss[0], "")
-				} else {
-					authenticator.Add(ss[0], ss[1])
-				}
+		for _, auth := range auths {
+			ss := strings.SplitN(auth, ":", 2)
+			if len(ss) == 1 {
+				authenticator.Add(ss[0], "")
+			} else {
+				authenticator.Add(ss[0], ss[1])
 			}
 		}
 		h.md.authenticator = authenticator
 	}
+
 	h.md.readTimeout = md.GetDuration(readTimeout)
 	h.md.retryCount = md.GetInt(retryCount)
 	h.md.enableBind = md.GetBool(enableBind)

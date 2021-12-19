@@ -60,6 +60,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/listener/tcp"
 	_ "github.com/go-gost/gost/pkg/listener/tls"
 	_ "github.com/go-gost/gost/pkg/listener/tls/mux"
+	_ "github.com/go-gost/gost/pkg/listener/tun"
 	_ "github.com/go-gost/gost/pkg/listener/udp"
 	_ "github.com/go-gost/gost/pkg/listener/ws"
 	_ "github.com/go-gost/gost/pkg/listener/ws/mux"

@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -12,8 +13,9 @@ type Metadata interface {
 	GetBool(key string) bool
 	GetInt(key string) int
 	GetFloat(key string) float64
-	GetString(key string) string
 	GetDuration(key string) time.Duration
+	GetString(key string) string
+	GetStrings(key string) []string
 }
 
 type MapMetadata map[string]interface{}
@@ -76,13 +78,6 @@ func (m MapMetadata) GetFloat(key string) (v float64) {
 	return
 }
 
-func (m MapMetadata) GetString(key string) (v string) {
-	if m != nil {
-		v, _ = m[key].(string)
-	}
-	return
-}
-
 func (m MapMetadata) GetDuration(key string) (v time.Duration) {
 	if m != nil {
 		switch vv := m[key].(type) {
@@ -90,6 +85,34 @@ func (m MapMetadata) GetDuration(key string) (v time.Duration) {
 			return time.Duration(vv) * time.Second
 		case string:
 			v, _ = time.ParseDuration(vv)
+		}
+	}
+	return
+}
+
+func (m MapMetadata) GetString(key string) (v string) {
+	if m != nil {
+		v, _ = m[key].(string)
+	}
+	return
+}
+
+func (m MapMetadata) GetStrings(key string) (ss []string) {
+	if v, _ := m.Get(key).([]interface{}); len(v) > 0 {
+		for _, vv := range v {
+			if s, ok := vv.(string); ok {
+				ss = append(ss, s)
+			}
+		}
+	}
+	return
+}
+
+func GetStringMapString(md Metadata, key string) (m map[string]string) {
+	if mm, _ := md.Get(key).(map[interface{}]interface{}); len(mm) > 0 {
+		m = make(map[string]string)
+		for k, v := range mm {
+			m[fmt.Sprintf("%v", k)] = fmt.Sprintf("%v", v)
 		}
 	}
 	return

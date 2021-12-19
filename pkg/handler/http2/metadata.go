@@ -29,16 +29,14 @@ func (h *http2Handler) parseMetadata(md md.Metadata) error {
 
 	h.md.proxyAgent = md.GetString(proxyAgent)
 
-	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
+	if auths := md.GetStrings(users); len(auths) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
-		for _, auth := range v {
-			if s, _ := auth.(string); s != "" {
-				ss := strings.SplitN(s, ":", 2)
-				if len(ss) == 1 {
-					authenticator.Add(ss[0], "")
-				} else {
-					authenticator.Add(ss[0], ss[1])
-				}
+		for _, auth := range auths {
+			ss := strings.SplitN(auth, ":", 2)
+			if len(ss) == 1 {
+				authenticator.Add(ss[0], "")
+			} else {
+				authenticator.Add(ss[0], ss[1])
 			}
 		}
 		h.md.authenticator = authenticator

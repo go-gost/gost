@@ -2,12 +2,11 @@ package mux
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"time"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -35,7 +34,7 @@ type metadata struct {
 	muxMaxStreamBuffer   int
 }
 
-func (l *mwsListener) parseMetadata(md md.Metadata) (err error) {
+func (l *mwsListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		path    = "path"
 		backlog = "backlog"
@@ -91,12 +90,12 @@ func (l *mwsListener) parseMetadata(md md.Metadata) (err error) {
 	l.md.muxMaxReceiveBuffer = md.GetInt(muxMaxReceiveBuffer)
 	l.md.muxMaxStreamBuffer = md.GetInt(muxMaxStreamBuffer)
 
-	if mm, _ := md.Get(header).(map[interface{}]interface{}); len(mm) > 0 {
-		h := http.Header{}
+	if mm := mdata.GetStringMapString(md, header); len(mm) > 0 {
+		hd := http.Header{}
 		for k, v := range mm {
-			h.Add(fmt.Sprintf("%v", k), fmt.Sprintf("%v", v))
+			hd.Add(k, v)
 		}
-		l.md.header = h
+		l.md.header = hd
 	}
 	return
 }

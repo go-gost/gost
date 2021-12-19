@@ -1,12 +1,11 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/go-gost/gost/pkg/auth"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -18,7 +17,7 @@ type metadata struct {
 	header        http.Header
 }
 
-func (h *httpHandler) parseMetadata(md md.Metadata) error {
+func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 	const (
 		header         = "header"
 		users          = "users"
@@ -29,25 +28,23 @@ func (h *httpHandler) parseMetadata(md md.Metadata) error {
 		enableUDP      = "udp"
 	)
 
-	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
+	if auths := md.GetStrings(users); len(auths) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
-		for _, auth := range v {
-			if s, _ := auth.(string); s != "" {
-				ss := strings.SplitN(s, ":", 2)
-				if len(ss) == 1 {
-					authenticator.Add(ss[0], "")
-				} else {
-					authenticator.Add(ss[0], ss[1])
-				}
+		for _, auth := range auths {
+			ss := strings.SplitN(auth, ":", 2)
+			if len(ss) == 1 {
+				authenticator.Add(ss[0], "")
+			} else {
+				authenticator.Add(ss[0], ss[1])
 			}
 		}
 		h.md.authenticator = authenticator
 	}
 
-	if mm, _ := md.Get(header).(map[interface{}]interface{}); len(mm) > 0 {
+	if mm := mdata.GetStringMapString(md, header); len(mm) > 0 {
 		hd := http.Header{}
 		for k, v := range mm {
-			hd.Add(fmt.Sprintf("%v", k), fmt.Sprintf("%v", v))
+			hd.Add(k, v)
 		}
 		h.md.header = hd
 	}

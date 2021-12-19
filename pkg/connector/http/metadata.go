@@ -1,13 +1,12 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -16,7 +15,7 @@ type metadata struct {
 	header         http.Header
 }
 
-func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
+func (c *httpConnector) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
 		user           = "user"
@@ -34,12 +33,12 @@ func (c *httpConnector) parseMetadata(md md.Metadata) (err error) {
 		}
 	}
 
-	if mm, _ := md.Get(header).(map[interface{}]interface{}); len(mm) > 0 {
-		h := http.Header{}
+	if mm := mdata.GetStringMapString(md, header); len(mm) > 0 {
+		hd := http.Header{}
 		for k, v := range mm {
-			h.Add(fmt.Sprintf("%v", k), fmt.Sprintf("%v", v))
+			hd.Add(k, v)
 		}
-		c.md.header = h
+		c.md.header = hd
 	}
 
 	return

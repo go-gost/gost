@@ -16,10 +16,10 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("sshd", NewDialer)
+	registry.RegisterDialer("ssh", NewDialer)
 }
 
-type forwardDialer struct {
+type sshDialer struct {
 	sessions     map[string]*sshSession
 	sessionMutex sync.Mutex
 	logger       logger.Logger
@@ -32,13 +32,13 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 		opt(options)
 	}
 
-	return &forwardDialer{
+	return &sshDialer{
 		sessions: make(map[string]*sshSession),
 		logger:   options.Logger,
 	}
 }
 
-func (d *forwardDialer) Init(md md.Metadata) (err error) {
+func (d *sshDialer) Init(md md.Metadata) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}
@@ -47,11 +47,11 @@ func (d *forwardDialer) Init(md md.Metadata) (err error) {
 }
 
 // Multiplex implements dialer.Multiplexer interface.
-func (d *forwardDialer) Multiplex() bool {
+func (d *sshDialer) Multiplex() bool {
 	return true
 }
 
-func (d *forwardDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (conn net.Conn, err error) {
+func (d *sshDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (conn net.Conn, err error) {
 	var options dialer.DialOptions
 	for _, opt := range opts {
 		opt(&options)
@@ -82,7 +82,7 @@ func (d *forwardDialer) Dial(ctx context.Context, addr string, opts ...dialer.Di
 }
 
 // Handshake implements dialer.Handshaker
-func (d *forwardDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
+func (d *sshDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	opts := &dialer.HandshakeOptions{}
 	for _, option := range options {
 		option(opts)
@@ -125,10 +125,16 @@ func (d *forwardDialer) Handshake(ctx context.Context, conn net.Conn, options ..
 		return nil, ssh_util.ErrSessionDead
 	}
 
-	return ssh_util.NewClientConn(session.conn, session.client), nil
+	channel, reqs, err := session.client.OpenChannel(ssh_util.GostSSHTunnelRequest, nil)
+	if err != nil {
+		return nil, err
+	}
+	go ssh.DiscardRequests(reqs)
+
+	return ssh_util.NewConn(conn, channel), nil
 }
 
-func (d *forwardDialer) dial(ctx context.Context, network, addr string, opts *dialer.DialOptions) (net.Conn, error) {
+func (d *sshDialer) dial(ctx context.Context, network, addr string, opts *dialer.DialOptions) (net.Conn, error) {
 	dial := opts.DialFunc
 	if dial != nil {
 		conn, err := dial(ctx, addr)
@@ -156,7 +162,7 @@ func (d *forwardDialer) dial(ctx context.Context, network, addr string, opts *di
 	return conn, err
 }
 
-func (d *forwardDialer) initSession(ctx context.Context, addr string, conn net.Conn) (*sshSession, error) {
+func (d *sshDialer) initSession(ctx context.Context, addr string, conn net.Conn) (*sshSession, error) {
 	config := ssh.ClientConfig{
 		// Timeout:         timeout,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),

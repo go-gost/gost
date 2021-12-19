@@ -3,7 +3,6 @@ package tcp
 import (
 	"net"
 
-	util "github.com/go-gost/gost/pkg/common/util"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -43,14 +42,6 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 	}
 	ln, err := net.ListenTCP("tcp", laddr)
 	if err != nil {
-		return
-	}
-
-	if l.md.keepAlive {
-		l.Listener = &util.TCPKeepAliveListener{
-			TCPListener:     ln,
-			KeepAlivePeriod: l.md.keepAlivePeriod,
-		}
 		return
 	}
 

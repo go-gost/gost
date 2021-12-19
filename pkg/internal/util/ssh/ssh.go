@@ -1,10 +1,20 @@
 package ssh
 
 import (
+	"errors"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/go-gost/gost/pkg/auth"
 	"golang.org/x/crypto/ssh"
+)
+
+const (
+	GostSSHTunnelRequest = "gost-tunnel" // extended request type for ssh tunnel
+)
+
+var (
+	ErrSessionDead = errors.New("session is dead")
 )
 
 // PasswordCallbackFunc is a callback function used by SSH server.
@@ -43,4 +53,23 @@ func PublicKeyCallback(keys map[string]bool) PublicKeyCallbackFunc {
 		}
 		return nil, fmt.Errorf("unknown public key for %q", c.User())
 	}
+}
+
+// ParseSSHAuthorizedKeysFile parses ssh authorized keys file.
+func ParseAuthorizedKeysFile(name string) (map[string]bool, error) {
+	authorizedKeysBytes, err := ioutil.ReadFile(name)
+	if err != nil {
+		return nil, err
+	}
+	authorizedKeysMap := make(map[string]bool)
+	for len(authorizedKeysBytes) > 0 {
+		pubKey, _, _, rest, err := ssh.ParseAuthorizedKey(authorizedKeysBytes)
+		if err != nil {
+			return nil, err
+		}
+		authorizedKeysMap[string(pubKey.Marshal())] = true
+		authorizedKeysBytes = rest
+	}
+
+	return authorizedKeysMap, nil
 }

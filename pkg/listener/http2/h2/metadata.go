@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -17,7 +17,7 @@ type metadata struct {
 	backlog   int
 }
 
-func (l *h2Listener) parseMetadata(md md.Metadata) (err error) {
+func (l *h2Listener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		path     = "path"
 		certFile = "certFile"
@@ -27,19 +27,19 @@ func (l *h2Listener) parseMetadata(md md.Metadata) (err error) {
 	)
 
 	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
+		mdata.GetString(md, certFile),
+		mdata.GetString(md, keyFile),
+		mdata.GetString(md, caFile),
 	)
 	if err != nil {
 		return
 	}
 
-	l.md.backlog = md.GetInt(backlog)
+	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}
 
-	l.md.path = md.GetString(path)
+	l.md.path = mdata.GetString(md, path)
 	return
 }

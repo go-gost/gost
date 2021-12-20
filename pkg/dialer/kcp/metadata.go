@@ -5,7 +5,7 @@ import (
 	"time"
 
 	kcp_util "github.com/go-gost/gost/pkg/common/util/kcp"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -13,19 +13,13 @@ type metadata struct {
 	config           *kcp_util.Config
 }
 
-func (d *kcpDialer) parseMetadata(md md.Metadata) (err error) {
+func (d *kcpDialer) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		config           = "config"
 		handshakeTimeout = "handshakeTimeout"
 	)
 
-	if mm, _ := md.Get(config).(map[interface{}]interface{}); len(mm) > 0 {
-		m := make(map[string]interface{})
-		for k, v := range mm {
-			if sk, ok := k.(string); ok {
-				m[sk] = v
-			}
-		}
+	if m := mdata.GetStringMap(md, config); len(m) > 0 {
 		b, err := json.Marshal(m)
 		if err != nil {
 			return err
@@ -36,11 +30,10 @@ func (d *kcpDialer) parseMetadata(md md.Metadata) (err error) {
 		}
 		d.md.config = cfg
 	}
-
 	if d.md.config == nil {
 		d.md.config = kcp_util.DefaultConfig
 	}
 
-	d.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
+	d.md.handshakeTimeout = mdata.GetDuration(md, handshakeTimeout)
 	return
 }

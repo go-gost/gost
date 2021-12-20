@@ -3,17 +3,12 @@ package tun
 import (
 	"net"
 
+	tun_util "github.com/go-gost/gost/pkg/internal/util/tun"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 )
-
-// ipRoute is an IP routing entry
-type ipRoute struct {
-	Dest    net.IPNet
-	Gateway net.IP
-}
 
 func init() {
 	registry.RegisterListener("tun", NewListener)
@@ -44,18 +39,32 @@ func (l *tunListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	conn, ifce, err := l.createTun()
+	l.addr, err = net.ResolveUDPAddr("udp", l.saddr)
 	if err != nil {
 		return
 	}
 
-	addrs, _ := ifce.Addrs()
-	l.logger.Infof("name: %s, net: %s, mtu: %d, addrs: %s",
-		ifce.Name, conn.LocalAddr(), ifce.MTU, addrs)
+	ifce, ip, err := l.createTun()
+	if err != nil {
+		if ifce != nil {
+			ifce.Close()
+		}
+		return
+	}
 
-	l.addr = conn.LocalAddr()
+	itf, err := net.InterfaceByName(ifce.Name())
+	if err != nil {
+		return
+	}
+
+	addrs, _ := itf.Addrs()
+	l.logger.Infof("name: %s, net: %s, mtu: %d, addrs: %s",
+		itf.Name, ip, itf.MTU, addrs)
+
 	l.cqueue = make(chan net.Conn, 1)
 	l.closed = make(chan struct{})
+
+	conn := tun_util.NewConn(l.md.config, ifce, l.addr, &net.IPAddr{IP: ip})
 
 	l.cqueue <- conn
 

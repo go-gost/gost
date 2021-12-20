@@ -3,7 +3,7 @@ package sni
 import (
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -11,13 +11,13 @@ type metadata struct {
 	retryCount  int
 }
 
-func (h *sniHandler) parseMetadata(md md.Metadata) (err error) {
+func (h *sniHandler) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		readTimeout = "readTimeout"
 		retryCount  = "retry"
 	)
 
-	h.md.readTimeout = md.GetDuration(readTimeout)
-	h.md.retryCount = md.GetInt(retryCount)
+	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
+	h.md.retryCount = mdata.GetInt(md, retryCount)
 	return
 }

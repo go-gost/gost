@@ -10,12 +10,6 @@ type Metadata interface {
 	IsExists(key string) bool
 	Set(key string, value interface{})
 	Get(key string) interface{}
-	GetBool(key string) bool
-	GetInt(key string) int
-	GetFloat(key string) float64
-	GetDuration(key string) time.Duration
-	GetString(key string) string
-	GetStrings(key string) []string
 }
 
 type MapMetadata map[string]interface{}
@@ -36,11 +30,11 @@ func (m MapMetadata) Get(key string) interface{} {
 	return nil
 }
 
-func (m MapMetadata) GetBool(key string) (v bool) {
-	if m == nil || !m.IsExists(key) {
+func GetBool(md Metadata, key string) (v bool) {
+	if md == nil || !md.IsExists(key) {
 		return
 	}
-	switch vv := m[key].(type) {
+	switch vv := md.Get(key).(type) {
 	case bool:
 		return vv
 	case int:
@@ -52,8 +46,12 @@ func (m MapMetadata) GetBool(key string) (v bool) {
 	return
 }
 
-func (m MapMetadata) GetInt(key string) (v int) {
-	switch vv := m[key].(type) {
+func GetInt(md Metadata, key string) (v int) {
+	if md == nil {
+		return
+	}
+
+	switch vv := md.Get(key).(type) {
 	case bool:
 		if vv {
 			v = 1
@@ -67,8 +65,12 @@ func (m MapMetadata) GetInt(key string) (v int) {
 	return
 }
 
-func (m MapMetadata) GetFloat(key string) (v float64) {
-	switch vv := m[key].(type) {
+func GetFloat(md Metadata, key string) (v float64) {
+	if md == nil {
+		return
+	}
+
+	switch vv := md.Get(key).(type) {
 	case int:
 		return float64(vv)
 	case string:
@@ -78,27 +80,28 @@ func (m MapMetadata) GetFloat(key string) (v float64) {
 	return
 }
 
-func (m MapMetadata) GetDuration(key string) (v time.Duration) {
-	if m != nil {
-		switch vv := m[key].(type) {
-		case int:
-			return time.Duration(vv) * time.Second
-		case string:
-			v, _ = time.ParseDuration(vv)
-		}
+func GetDuration(md Metadata, key string) (v time.Duration) {
+	if md == nil {
+		return
+	}
+	switch vv := md.Get(key).(type) {
+	case int:
+		return time.Duration(vv) * time.Second
+	case string:
+		v, _ = time.ParseDuration(vv)
 	}
 	return
 }
 
-func (m MapMetadata) GetString(key string) (v string) {
-	if m != nil {
-		v, _ = m[key].(string)
+func GetString(md Metadata, key string) (v string) {
+	if md != nil {
+		v, _ = md.Get(key).(string)
 	}
 	return
 }
 
-func (m MapMetadata) GetStrings(key string) (ss []string) {
-	if v, _ := m.Get(key).([]interface{}); len(v) > 0 {
+func GetStrings(md Metadata, key string) (ss []string) {
+	if v, _ := md.Get(key).([]interface{}); len(v) > 0 {
 		for _, vv := range v {
 			if s, ok := vv.(string); ok {
 				ss = append(ss, s)
@@ -108,10 +111,29 @@ func (m MapMetadata) GetStrings(key string) (ss []string) {
 	return
 }
 
+func GetStringMap(md Metadata, key string) (m map[string]interface{}) {
+	switch vv := md.Get(key).(type) {
+	case map[string]interface{}:
+		return vv
+	case map[interface{}]interface{}:
+		m = make(map[string]interface{})
+		for k, v := range vv {
+			m[fmt.Sprintf("%v", k)] = v
+		}
+	}
+	return
+}
+
 func GetStringMapString(md Metadata, key string) (m map[string]string) {
-	if mm, _ := md.Get(key).(map[interface{}]interface{}); len(mm) > 0 {
+	switch vv := md.Get(key).(type) {
+	case map[string]interface{}:
 		m = make(map[string]string)
-		for k, v := range mm {
+		for k, v := range vv {
+			m[k] = fmt.Sprintf("%v", v)
+		}
+	case map[interface{}]interface{}:
+		m = make(map[string]string)
+		for k, v := range vv {
 			m[fmt.Sprintf("%v", k)] = fmt.Sprintf("%v", v)
 		}
 	}

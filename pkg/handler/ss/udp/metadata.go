@@ -1,11 +1,12 @@
 package ss
 
 import (
+	"math"
 	"strings"
 	"time"
 
 	"github.com/go-gost/gost/pkg/common/util/ss"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
@@ -16,7 +17,7 @@ type metadata struct {
 	bufferSize  int
 }
 
-func (h *ssuHandler) parseMetadata(md md.Metadata) (err error) {
+func (h *ssuHandler) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		users       = "users"
 		key         = "key"
@@ -26,36 +27,27 @@ func (h *ssuHandler) parseMetadata(md md.Metadata) (err error) {
 	)
 
 	var method, password string
-	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
-		for _, auth := range v {
-			if s, _ := auth.(string); s != "" {
-				ss := strings.SplitN(s, ":", 2)
-				if len(ss) == 1 {
-					method = ss[0]
-				} else {
-					method, password = ss[0], ss[1]
-				}
-			}
+	if auths := mdata.GetStrings(md, users); len(auths) > 0 {
+		auth := auths[0]
+		ss := strings.SplitN(auth, ":", 2)
+		if len(ss) == 1 {
+			method = ss[0]
+		} else {
+			method, password = ss[0], ss[1]
 		}
 	}
-	h.md.cipher, err = ss.ShadowCipher(method, password, md.GetString(key))
+	h.md.cipher, err = ss.ShadowCipher(method, password, mdata.GetString(md, key))
 	if err != nil {
 		return
 	}
 
-	h.md.readTimeout = md.GetDuration(readTimeout)
-	h.md.retryCount = md.GetInt(retryCount)
+	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
+	h.md.retryCount = mdata.GetInt(md, retryCount)
 
-	h.md.bufferSize = md.GetInt(bufferSize)
-	if h.md.bufferSize > 0 {
-		if h.md.bufferSize < 512 {
-			h.md.bufferSize = 512 // min buffer size
-		}
-		if h.md.bufferSize > 65*1024 {
-			h.md.bufferSize = 65 * 1024 // max buffer size
-		}
+	if bs := mdata.GetInt(md, bufferSize); bs > 0 {
+		h.md.bufferSize = int(math.Min(math.Max(float64(bs), 512), 64*1024))
 	} else {
-		h.md.bufferSize = 1024 // default buffer size
+		h.md.bufferSize = 1024
 	}
 	return
 }

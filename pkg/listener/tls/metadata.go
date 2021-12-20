@@ -4,14 +4,14 @@ import (
 	"crypto/tls"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
 	tlsConfig *tls.Config
 }
 
-func (l *tlsListener) parseMetadata(md md.Metadata) (err error) {
+func (l *tlsListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		certFile = "certFile"
 		keyFile  = "keyFile"
@@ -19,9 +19,9 @@ func (l *tlsListener) parseMetadata(md md.Metadata) (err error) {
 	)
 
 	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
+		mdata.GetString(md, certFile),
+		mdata.GetString(md, keyFile),
+		mdata.GetString(md, caFile),
 	)
 	if err != nil {
 		return

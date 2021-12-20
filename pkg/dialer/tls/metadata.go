@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -14,7 +14,7 @@ type metadata struct {
 	handshakeTimeout time.Duration
 }
 
-func (d *tlsDialer) parseMetadata(md md.Metadata) (err error) {
+func (d *tlsDialer) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		certFile   = "certFile"
 		keyFile    = "keyFile"
@@ -25,19 +25,19 @@ func (d *tlsDialer) parseMetadata(md md.Metadata) (err error) {
 		handshakeTimeout = "handshakeTimeout"
 	)
 
-	sn, _, _ := net.SplitHostPort(md.GetString(serverName))
+	sn, _, _ := net.SplitHostPort(mdata.GetString(md, serverName))
 	if sn == "" {
 		sn = "localhost"
 	}
 	d.md.tlsConfig, err = tls_util.LoadClientConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-		md.GetBool(secure),
+		mdata.GetString(md, certFile),
+		mdata.GetString(md, keyFile),
+		mdata.GetString(md, caFile),
+		mdata.GetBool(md, secure),
 		sn,
 	)
 
-	d.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
+	d.md.handshakeTimeout = mdata.GetDuration(md, handshakeTimeout)
 
 	return
 }

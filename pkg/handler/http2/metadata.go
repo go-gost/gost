@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/go-gost/gost/pkg/auth"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -16,7 +16,7 @@ type metadata struct {
 	enableUDP     bool
 }
 
-func (h *http2Handler) parseMetadata(md md.Metadata) error {
+func (h *http2Handler) parseMetadata(md mdata.Metadata) error {
 	const (
 		proxyAgent     = "proxyAgent"
 		users          = "users"
@@ -27,9 +27,9 @@ func (h *http2Handler) parseMetadata(md md.Metadata) error {
 		enableUDP      = "udp"
 	)
 
-	h.md.proxyAgent = md.GetString(proxyAgent)
+	h.md.proxyAgent = mdata.GetString(md, proxyAgent)
 
-	if auths := md.GetStrings(users); len(auths) > 0 {
+	if auths := mdata.GetStrings(md, users); len(auths) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
 		for _, auth := range auths {
 			ss := strings.SplitN(auth, ":", 2)
@@ -42,18 +42,18 @@ func (h *http2Handler) parseMetadata(md md.Metadata) error {
 		h.md.authenticator = authenticator
 	}
 
-	if v := md.GetString(probeResistKey); v != "" {
+	if v := mdata.GetString(md, probeResistKey); v != "" {
 		if ss := strings.SplitN(v, ":", 2); len(ss) == 2 {
 			h.md.probeResist = &probeResist{
 				Type:  ss[0],
 				Value: ss[1],
-				Knock: md.GetString(knock),
+				Knock: mdata.GetString(md, knock),
 			}
 		}
 	}
-	h.md.retryCount = md.GetInt(retryCount)
-	h.md.sni = md.GetBool(sni)
-	h.md.enableUDP = md.GetBool(enableUDP)
+	h.md.retryCount = mdata.GetInt(md, retryCount)
+	h.md.sni = mdata.GetBool(md, sni)
+	h.md.enableUDP = mdata.GetBool(md, enableUDP)
 
 	return nil
 }

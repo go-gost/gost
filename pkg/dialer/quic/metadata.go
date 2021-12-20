@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -18,7 +18,7 @@ type metadata struct {
 	tlsConfig *tls.Config
 }
 
-func (d *quicDialer) parseMetadata(md md.Metadata) (err error) {
+func (d *quicDialer) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		keepAlive        = "keepAlive"
 		handshakeTimeout = "handshakeTimeout"
@@ -33,26 +33,26 @@ func (d *quicDialer) parseMetadata(md md.Metadata) (err error) {
 		cipherKey = "cipherKey"
 	)
 
-	d.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
+	d.md.handshakeTimeout = mdata.GetDuration(md, handshakeTimeout)
 
-	if key := md.GetString(cipherKey); key != "" {
+	if key := mdata.GetString(md, cipherKey); key != "" {
 		d.md.cipherKey = []byte(key)
 	}
 
-	sn, _, _ := net.SplitHostPort(md.GetString(serverName))
+	sn, _, _ := net.SplitHostPort(mdata.GetString(md, serverName))
 	if sn == "" {
 		sn = "localhost"
 	}
 	d.md.tlsConfig, err = tls_util.LoadClientConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-		md.GetBool(secure),
+		mdata.GetString(md, certFile),
+		mdata.GetString(md, keyFile),
+		mdata.GetString(md, caFile),
+		mdata.GetBool(md, secure),
 		sn,
 	)
 
-	d.md.keepAlive = md.GetBool(keepAlive)
-	d.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
-	d.md.maxIdleTimeout = md.GetDuration(maxIdleTimeout)
+	d.md.keepAlive = mdata.GetBool(md, keepAlive)
+	d.md.handshakeTimeout = mdata.GetDuration(md, handshakeTimeout)
+	d.md.maxIdleTimeout = mdata.GetDuration(md, maxIdleTimeout)
 	return
 }

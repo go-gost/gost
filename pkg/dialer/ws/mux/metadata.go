@@ -2,13 +2,12 @@ package mux
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -36,7 +35,7 @@ type metadata struct {
 	header http.Header
 }
 
-func (d *mwsDialer) parseMetadata(md md.Metadata) (err error) {
+func (d *mwsDialer) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		path = "path"
 		host = "host"
@@ -63,42 +62,42 @@ func (d *mwsDialer) parseMetadata(md md.Metadata) (err error) {
 		muxMaxStreamBuffer   = "muxMaxStreamBuffer"
 	)
 
-	d.md.path = md.GetString(path)
+	d.md.path = mdata.GetString(md, path)
 	if d.md.path == "" {
 		d.md.path = defaultPath
 	}
 
-	d.md.host = md.GetString(host)
+	d.md.host = mdata.GetString(md, host)
 
-	sn, _, _ := net.SplitHostPort(md.GetString(serverName))
+	sn, _, _ := net.SplitHostPort(mdata.GetString(md, serverName))
 	if sn == "" {
 		sn = "localhost"
 	}
 	d.md.tlsConfig, err = tls_util.LoadClientConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
-		md.GetBool(secure),
+		mdata.GetString(md, certFile),
+		mdata.GetString(md, keyFile),
+		mdata.GetString(md, caFile),
+		mdata.GetBool(md, secure),
 		sn,
 	)
 
-	d.md.muxKeepAliveDisabled = md.GetBool(muxKeepAliveDisabled)
-	d.md.muxKeepAliveInterval = md.GetDuration(muxKeepAliveInterval)
-	d.md.muxKeepAliveTimeout = md.GetDuration(muxKeepAliveTimeout)
-	d.md.muxMaxFrameSize = md.GetInt(muxMaxFrameSize)
-	d.md.muxMaxReceiveBuffer = md.GetInt(muxMaxReceiveBuffer)
-	d.md.muxMaxStreamBuffer = md.GetInt(muxMaxStreamBuffer)
+	d.md.muxKeepAliveDisabled = mdata.GetBool(md, muxKeepAliveDisabled)
+	d.md.muxKeepAliveInterval = mdata.GetDuration(md, muxKeepAliveInterval)
+	d.md.muxKeepAliveTimeout = mdata.GetDuration(md, muxKeepAliveTimeout)
+	d.md.muxMaxFrameSize = mdata.GetInt(md, muxMaxFrameSize)
+	d.md.muxMaxReceiveBuffer = mdata.GetInt(md, muxMaxReceiveBuffer)
+	d.md.muxMaxStreamBuffer = mdata.GetInt(md, muxMaxStreamBuffer)
 
-	d.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
-	d.md.readHeaderTimeout = md.GetDuration(readHeaderTimeout)
-	d.md.readBufferSize = md.GetInt(readBufferSize)
-	d.md.writeBufferSize = md.GetInt(writeBufferSize)
-	d.md.enableCompression = md.GetBool(enableCompression)
+	d.md.handshakeTimeout = mdata.GetDuration(md, handshakeTimeout)
+	d.md.readHeaderTimeout = mdata.GetDuration(md, readHeaderTimeout)
+	d.md.readBufferSize = mdata.GetInt(md, readBufferSize)
+	d.md.writeBufferSize = mdata.GetInt(md, writeBufferSize)
+	d.md.enableCompression = mdata.GetBool(md, enableCompression)
 
-	if mm, _ := md.Get(header).(map[interface{}]interface{}); len(mm) > 0 {
+	if m := mdata.GetStringMapString(md, header); len(m) > 0 {
 		h := http.Header{}
-		for k, v := range mm {
-			h.Add(fmt.Sprintf("%v", k), fmt.Sprintf("%v", v))
+		for k, v := range m {
+			h.Add(k, v)
 		}
 		d.md.header = h
 	}

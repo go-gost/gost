@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -18,20 +18,20 @@ type metadata struct {
 	User           *url.Userinfo
 }
 
-func (c *http2Connector) parseMetadata(md md.Metadata) (err error) {
+func (c *http2Connector) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
 		userAgent      = "userAgent"
 		user           = "user"
 	)
 
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.UserAgent, _ = md.Get(userAgent).(string)
+	c.md.connectTimeout = mdata.GetDuration(md, connectTimeout)
+	c.md.UserAgent = mdata.GetString(md, userAgent)
 	if c.md.UserAgent == "" {
 		c.md.UserAgent = defaultUserAgent
 	}
 
-	if v := md.GetString(user); v != "" {
+	if v := mdata.GetString(md, user); v != "" {
 		ss := strings.SplitN(v, ":", 2)
 		if len(ss) == 1 {
 			c.md.User = url.User(ss[0])

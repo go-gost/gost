@@ -5,7 +5,7 @@ import (
 	"time"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -25,7 +25,7 @@ type metadata struct {
 	backlog int
 }
 
-func (l *mtlsListener) parseMetadata(md md.Metadata) (err error) {
+func (l *mtlsListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		certFile = "certFile"
 		keyFile  = "keyFile"
@@ -42,25 +42,25 @@ func (l *mtlsListener) parseMetadata(md md.Metadata) (err error) {
 	)
 
 	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
+		mdata.GetString(md, certFile),
+		mdata.GetString(md, keyFile),
+		mdata.GetString(md, caFile),
 	)
 	if err != nil {
 		return
 	}
 
-	l.md.backlog = md.GetInt(backlog)
+	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}
 
-	l.md.muxKeepAliveDisabled = md.GetBool(muxKeepAliveDisabled)
-	l.md.muxKeepAliveInterval = md.GetDuration(muxKeepAliveInterval)
-	l.md.muxKeepAliveTimeout = md.GetDuration(muxKeepAliveTimeout)
-	l.md.muxMaxFrameSize = md.GetInt(muxMaxFrameSize)
-	l.md.muxMaxReceiveBuffer = md.GetInt(muxMaxReceiveBuffer)
-	l.md.muxMaxStreamBuffer = md.GetInt(muxMaxStreamBuffer)
+	l.md.muxKeepAliveDisabled = mdata.GetBool(md, muxKeepAliveDisabled)
+	l.md.muxKeepAliveInterval = mdata.GetDuration(md, muxKeepAliveInterval)
+	l.md.muxKeepAliveTimeout = mdata.GetDuration(md, muxKeepAliveTimeout)
+	l.md.muxMaxFrameSize = mdata.GetInt(md, muxMaxFrameSize)
+	l.md.muxMaxReceiveBuffer = mdata.GetInt(md, muxMaxReceiveBuffer)
+	l.md.muxMaxStreamBuffer = mdata.GetInt(md, muxMaxStreamBuffer)
 
 	return
 }

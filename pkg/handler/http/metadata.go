@@ -28,7 +28,7 @@ func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 		enableUDP      = "udp"
 	)
 
-	if auths := md.GetStrings(users); len(auths) > 0 {
+	if auths := mdata.GetStrings(md, users); len(auths) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
 		for _, auth := range auths {
 			ss := strings.SplitN(auth, ":", 2)
@@ -41,26 +41,26 @@ func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 		h.md.authenticator = authenticator
 	}
 
-	if mm := mdata.GetStringMapString(md, header); len(mm) > 0 {
+	if m := mdata.GetStringMapString(md, header); len(m) > 0 {
 		hd := http.Header{}
-		for k, v := range mm {
+		for k, v := range m {
 			hd.Add(k, v)
 		}
 		h.md.header = hd
 	}
 
-	if v := md.GetString(probeResistKey); v != "" {
+	if v := mdata.GetString(md, probeResistKey); v != "" {
 		if ss := strings.SplitN(v, ":", 2); len(ss) == 2 {
 			h.md.probeResist = &probeResist{
 				Type:  ss[0],
 				Value: ss[1],
-				Knock: md.GetString(knock),
+				Knock: mdata.GetString(md, knock),
 			}
 		}
 	}
-	h.md.retryCount = md.GetInt(retryCount)
-	h.md.sni = md.GetBool(sni)
-	h.md.enableUDP = md.GetBool(enableUDP)
+	h.md.retryCount = mdata.GetInt(md, retryCount)
+	h.md.sni = mdata.GetBool(md, sni)
+	h.md.enableUDP = mdata.GetBool(md, enableUDP)
 
 	return nil
 }

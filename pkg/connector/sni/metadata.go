@@ -3,7 +3,7 @@ package sni
 import (
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -11,14 +11,14 @@ type metadata struct {
 	connectTimeout time.Duration
 }
 
-func (c *sniConnector) parseMetadata(md md.Metadata) (err error) {
+func (c *sniConnector) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		host           = "host"
 		connectTimeout = "timeout"
 	)
 
-	c.md.host = md.GetString(host)
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
+	c.md.host = mdata.GetString(md, host)
+	c.md.connectTimeout = mdata.GetDuration(md, connectTimeout)
 
 	return
 }

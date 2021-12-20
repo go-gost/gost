@@ -44,6 +44,8 @@ import (
 	_ "github.com/go-gost/gost/pkg/handler/socks/v5"
 	_ "github.com/go-gost/gost/pkg/handler/ss"
 	_ "github.com/go-gost/gost/pkg/handler/ss/udp"
+	_ "github.com/go-gost/gost/pkg/handler/tap"
+	_ "github.com/go-gost/gost/pkg/handler/tun"
 
 	// Register listeners
 	_ "github.com/go-gost/gost/pkg/listener/ftcp"
@@ -57,6 +59,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/listener/rtcp"
 	_ "github.com/go-gost/gost/pkg/listener/rudp"
 	_ "github.com/go-gost/gost/pkg/listener/ssh"
+	_ "github.com/go-gost/gost/pkg/listener/tap"
 	_ "github.com/go-gost/gost/pkg/listener/tcp"
 	_ "github.com/go-gost/gost/pkg/listener/tls"
 	_ "github.com/go-gost/gost/pkg/listener/tls/mux"

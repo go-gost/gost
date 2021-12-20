@@ -72,7 +72,7 @@ func (c *ssuConnector) Connect(ctx context.Context, conn net.Conn, network, addr
 		}
 
 		// standard UDP relay
-		return ss.UDPClientConn(pc, conn.RemoteAddr(), taddr, c.md.udpBufferSize), nil
+		return ss.UDPClientConn(pc, conn.RemoteAddr(), taddr, c.md.bufferSize), nil
 	}
 
 	if c.md.cipher != nil {

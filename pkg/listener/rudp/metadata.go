@@ -3,7 +3,7 @@ package rudp
 import (
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -21,7 +21,7 @@ type metadata struct {
 	retryCount     int
 }
 
-func (l *rudpListener) parseMetadata(md md.Metadata) (err error) {
+func (l *rudpListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		ttl            = "ttl"
 		readBufferSize = "readBufferSize"
@@ -30,25 +30,25 @@ func (l *rudpListener) parseMetadata(md md.Metadata) (err error) {
 		retryCount     = "retry"
 	)
 
-	l.md.ttl = md.GetDuration(ttl)
+	l.md.ttl = mdata.GetDuration(md, ttl)
 	if l.md.ttl <= 0 {
 		l.md.ttl = defaultTTL
 	}
-	l.md.readBufferSize = md.GetInt(readBufferSize)
+	l.md.readBufferSize = mdata.GetInt(md, readBufferSize)
 	if l.md.readBufferSize <= 0 {
 		l.md.readBufferSize = defaultReadBufferSize
 	}
 
-	l.md.readQueueSize = md.GetInt(readQueueSize)
+	l.md.readQueueSize = mdata.GetInt(md, readQueueSize)
 	if l.md.readQueueSize <= 0 {
 		l.md.readQueueSize = defaultReadQueueSize
 	}
 
-	l.md.backlog = md.GetInt(backlog)
+	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}
 
-	l.md.retryCount = md.GetInt(retryCount)
+	l.md.retryCount = mdata.GetInt(md, retryCount)
 	return
 }

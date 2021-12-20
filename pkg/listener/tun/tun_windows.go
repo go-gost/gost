@@ -6,21 +6,22 @@ import (
 	"os/exec"
 	"strings"
 
+	tun_util "github.com/go-gost/gost/pkg/internal/util/tun"
 	"github.com/songgao/water"
 )
 
-func (l *tunListener) createTun() (conn net.Conn, itf *net.Interface, err error) {
-	ip, ipNet, err := net.ParseCIDR(l.md.net)
+func (l *tunListener) createTun() (ifce *water.Interface, ip net.IP, err error) {
+	ip, ipNet, err := net.ParseCIDR(l.md.config.Net)
 	if err != nil {
 		return
 	}
 
-	ifce, err := water.New(water.Config{
+	ifce, err = water.New(water.Config{
 		DeviceType: water.TUN,
 		PlatformSpecificParams: water.PlatformSpecificParams{
 			ComponentID:   "tap0901",
-			InterfaceName: l.md.name,
-			Network:       l.md.net,
+			InterfaceName: l.md.config.Name,
+			Network:       l.md.config.Net,
 		},
 	})
 	if err != nil {
@@ -38,28 +39,19 @@ func (l *tunListener) createTun() (conn net.Conn, itf *net.Interface, err error)
 		return
 	}
 
-	if err = l.addRoutes(ifce.Name(), l.md.gateway, l.md.routes...); err != nil {
+	if err = l.addRoutes(ifce.Name(), l.md.config.Gateway, l.md.config.Routes...); err != nil {
 		return
 	}
 
-	itf, err = net.InterfaceByName(ifce.Name())
-	if err != nil {
-		return
-	}
-
-	conn = &tunConn{
-		ifce: ifce,
-		addr: &net.IPAddr{IP: ip},
-	}
 	return
 }
 
-func (l *tunListener) addRoutes(ifName string, gw string, routes ...ipRoute) error {
+func (l *tunListener) addRoutes(ifName string, gw string, routes ...tun_util.Route) error {
 	for _, route := range routes {
-		l.deleteRoute(ifName, route.Dest.String())
+		l.deleteRoute(ifName, route.Net.String())
 
 		cmd := fmt.Sprintf("netsh interface ip add route prefix=%s interface=%s store=active",
-			route.Dest.String(), ifName)
+			route.Net.String(), ifName)
 		if gw != "" {
 			cmd += " nexthop=" + gw
 		}

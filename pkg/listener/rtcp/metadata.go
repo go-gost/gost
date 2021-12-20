@@ -3,7 +3,7 @@ package rtcp
 import (
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -17,17 +17,17 @@ type metadata struct {
 	retryCount int
 }
 
-func (l *rtcpListener) parseMetadata(md md.Metadata) (err error) {
+func (l *rtcpListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		enableMux  = "mux"
 		backlog    = "backlog"
 		retryCount = "retry"
 	)
 
-	l.md.enableMux = md.GetBool(enableMux)
-	l.md.retryCount = md.GetInt(retryCount)
+	l.md.enableMux = mdata.GetBool(md, enableMux)
+	l.md.retryCount = mdata.GetInt(md, retryCount)
 
-	l.md.backlog = md.GetInt(backlog)
+	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}

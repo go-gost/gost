@@ -3,7 +3,7 @@ package udp
 import (
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -21,7 +21,7 @@ type metadata struct {
 	backlog        int
 }
 
-func (l *udpListener) parseMetadata(md md.Metadata) (err error) {
+func (l *udpListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		ttl            = "ttl"
 		readBufferSize = "readBufferSize"
@@ -29,21 +29,21 @@ func (l *udpListener) parseMetadata(md md.Metadata) (err error) {
 		backlog        = "backlog"
 	)
 
-	l.md.ttl = md.GetDuration(ttl)
+	l.md.ttl = mdata.GetDuration(md, ttl)
 	if l.md.ttl <= 0 {
 		l.md.ttl = defaultTTL
 	}
-	l.md.readBufferSize = md.GetInt(readBufferSize)
+	l.md.readBufferSize = mdata.GetInt(md, readBufferSize)
 	if l.md.readBufferSize <= 0 {
 		l.md.readBufferSize = defaultReadBufferSize
 	}
 
-	l.md.readQueueSize = md.GetInt(readQueueSize)
+	l.md.readQueueSize = mdata.GetInt(md, readQueueSize)
 	if l.md.readQueueSize <= 0 {
 		l.md.readQueueSize = defaultReadQueueSize
 	}
 
-	l.md.backlog = md.GetInt(backlog)
+	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}

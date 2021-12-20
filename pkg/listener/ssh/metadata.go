@@ -7,7 +7,7 @@ import (
 	"github.com/go-gost/gost/pkg/auth"
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -22,7 +22,7 @@ type metadata struct {
 	backlog        int
 }
 
-func (l *sshListener) parseMetadata(md md.Metadata) (err error) {
+func (l *sshListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		users          = "users"
 		authorizedKeys = "authorizedKeys"
@@ -31,28 +31,26 @@ func (l *sshListener) parseMetadata(md md.Metadata) (err error) {
 		backlog        = "backlog"
 	)
 
-	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
+	if auths := mdata.GetStrings(md, users); len(auths) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
-		for _, auth := range v {
-			if s, _ := auth.(string); s != "" {
-				ss := strings.SplitN(s, ":", 2)
-				if len(ss) == 1 {
-					authenticator.Add(ss[0], "")
-				} else {
-					authenticator.Add(ss[0], ss[1])
-				}
+		for _, auth := range auths {
+			ss := strings.SplitN(auth, ":", 2)
+			if len(ss) == 1 {
+				authenticator.Add(ss[0], "")
+			} else {
+				authenticator.Add(ss[0], ss[1])
 			}
 		}
 		l.md.authenticator = authenticator
 	}
 
-	if key := md.GetString(privateKeyFile); key != "" {
+	if key := mdata.GetString(md, privateKeyFile); key != "" {
 		data, err := ioutil.ReadFile(key)
 		if err != nil {
 			return err
 		}
 
-		pp := md.GetString(passphrase)
+		pp := mdata.GetString(md, passphrase)
 		if pp == "" {
 			l.md.signer, err = ssh.ParsePrivateKey(data)
 		} else {
@@ -70,7 +68,7 @@ func (l *sshListener) parseMetadata(md md.Metadata) (err error) {
 		l.md.signer = signer
 	}
 
-	if name := md.GetString(authorizedKeys); name != "" {
+	if name := mdata.GetString(md, authorizedKeys); name != "" {
 		m, err := ssh_util.ParseAuthorizedKeysFile(name)
 		if err != nil {
 			return err
@@ -78,7 +76,7 @@ func (l *sshListener) parseMetadata(md md.Metadata) (err error) {
 		l.md.authorizedKeys = m
 	}
 
-	l.md.backlog = md.GetInt(backlog)
+	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}

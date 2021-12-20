@@ -7,7 +7,7 @@ import (
 	"github.com/go-gost/gost/pkg/auth"
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -17,7 +17,7 @@ type metadata struct {
 	authorizedKeys map[string]bool
 }
 
-func (h *forwardHandler) parseMetadata(md md.Metadata) (err error) {
+func (h *forwardHandler) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		users          = "users"
 		authorizedKeys = "authorizedKeys"
@@ -25,28 +25,26 @@ func (h *forwardHandler) parseMetadata(md md.Metadata) (err error) {
 		passphrase     = "passphrase"
 	)
 
-	if v, _ := md.Get(users).([]interface{}); len(v) > 0 {
+	if auths := mdata.GetStrings(md, users); len(auths) > 0 {
 		authenticator := auth.NewLocalAuthenticator(nil)
-		for _, auth := range v {
-			if s, _ := auth.(string); s != "" {
-				ss := strings.SplitN(s, ":", 2)
-				if len(ss) == 1 {
-					authenticator.Add(ss[0], "")
-				} else {
-					authenticator.Add(ss[0], ss[1])
-				}
+		for _, auth := range auths {
+			ss := strings.SplitN(auth, ":", 2)
+			if len(ss) == 1 {
+				authenticator.Add(ss[0], "")
+			} else {
+				authenticator.Add(ss[0], ss[1])
 			}
 		}
 		h.md.authenticator = authenticator
 	}
 
-	if key := md.GetString(privateKeyFile); key != "" {
+	if key := mdata.GetString(md, privateKeyFile); key != "" {
 		data, err := ioutil.ReadFile(key)
 		if err != nil {
 			return err
 		}
 
-		pp := md.GetString(passphrase)
+		pp := mdata.GetString(md, passphrase)
 		if pp == "" {
 			h.md.signer, err = ssh.ParsePrivateKey(data)
 		} else {
@@ -64,7 +62,7 @@ func (h *forwardHandler) parseMetadata(md md.Metadata) (err error) {
 		h.md.signer = signer
 	}
 
-	if name := md.GetString(authorizedKeys); name != "" {
+	if name := mdata.GetString(md, authorizedKeys); name != "" {
 		m, err := ssh_util.ParseAuthorizedKeysFile(name)
 		if err != nil {
 			return err

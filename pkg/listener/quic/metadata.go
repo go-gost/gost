@@ -5,7 +5,7 @@ import (
 	"time"
 
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 const (
@@ -22,7 +22,7 @@ type metadata struct {
 	backlog   int
 }
 
-func (l *quicListener) parseMetadata(md md.Metadata) (err error) {
+func (l *quicListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		keepAlive        = "keepAlive"
 		handshakeTimeout = "handshakeTimeout"
@@ -37,26 +37,26 @@ func (l *quicListener) parseMetadata(md md.Metadata) (err error) {
 	)
 
 	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
+		mdata.GetString(md, certFile),
+		mdata.GetString(md, keyFile),
+		mdata.GetString(md, caFile),
 	)
 
 	if err != nil {
 		return
 	}
-	l.md.backlog = md.GetInt(backlog)
+	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}
 
-	if key := md.GetString(cipherKey); key != "" {
+	if key := mdata.GetString(md, cipherKey); key != "" {
 		l.md.cipherKey = []byte(key)
 	}
 
-	l.md.keepAlive = md.GetBool(keepAlive)
-	l.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
-	l.md.maxIdleTimeout = md.GetDuration(maxIdleTimeout)
+	l.md.keepAlive = mdata.GetBool(md, keepAlive)
+	l.md.handshakeTimeout = mdata.GetDuration(md, handshakeTimeout)
+	l.md.maxIdleTimeout = mdata.GetDuration(md, maxIdleTimeout)
 
 	return
 }

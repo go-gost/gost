@@ -76,7 +76,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	addr := &gosocks5.Addr{}
 	if _, err := addr.ReadFrom(conn); err != nil {
 		h.logger.Error(err)
-		h.discard(conn)
+		io.Copy(ioutil.Discard, conn)
 		return
 	}
 
@@ -109,8 +109,4 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 			"duration": time.Since(t),
 		}).
 		Infof("%s >-< %s", conn.RemoteAddr(), addr)
-}
-
-func (h *ssHandler) discard(conn net.Conn) {
-	io.Copy(ioutil.Discard, conn)
 }

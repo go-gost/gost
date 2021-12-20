@@ -22,9 +22,9 @@ func (c *httpConnector) parseMetadata(md mdata.Metadata) (err error) {
 		header         = "header"
 	)
 
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
+	c.md.connectTimeout = mdata.GetDuration(md, connectTimeout)
 
-	if v := md.GetString(user); v != "" {
+	if v := mdata.GetString(md, user); v != "" {
 		ss := strings.SplitN(v, ":", 2)
 		if len(ss) == 1 {
 			c.md.User = url.User(ss[0])

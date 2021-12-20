@@ -59,36 +59,36 @@ func (l *mwsListener) parseMetadata(md mdata.Metadata) (err error) {
 	)
 
 	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		md.GetString(certFile),
-		md.GetString(keyFile),
-		md.GetString(caFile),
+		mdata.GetString(md, certFile),
+		mdata.GetString(md, keyFile),
+		mdata.GetString(md, caFile),
 	)
 	if err != nil {
 		return
 	}
 
-	l.md.path = md.GetString(path)
+	l.md.path = mdata.GetString(md, path)
 	if l.md.path == "" {
 		l.md.path = defaultPath
 	}
 
-	l.md.backlog = md.GetInt(backlog)
+	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}
 
-	l.md.handshakeTimeout = md.GetDuration(handshakeTimeout)
-	l.md.readHeaderTimeout = md.GetDuration(readHeaderTimeout)
-	l.md.readBufferSize = md.GetInt(readBufferSize)
-	l.md.writeBufferSize = md.GetInt(writeBufferSize)
-	l.md.enableCompression = md.GetBool(enableCompression)
+	l.md.handshakeTimeout = mdata.GetDuration(md, handshakeTimeout)
+	l.md.readHeaderTimeout = mdata.GetDuration(md, readHeaderTimeout)
+	l.md.readBufferSize = mdata.GetInt(md, readBufferSize)
+	l.md.writeBufferSize = mdata.GetInt(md, writeBufferSize)
+	l.md.enableCompression = mdata.GetBool(md, enableCompression)
 
-	l.md.muxKeepAliveDisabled = md.GetBool(muxKeepAliveDisabled)
-	l.md.muxKeepAliveInterval = md.GetDuration(muxKeepAliveInterval)
-	l.md.muxKeepAliveTimeout = md.GetDuration(muxKeepAliveTimeout)
-	l.md.muxMaxFrameSize = md.GetInt(muxMaxFrameSize)
-	l.md.muxMaxReceiveBuffer = md.GetInt(muxMaxReceiveBuffer)
-	l.md.muxMaxStreamBuffer = md.GetInt(muxMaxStreamBuffer)
+	l.md.muxKeepAliveDisabled = mdata.GetBool(md, muxKeepAliveDisabled)
+	l.md.muxKeepAliveInterval = mdata.GetDuration(md, muxKeepAliveInterval)
+	l.md.muxKeepAliveTimeout = mdata.GetDuration(md, muxKeepAliveTimeout)
+	l.md.muxMaxFrameSize = mdata.GetInt(md, muxMaxFrameSize)
+	l.md.muxMaxReceiveBuffer = mdata.GetInt(md, muxMaxReceiveBuffer)
+	l.md.muxMaxStreamBuffer = mdata.GetInt(md, muxMaxStreamBuffer)
 
 	if mm := mdata.GetStringMapString(md, header); len(mm) > 0 {
 		hd := http.Header{}

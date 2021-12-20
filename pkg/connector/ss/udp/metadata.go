@@ -1,30 +1,31 @@
 package ss
 
 import (
+	"math"
 	"strings"
 	"time"
 
 	"github.com/go-gost/gost/pkg/common/util/ss"
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
 type metadata struct {
 	cipher         core.Cipher
 	connectTimeout time.Duration
-	udpBufferSize  int
+	bufferSize     int
 }
 
-func (c *ssuConnector) parseMetadata(md md.Metadata) (err error) {
+func (c *ssuConnector) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		user           = "user"
 		key            = "key"
 		connectTimeout = "timeout"
-		udpBufferSize  = "udpBufferSize" // udp buffer size
+		bufferSize     = "bufferSize" // udp buffer size
 	)
 
 	var method, password string
-	if v := md.GetString(user); v != "" {
+	if v := mdata.GetString(md, user); v != "" {
 		ss := strings.SplitN(v, ":", 2)
 		if len(ss) == 1 {
 			method = ss[0]
@@ -32,22 +33,17 @@ func (c *ssuConnector) parseMetadata(md md.Metadata) (err error) {
 			method, password = ss[0], ss[1]
 		}
 	}
-	c.md.cipher, err = ss.ShadowCipher(method, password, md.GetString(key))
+	c.md.cipher, err = ss.ShadowCipher(method, password, mdata.GetString(md, key))
 	if err != nil {
 		return
 	}
 
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
+	c.md.connectTimeout = mdata.GetDuration(md, connectTimeout)
 
-	if c.md.udpBufferSize > 0 {
-		if c.md.udpBufferSize < 512 {
-			c.md.udpBufferSize = 512
-		}
-		if c.md.udpBufferSize > 65*1024 {
-			c.md.udpBufferSize = 65 * 1024
-		}
+	if bs := mdata.GetInt(md, bufferSize); bs > 0 {
+		c.md.bufferSize = int(math.Min(math.Max(float64(bs), 512), 64*1024))
 	} else {
-		c.md.udpBufferSize = 4096
+		c.md.bufferSize = 1024
 	}
 
 	return

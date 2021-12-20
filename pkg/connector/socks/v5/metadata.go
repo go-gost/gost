@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -16,14 +16,14 @@ type metadata struct {
 	noTLS          bool
 }
 
-func (c *socks5Connector) parseMetadata(md md.Metadata) (err error) {
+func (c *socks5Connector) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
 		user           = "user"
 		noTLS          = "notls"
 	)
 
-	if v := md.GetString(user); v != "" {
+	if v := mdata.GetString(md, user); v != "" {
 		ss := strings.SplitN(v, ":", 2)
 		if len(ss) == 1 {
 			c.md.User = url.User(ss[0])
@@ -32,8 +32,8 @@ func (c *socks5Connector) parseMetadata(md md.Metadata) (err error) {
 		}
 	}
 
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.noTLS = md.GetBool(noTLS)
+	c.md.connectTimeout = mdata.GetDuration(md, connectTimeout)
+	c.md.noTLS = mdata.GetBool(md, noTLS)
 
 	return
 }

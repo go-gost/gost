@@ -6,20 +6,21 @@ import (
 	"syscall"
 
 	"github.com/docker/libcontainer/netlink"
+	tun_util "github.com/go-gost/gost/pkg/internal/util/tun"
 	"github.com/milosgajdos/tenus"
 	"github.com/songgao/water"
 )
 
-func (l *tunListener) createTun() (conn net.Conn, itf *net.Interface, err error) {
-	ip, ipNet, err := net.ParseCIDR(l.md.net)
+func (l *tunListener) createTun() (ifce *water.Interface, ip net.IP, err error) {
+	ip, ipNet, err := net.ParseCIDR(l.md.config.Net)
 	if err != nil {
 		return
 	}
 
-	ifce, err := water.New(water.Config{
+	ifce, err = water.New(water.Config{
 		DeviceType: water.TUN,
 		PlatformSpecificParams: water.PlatformSpecificParams{
-			Name: l.md.name,
+			Name: l.md.config.Name,
 		},
 	})
 	if err != nil {
@@ -31,13 +32,13 @@ func (l *tunListener) createTun() (conn net.Conn, itf *net.Interface, err error)
 		return
 	}
 
-	l.logger.Debugf("ip link set dev %s mtu %d", ifce.Name(), l.md.mtu)
+	l.logger.Debugf("ip link set dev %s mtu %d", ifce.Name(), l.md.config.MTU)
 
-	if err = link.SetLinkMTU(l.md.mtu); err != nil {
+	if err = link.SetLinkMTU(l.md.config.MTU); err != nil {
 		return
 	}
 
-	l.logger.Debugf("ip address add %s dev %s", l.md.net, ifce.Name())
+	l.logger.Debugf("ip address add %s dev %s", l.md.config.Net, ifce.Name())
 
 	if err = link.SetLinkIp(ip, ipNet); err != nil {
 		return
@@ -48,26 +49,17 @@ func (l *tunListener) createTun() (conn net.Conn, itf *net.Interface, err error)
 		return
 	}
 
-	if err = l.addRoutes(ifce.Name(), l.md.routes...); err != nil {
+	if err = l.addRoutes(ifce.Name(), l.md.config.Routes...); err != nil {
 		return
 	}
 
-	itf, err = net.InterfaceByName(ifce.Name())
-	if err != nil {
-		return
-	}
-
-	conn = &tunConn{
-		ifce: ifce,
-		addr: &net.IPAddr{IP: ip},
-	}
 	return
 }
 
-func (l *tunListener) addRoutes(ifName string, routes ...ipRoute) error {
+func (l *tunListener) addRoutes(ifName string, routes ...tun_util.Route) error {
 	for _, route := range routes {
-		l.logger.Debugf("ip route add %s dev %s", route.Dest.String(), ifName)
-		if err := netlink.AddRoute(route.Dest.String(), "", "", ifName); err != nil && !errors.Is(err, syscall.EEXIST) {
+		l.logger.Debugf("ip route add %s dev %s", route.Net.String(), ifName)
+		if err := netlink.AddRoute(route.Net.String(), "", "", ifName); err != nil && !errors.Is(err, syscall.EEXIST) {
 			return err
 		}
 	}

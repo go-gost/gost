@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
@@ -13,18 +13,18 @@ type metadata struct {
 	disable4a      bool
 }
 
-func (c *socks4Connector) parseMetadata(md md.Metadata) (err error) {
+func (c *socks4Connector) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
 		user           = "user"
 		disable4a      = "disable4a"
 	)
 
-	if v := md.GetString(user); v != "" {
+	if v := mdata.GetString(md, user); v != "" {
 		c.md.User = url.User(v)
 	}
-	c.md.connectTimeout = md.GetDuration(connectTimeout)
-	c.md.disable4a = md.GetBool(disable4a)
+	c.md.connectTimeout = mdata.GetDuration(md, connectTimeout)
+	c.md.disable4a = mdata.GetBool(md, disable4a)
 
 	return
 }

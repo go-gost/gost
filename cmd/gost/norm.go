@@ -64,7 +64,8 @@ func normService(svc *config.ServiceConfig) {
 		}
 		if handler != "relay" {
 			if listener == "tcp" || listener == "udp" ||
-				listener == "rtcp" || listener == "rudp" {
+				listener == "rtcp" || listener == "rudp" ||
+				listener == "tun" || listener == "tap" {
 				handler = listener
 			} else {
 				handler = "tcp"

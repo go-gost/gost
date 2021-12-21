@@ -8,6 +8,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/cheekybits/genny v1.0.0 // indirect
 	github.com/coreos/go-iptables v0.5.0 // indirect
+	github.com/docker/libcontainer v2.2.1+incompatible
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-gost/gosocks4 v0.0.1
 	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09
@@ -25,6 +26,7 @@ require (
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/marten-seemann/qtls-go1-16 v0.1.4 // indirect
 	github.com/marten-seemann/qtls-go1-17 v0.1.0 // indirect
+	github.com/miekg/dns v1.1.44
 	github.com/milosgajdos/tenus v0.0.3
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/mmcloughlin/avo v0.0.0-20200803215136-443f81d77104 // indirect
@@ -54,11 +56,9 @@ require (
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63
 	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	golang.org/x/text v0.3.6 // indirect
-	golang.org/x/tools v0.1.5 // indirect
+	golang.org/x/tools v0.1.6-0.20210726203631-07bc1bf47fb2 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-require github.com/docker/libcontainer v2.2.1+incompatible // indirect

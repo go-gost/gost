@@ -48,6 +48,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/handler/tun"
 
 	// Register listeners
+	_ "github.com/go-gost/gost/pkg/listener/dns"
 	_ "github.com/go-gost/gost/pkg/listener/ftcp"
 	_ "github.com/go-gost/gost/pkg/listener/http2"
 	_ "github.com/go-gost/gost/pkg/listener/http2/h2"

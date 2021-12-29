@@ -60,8 +60,9 @@ func (c *serverConn) Read(b []byte) (n int, err error) {
 	case <-c.closed:
 		err = io.ErrClosedPipe
 		return
+	default:
+		return c.r.Read(b)
 	}
-	return c.r.Read(b)
 }
 
 func (c *serverConn) Write(b []byte) (n int, err error) {
@@ -69,8 +70,9 @@ func (c *serverConn) Write(b []byte) (n int, err error) {
 	case <-c.closed:
 		err = io.ErrClosedPipe
 		return
+	default:
+		return c.w.Write(b)
 	}
-	return c.w.Write(b)
 }
 
 func (c *serverConn) Close() error {

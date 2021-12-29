@@ -32,6 +32,19 @@ func (r *Router) WithLogger(logger logger.Logger) *Router {
 }
 
 func (r *Router) Dial(ctx context.Context, network, address string) (conn net.Conn, err error) {
+	conn, err = r.dial(ctx, network, address)
+	if err != nil {
+		return
+	}
+	if network == "udp" || network == "udp4" || network == "udp6" {
+		if _, ok := conn.(net.PacketConn); !ok {
+			return &packetConn{conn}, nil
+		}
+	}
+	return
+}
+
+func (r *Router) dial(ctx context.Context, network, address string) (conn net.Conn, err error) {
 	count := r.retries + 1
 	if count <= 0 {
 		count = 1
@@ -87,4 +100,18 @@ func (r *Router) Bind(ctx context.Context, network, address string, opts ...conn
 	}
 
 	return
+}
+
+type packetConn struct {
+	net.Conn
+}
+
+func (c *packetConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
+	n, err = c.Read(b)
+	addr = c.Conn.RemoteAddr()
+	return
+}
+
+func (c *packetConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
+	return c.Write(b)
 }

@@ -32,6 +32,7 @@ import (
 
 	// Register handlers
 	_ "github.com/go-gost/gost/pkg/handler/auto"
+	_ "github.com/go-gost/gost/pkg/handler/dns"
 	_ "github.com/go-gost/gost/pkg/handler/forward/local"
 	_ "github.com/go-gost/gost/pkg/handler/forward/remote"
 	_ "github.com/go-gost/gost/pkg/handler/forward/ssh"

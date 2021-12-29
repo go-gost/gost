@@ -26,7 +26,7 @@ require (
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/marten-seemann/qtls-go1-16 v0.1.4 // indirect
 	github.com/marten-seemann/qtls-go1-17 v0.1.0 // indirect
-	github.com/miekg/dns v1.1.44
+	github.com/miekg/dns v1.1.45
 	github.com/milosgajdos/tenus v0.0.3
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/mmcloughlin/avo v0.0.0-20200803215136-443f81d77104 // indirect

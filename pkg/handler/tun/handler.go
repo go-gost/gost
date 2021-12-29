@@ -2,6 +2,7 @@ package tun
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -124,7 +125,12 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 				if err != nil {
 					return err
 				}
-				pc = &packetConn{cc}
+
+				var ok bool
+				pc, ok = cc.(net.PacketConn)
+				if !ok {
+					return errors.New("invalid connnection")
+				}
 			} else {
 				if h.md.tcpMode {
 					if addr != nil {

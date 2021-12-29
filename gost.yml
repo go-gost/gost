@@ -12,6 +12,19 @@ profiling:
 #  key: "key.pem"
 #  ca: "root.ca"
 
+resolvers:
+- name: resolver-0
+  ttl: 60s
+  prefer: ipv4
+  clientIP: 1.2.3.4
+  nameServers:
+  - addr: udp://8.8.8.8:53
+    timeout: 5s
+  - addr: tcp://1.1.1.1:53
+  - addr: tls://1.1.1.1:853
+  - addr: https://1.0.0.1/dns-query
+    domain: cloudflare-dns.com
+
 services:
 - name: http+tcp
   url: "http://gost:gost@:8000"

@@ -20,7 +20,6 @@ import (
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/shadowsocks/go-shadowsocks2/shadowaead"
 	"github.com/songgao/water/waterutil"
-	"github.com/xtaci/tcpraw"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
 )
@@ -31,10 +30,10 @@ func init() {
 
 type tunHandler struct {
 	group  *chain.NodeGroup
-	chain  *chain.Chain
 	bypass bypass.Bypass
 	routes sync.Map
 	exit   chan struct{}
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -47,18 +46,27 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &tunHandler{
 		bypass: options.Bypass,
-		exit:   make(chan struct{}, 1),
+		router: (&chain.Router{}).
+			WithLogger(options.Logger).
+			WithResolver(options.Resolver),
 		logger: options.Logger,
+		exit:   make(chan struct{}, 1),
 	}
 }
 
 func (h *tunHandler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
+	if err := h.parseMetadata(md); err != nil {
+		return err
+	}
+
+	h.router.WithRetry(h.md.retryCount)
+
+	return nil
 }
 
 // implements chain.Chainable interface
 func (h *tunHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	h.router.WithChain(chain)
 }
 
 // Forward implements handler.Forwarder.
@@ -115,13 +123,8 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 		err := func() error {
 			var err error
 			var pc net.PacketConn
-			// fake tcp mode will be ignored when the client specifies a chain.
-			if addr != nil && !h.chain.IsEmpty() {
-				r := (&chain.Router{}).
-					WithChain(h.chain).
-					WithRetry(h.md.retryCount).
-					WithLogger(h.logger)
-				cc, err := r.Dial(ctx, addr.Network(), addr.String())
+			if addr != nil {
+				cc, err := h.router.Dial(ctx, addr.Network(), addr.String())
 				if err != nil {
 					return err
 				}
@@ -132,16 +135,8 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 					return errors.New("invalid connnection")
 				}
 			} else {
-				if h.md.tcpMode {
-					if addr != nil {
-						pc, err = tcpraw.Dial("tcp", addr.String())
-					} else {
-						pc, err = tcpraw.Listen("tcp", conn.LocalAddr().String())
-					}
-				} else {
-					laddr, _ := net.ResolveUDPAddr("udp", conn.LocalAddr().String())
-					pc, err = net.ListenUDP("udp", laddr)
-				}
+				laddr, _ := net.ResolveUDPAddr("udp", conn.LocalAddr().String())
+				pc, err = net.ListenUDP("udp", laddr)
 			}
 			if err != nil {
 				return err

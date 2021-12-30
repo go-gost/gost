@@ -29,8 +29,8 @@ func init() {
 }
 
 type httpHandler struct {
-	chain  *chain.Chain
 	bypass bypass.Bypass
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -43,17 +43,26 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &httpHandler{
 		bypass: options.Bypass,
+		router: (&chain.Router{}).
+			WithLogger(options.Logger).
+			WithResolver(options.Resolver),
 		logger: options.Logger,
 	}
 }
 
 func (h *httpHandler) Init(md md.Metadata) error {
-	return h.parseMetadata(md)
+	if err := h.parseMetadata(md); err != nil {
+		return err
+	}
+
+	h.router.WithRetry(h.md.retryCount)
+
+	return nil
 }
 
 // implements chain.Chainable interface
 func (h *httpHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	h.router.WithChain(chain)
 }
 
 func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -192,11 +201,7 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 
 	req.Header.Del("Proxy-Authorization")
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	cc, err := r.Dial(ctx, network, addr)
+	cc, err := h.router.Dial(ctx, network, addr)
 	if err != nil {
 		resp.StatusCode = http.StatusServiceUnavailable
 		resp.Write(conn)

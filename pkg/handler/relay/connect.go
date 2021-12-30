@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/relay"
 )
@@ -38,11 +37,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 		return
 	}
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	cc, err := r.Dial(ctx, network, address)
+	cc, err := h.router.Dial(ctx, network, address)
 	if err != nil {
 		resp.Status = relay.StatusNetworkUnreachable
 		resp.WriteTo(conn)

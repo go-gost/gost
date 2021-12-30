@@ -27,8 +27,8 @@ func init() {
 
 type sniHandler struct {
 	httpHandler handler.Handler
-	chain       *chain.Chain
 	bypass      bypass.Bypass
+	router      *chain.Router
 	logger      logger.Logger
 	md          metadata
 }
@@ -46,6 +46,9 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	h := &sniHandler{
 		bypass: options.Bypass,
+		router: (&chain.Router{}).
+			WithLogger(options.Logger).
+			WithResolver(options.Resolver),
 		logger: log,
 	}
 
@@ -71,12 +74,14 @@ func (h *sniHandler) Init(md md.Metadata) (err error) {
 		}
 	}
 
+	h.router.WithRetry(h.md.retryCount)
+
 	return nil
 }
 
 // WithChain implements chain.Chainable interface
 func (h *sniHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	h.router.WithChain(chain)
 }
 
 func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -141,11 +146,7 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	cc, err := r.Dial(ctx, "tcp", target)
+	cc, err := h.router.Dial(ctx, "tcp", target)
 	if err != nil {
 		return
 	}

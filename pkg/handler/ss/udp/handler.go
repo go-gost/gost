@@ -21,8 +21,8 @@ func init() {
 }
 
 type ssuHandler struct {
-	chain  *chain.Chain
 	bypass bypass.Bypass
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -35,17 +35,26 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &ssuHandler{
 		bypass: options.Bypass,
+		router: (&chain.Router{}).
+			WithLogger(options.Logger).
+			WithResolver(options.Resolver),
 		logger: options.Logger,
 	}
 }
 
 func (h *ssuHandler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
+	if err := h.parseMetadata(md); err != nil {
+		return err
+	}
+
+	h.router.WithRetry(h.md.retryCount)
+
+	return nil
 }
 
 // WithChain implements chain.Chainable interface
 func (h *ssuHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	h.router.WithChain(chain)
 }
 
 func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -80,11 +89,7 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	// obtain a udp connection
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	c, err := r.Dial(ctx, "udp", "") // UDP association
+	c, err := h.router.Dial(ctx, "udp", "") // UDP association
 	if err != nil {
 		h.logger.Error(err)
 		return

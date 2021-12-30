@@ -3,21 +3,29 @@ package chain
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net"
 
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/resolver"
 )
 
 type Router struct {
-	chain   *Chain
-	retries int
-	logger  logger.Logger
+	retries  int
+	chain    *Chain
+	resolver resolver.Resolver
+	logger   logger.Logger
 }
 
 func (r *Router) WithChain(chain *Chain) *Router {
 	r.chain = chain
+	return r
+}
+
+func (r *Router) WithResolver(resolver resolver.Resolver) *Router {
+	r.resolver = resolver
 	return r
 }
 
@@ -63,6 +71,12 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 			r.logger.Debugf("route(retry=%d) %s", i, buf.String())
 		}
 
+		address, err = r.resolve(ctx, address)
+		if err != nil {
+			r.logger.Error(err)
+			break
+		}
+
 		conn, err = route.Dial(ctx, network, address)
 		if err == nil {
 			break
@@ -71,6 +85,31 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 	}
 
 	return
+}
+
+func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "", err
+	}
+
+	/*
+		if ip := hosts.Lookup(host); ip != nil {
+			return net.JoinHostPort(ip.String(), port)
+		}
+	*/
+
+	if r.resolver != nil {
+		ips, err := r.resolver.Resolve(ctx, host)
+		if err != nil {
+			r.logger.Error(err)
+		}
+		if len(ips) == 0 {
+			return "", errors.New("domain not exists")
+		}
+		return net.JoinHostPort(ips[0].String(), port), nil
+	}
+	return addr, nil
 }
 
 func (r *Router) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (ln net.Listener, err error) {

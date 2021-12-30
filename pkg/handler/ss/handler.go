@@ -22,8 +22,8 @@ func init() {
 }
 
 type ssHandler struct {
-	chain  *chain.Chain
 	bypass bypass.Bypass
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -36,17 +36,26 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &ssHandler{
 		bypass: options.Bypass,
+		router: (&chain.Router{}).
+			WithLogger(options.Logger).
+			WithResolver(options.Resolver),
 		logger: options.Logger,
 	}
 }
 
 func (h *ssHandler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
+	if err := h.parseMetadata(md); err != nil {
+		return err
+	}
+
+	h.router.WithRetry(h.md.retryCount)
+
+	return nil
 }
 
 // implements chain.Chainable interface
 func (h *ssHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	h.router.WithChain(chain)
 }
 
 func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -91,11 +100,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	cc, err := r.Dial(ctx, "tcp", addr.String())
+	cc, err := h.router.Dial(ctx, "tcp", addr.String())
 	if err != nil {
 		return
 	}

@@ -20,8 +20,8 @@ func init() {
 }
 
 type socks4Handler struct {
-	chain  *chain.Chain
 	bypass bypass.Bypass
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -34,17 +34,26 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &socks4Handler{
 		bypass: options.Bypass,
+		router: (&chain.Router{}).
+			WithLogger(options.Logger).
+			WithResolver(options.Resolver),
 		logger: options.Logger,
 	}
 }
 
 func (h *socks4Handler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
+	if err := h.parseMetadata(md); err != nil {
+		return err
+	}
+
+	h.router.WithRetry(h.md.retryCount)
+
+	return nil
 }
 
 // implements chain.Chainable interface
 func (h *socks4Handler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	h.router.WithChain(chain)
 }
 
 func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
@@ -111,11 +120,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		return
 	}
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	cc, err := r.Dial(ctx, "tcp", addr)
+	cc, err := h.router.Dial(ctx, "tcp", addr)
 	if err != nil {
 		resp := gosocks4.NewReply(gosocks4.Failed, nil)
 		resp.Write(conn)

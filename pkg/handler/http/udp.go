@@ -7,7 +7,6 @@ import (
 	"net/http/httputil"
 	"time"
 
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
@@ -51,11 +50,7 @@ func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, network, add
 	}
 
 	// obtain a udp connection
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	c, err := r.Dial(ctx, "udp", "") // UDP association
+	c, err := h.router.Dial(ctx, "udp", "") // UDP association
 	if err != nil {
 		h.logger.Error(err)
 		return

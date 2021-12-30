@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 )
 
@@ -26,11 +25,7 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, networ
 		return
 	}
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	cc, err := r.Dial(ctx, network, address)
+	cc, err := h.router.Dial(ctx, network, address)
 	if err != nil {
 		resp := gosocks5.NewReply(gosocks5.NetUnreachable, nil)
 		resp.Write(conn)

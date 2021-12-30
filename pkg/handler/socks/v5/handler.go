@@ -22,8 +22,8 @@ func init() {
 
 type socks5Handler struct {
 	selector gosocks5.Selector
-	chain    *chain.Chain
 	bypass   bypass.Bypass
+	router   *chain.Router
 	logger   logger.Logger
 	md       metadata
 }
@@ -36,6 +36,9 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &socks5Handler{
 		bypass: options.Bypass,
+		router: (&chain.Router{}).
+			WithLogger(options.Logger).
+			WithResolver(options.Resolver),
 		logger: options.Logger,
 	}
 }
@@ -52,12 +55,14 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 		noTLS:         h.md.noTLS,
 	}
 
+	h.router.WithRetry(h.md.retryCount)
+
 	return
 }
 
 // implements chain.Chainable interface
 func (h *socks5Handler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	h.router.WithChain(chain)
 }
 
 func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {

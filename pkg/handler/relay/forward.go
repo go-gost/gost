@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/relay"
 )
@@ -30,12 +29,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-
-	cc, err := r.Dial(ctx, network, target.Addr())
+	cc, err := h.router.Dial(ctx, network, target.Addr())
 	if err != nil {
 		// TODO: the router itself may be failed due to the failed node in the router,
 		// the dead marker may be a wrong operation.

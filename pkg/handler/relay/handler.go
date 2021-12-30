@@ -21,8 +21,8 @@ func init() {
 
 type relayHandler struct {
 	group  *chain.NodeGroup
-	chain  *chain.Chain
 	bypass bypass.Bypass
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -35,17 +35,26 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &relayHandler{
 		bypass: options.Bypass,
+		router: (&chain.Router{}).
+			WithLogger(options.Logger).
+			WithResolver(options.Resolver),
 		logger: options.Logger,
 	}
 }
 
 func (h *relayHandler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
+	if err := h.parseMetadata(md); err != nil {
+		return err
+	}
+
+	h.router.WithRetry(h.md.retryCount)
+
+	return nil
 }
 
 // WithChain implements chain.Chainable interface
 func (h *relayHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	h.router.WithChain(chain)
 }
 
 // Forward implements handler.Forwarder.

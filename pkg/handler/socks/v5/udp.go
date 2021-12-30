@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/handler"
 )
@@ -54,11 +53,7 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn) {
 	h.logger.Debugf("bind on %s OK", cc.LocalAddr())
 
 	// obtain a udp connection
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	c, err := r.Dial(ctx, "udp", "") // UDP association
+	c, err := h.router.Dial(ctx, "udp", "") // UDP association
 	if err != nil {
 		h.logger.Error(err)
 		return

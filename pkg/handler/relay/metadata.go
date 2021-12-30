@@ -12,7 +12,6 @@ import (
 type metadata struct {
 	authenticator auth.Authenticator
 	readTimeout   time.Duration
-	retryCount    int
 	enableBind    bool
 	udpBufferSize int
 	noDelay       bool
@@ -22,7 +21,6 @@ func (h *relayHandler) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		users         = "users"
 		readTimeout   = "readTimeout"
-		retryCount    = "retry"
 		enableBind    = "bind"
 		udpBufferSize = "udpBufferSize"
 		noDelay       = "nodelay"
@@ -42,7 +40,6 @@ func (h *relayHandler) parseMetadata(md mdata.Metadata) (err error) {
 	}
 
 	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
-	h.md.retryCount = mdata.GetInt(md, retryCount)
 	h.md.enableBind = mdata.GetBool(md, enableBind)
 	h.md.noDelay = mdata.GetBool(md, noDelay)
 

@@ -46,9 +46,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &tunHandler{
 		bypass: options.Bypass,
-		router: (&chain.Router{}).
-			WithLogger(options.Logger).
-			WithResolver(options.Resolver),
+		router: options.Router,
 		logger: options.Logger,
 		exit:   make(chan struct{}, 1),
 	}
@@ -59,14 +57,7 @@ func (h *tunHandler) Init(md md.Metadata) (err error) {
 		return err
 	}
 
-	h.router.WithRetry(h.md.retryCount)
-
 	return nil
-}
-
-// implements chain.Chainable interface
-func (h *tunHandler) WithChain(chain *chain.Chain) {
-	h.router.WithChain(chain)
 }
 
 // Forward implements handler.Forwarder.

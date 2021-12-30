@@ -10,7 +10,6 @@ import (
 type metadata struct {
 	authenticator auth.Authenticator
 	proxyAgent    string
-	retryCount    int
 	probeResist   *probeResist
 	sni           bool
 	enableUDP     bool
@@ -22,7 +21,6 @@ func (h *http2Handler) parseMetadata(md mdata.Metadata) error {
 		users          = "users"
 		probeResistKey = "probeResist"
 		knock          = "knock"
-		retryCount     = "retry"
 		sni            = "sni"
 		enableUDP      = "udp"
 	)
@@ -51,7 +49,6 @@ func (h *http2Handler) parseMetadata(md mdata.Metadata) error {
 			}
 		}
 	}
-	h.md.retryCount = mdata.GetInt(md, retryCount)
 	h.md.sni = mdata.GetBool(md, sni)
 	h.md.enableUDP = mdata.GetBool(md, enableUDP)
 

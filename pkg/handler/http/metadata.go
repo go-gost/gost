@@ -9,7 +9,6 @@ import (
 )
 
 type metadata struct {
-	retryCount    int
 	authenticator auth.Authenticator
 	probeResist   *probeResist
 	sni           bool
@@ -23,7 +22,6 @@ func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 		users          = "users"
 		probeResistKey = "probeResist"
 		knock          = "knock"
-		retryCount     = "retry"
 		sni            = "sni"
 		enableUDP      = "udp"
 	)
@@ -58,7 +56,6 @@ func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 			}
 		}
 	}
-	h.md.retryCount = mdata.GetInt(md, retryCount)
 	h.md.sni = mdata.GetBool(md, sni)
 	h.md.enableUDP = mdata.GetBool(md, enableUDP)
 

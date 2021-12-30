@@ -34,9 +34,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &socks4Handler{
 		bypass: options.Bypass,
-		router: (&chain.Router{}).
-			WithLogger(options.Logger).
-			WithResolver(options.Resolver),
+		router: options.Router,
 		logger: options.Logger,
 	}
 }
@@ -46,14 +44,7 @@ func (h *socks4Handler) Init(md md.Metadata) (err error) {
 		return err
 	}
 
-	h.router.WithRetry(h.md.retryCount)
-
 	return nil
-}
-
-// implements chain.Chainable interface
-func (h *socks4Handler) WithChain(chain *chain.Chain) {
-	h.router.WithChain(chain)
 }
 
 func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {

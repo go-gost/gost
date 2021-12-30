@@ -36,9 +36,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &ssHandler{
 		bypass: options.Bypass,
-		router: (&chain.Router{}).
-			WithLogger(options.Logger).
-			WithResolver(options.Resolver),
+		router: options.Router,
 		logger: options.Logger,
 	}
 }
@@ -48,14 +46,7 @@ func (h *ssHandler) Init(md md.Metadata) (err error) {
 		return err
 	}
 
-	h.router.WithRetry(h.md.retryCount)
-
 	return nil
-}
-
-// implements chain.Chainable interface
-func (h *ssHandler) WithChain(chain *chain.Chain) {
-	h.router.WithChain(chain)
 }
 
 func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {

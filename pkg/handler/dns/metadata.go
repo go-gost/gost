@@ -10,7 +10,6 @@ import (
 
 type metadata struct {
 	readTimeout time.Duration
-	retryCount  int
 	ttl         time.Duration
 	timeout     time.Duration
 	clientIP    net.IP
@@ -22,7 +21,6 @@ type metadata struct {
 func (h *dnsHandler) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		readTimeout = "readTimeout"
-		retryCount  = "retry"
 		ttl         = "ttl"
 		timeout     = "timeout"
 		clientIP    = "clientIP"
@@ -31,7 +29,6 @@ func (h *dnsHandler) parseMetadata(md mdata.Metadata) (err error) {
 	)
 
 	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
-	h.md.retryCount = mdata.GetInt(md, retryCount)
 	h.md.ttl = mdata.GetDuration(md, ttl)
 	h.md.timeout = mdata.GetDuration(md, timeout)
 	if h.md.timeout <= 0 {

@@ -31,9 +31,9 @@ func init() {
 }
 
 type forwardHandler struct {
-	chain  *chain.Chain
 	bypass bypass.Bypass
 	config *ssh.ServerConfig
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -46,6 +46,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &forwardHandler{
 		bypass: options.Bypass,
+		router: options.Router,
 		logger: options.Logger,
 	}
 }
@@ -69,11 +70,6 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 	h.config = config
 
 	return nil
-}
-
-// WithChain implements chain.Chainable interface
-func (h *forwardHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
 }
 
 func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -168,11 +164,7 @@ func (h *forwardHandler) directPortForwardChannel(ctx context.Context, channel s
 		return
 	}
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		// WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-	conn, err := r.Dial(ctx, "tcp", raddr)
+	conn, err := h.router.Dial(ctx, "tcp", raddr)
 	if err != nil {
 		return
 	}

@@ -18,7 +18,7 @@ import (
 )
 
 type Options struct {
-	chain     *chain.Chain
+	router    *chain.Router
 	tlsConfig *tls.Config
 	timeout   time.Duration
 	logger    logger.Logger
@@ -27,10 +27,10 @@ type Options struct {
 // Option allows a common way to set Exchanger options.
 type Option func(opts *Options)
 
-// ChainOption sets the chain for Exchanger.
-func ChainOption(chain *chain.Chain) Option {
+// RouterOption sets the router for Exchanger.
+func RouterOption(router *chain.Router) Option {
 	return func(opts *Options) {
-		opts.chain = chain
+		opts.router = router
 	}
 }
 
@@ -89,13 +89,16 @@ func NewExchanger(addr string, opts ...Option) (Exchanger, error) {
 		network: u.Scheme,
 		addr:    u.Host,
 		rawAddr: addr,
+		router:  options.router,
 		options: options,
 	}
-	ex.router = (&chain.Router{}).
-		WithChain(options.chain).
-		WithLogger(options.logger)
 	if _, port, _ := net.SplitHostPort(ex.addr); port == "" {
 		ex.addr = net.JoinHostPort(ex.addr, "53")
+	}
+	if ex.router == nil {
+		ex.router = &chain.Router{
+			Logger: options.logger,
+		}
 	}
 
 	switch ex.network {

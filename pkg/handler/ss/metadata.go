@@ -12,7 +12,6 @@ import (
 type metadata struct {
 	cipher      core.Cipher
 	readTimeout time.Duration
-	retryCount  int
 }
 
 func (h *ssHandler) parseMetadata(md mdata.Metadata) (err error) {
@@ -20,7 +19,6 @@ func (h *ssHandler) parseMetadata(md mdata.Metadata) (err error) {
 		users       = "users"
 		key         = "key"
 		readTimeout = "readTimeout"
-		retryCount  = "retry"
 	)
 
 	var method, password string
@@ -39,7 +37,6 @@ func (h *ssHandler) parseMetadata(md mdata.Metadata) (err error) {
 	}
 
 	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
-	h.md.retryCount = mdata.GetInt(md, retryCount)
 
 	return
 }

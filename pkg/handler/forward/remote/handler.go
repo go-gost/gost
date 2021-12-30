@@ -22,6 +22,7 @@ func init() {
 type forwardHandler struct {
 	group  *chain.NodeGroup
 	bypass bypass.Bypass
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -34,12 +35,20 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &forwardHandler{
 		bypass: options.Bypass,
+		router: &chain.Router{
+			Retries:  options.Router.Retries,
+			Resolver: options.Resolver,
+			Logger:   options.Logger,
+		},
 		logger: options.Logger,
 	}
 }
 
 func (h *forwardHandler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
+	if err = h.parseMetadata(md); err != nil {
+		return
+	}
+	return
 }
 
 // Forward implements handler.Forwarder.
@@ -80,12 +89,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
 
-	// without chain
-	r := (&chain.Router{}).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-
-	cc, err := r.Dial(ctx, network, target.Addr())
+	cc, err := h.router.Dial(ctx, network, target.Addr())
 	if err != nil {
 		h.logger.Error(err)
 		// TODO: the router itself may be failed due to the failed node in the router,

@@ -16,7 +16,6 @@ type metadata struct {
 	authenticator     auth.Authenticator
 	timeout           time.Duration
 	readTimeout       time.Duration
-	retryCount        int
 	noTLS             bool
 	enableBind        bool
 	enableUDP         bool
@@ -32,7 +31,6 @@ func (h *socks5Handler) parseMetadata(md mdata.Metadata) (err error) {
 		users             = "users"
 		readTimeout       = "readTimeout"
 		timeout           = "timeout"
-		retryCount        = "retry"
 		noTLS             = "notls"
 		enableBind        = "bind"
 		enableUDP         = "udp"
@@ -64,7 +62,6 @@ func (h *socks5Handler) parseMetadata(md mdata.Metadata) (err error) {
 
 	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
 	h.md.timeout = mdata.GetDuration(md, timeout)
-	h.md.retryCount = mdata.GetInt(md, retryCount)
 	h.md.noTLS = mdata.GetBool(md, noTLS)
 	h.md.enableBind = mdata.GetBool(md, enableBind)
 	h.md.enableUDP = mdata.GetBool(md, enableUDP)

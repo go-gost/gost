@@ -21,13 +21,17 @@ import (
 	"github.com/miekg/dns"
 )
 
+const (
+	defaultNameserver = "udp://127.0.0.1:53"
+)
+
 func init() {
 	registry.RegisterHandler("dns", NewHandler)
 }
 
 type dnsHandler struct {
-	chain      *chain.Chain
 	bypass     bypass.Bypass
+	router     *chain.Router
 	exchangers []exchanger.Exchanger
 	cache      *resolver_util.Cache
 	logger     logger.Logger
@@ -44,6 +48,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &dnsHandler{
 		bypass: options.Bypass,
+		router: options.Router,
 		cache:  cache,
 		logger: options.Logger,
 	}
@@ -61,7 +66,7 @@ func (h *dnsHandler) Init(md md.Metadata) (err error) {
 		}
 		ex, err := exchanger.NewExchanger(
 			server,
-			exchanger.ChainOption(h.chain),
+			exchanger.RouterOption(h.router),
 			exchanger.TimeoutOption(h.md.timeout),
 			exchanger.LoggerOption(h.logger),
 		)
@@ -72,25 +77,19 @@ func (h *dnsHandler) Init(md md.Metadata) (err error) {
 		h.exchangers = append(h.exchangers, ex)
 	}
 	if len(h.exchangers) == 0 {
-		addr := "udp://127.0.0.1:53"
 		ex, err := exchanger.NewExchanger(
-			addr,
-			exchanger.ChainOption(h.chain),
+			defaultNameserver,
+			exchanger.RouterOption(h.router),
 			exchanger.TimeoutOption(h.md.timeout),
 			exchanger.LoggerOption(h.logger),
 		)
-		h.logger.Warnf("resolver not found, default to %s", addr)
+		h.logger.Warnf("resolver not found, default to %s", defaultNameserver)
 		if err != nil {
 			return err
 		}
 		h.exchangers = append(h.exchangers, ex)
 	}
 	return
-}
-
-// implements chain.Chainable interface
-func (h *dnsHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
 }
 
 func (h *dnsHandler) Handle(ctx context.Context, conn net.Conn) {

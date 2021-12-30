@@ -71,11 +71,11 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		h := registry.GetHandler(svc.Handler.Type)(
 			handler.BypassOption(bypasses[svc.Bypass]),
 			handler.LoggerOption(handlerLogger),
+			handler.RouterOption(&chain.Router{
+				Chain:  chains[svc.Chain],
+				Logger: handlerLogger,
+			}),
 		)
-
-		if chainable, ok := h.(chain.Chainable); ok {
-			chainable.WithChain(chains[svc.Chain])
-		}
 
 		if forwarder, ok := h.(handler.Forwarder); ok {
 			forwarder.Forward(forwarderFromConfig(svc.Forwarder))

@@ -35,9 +35,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &relayHandler{
 		bypass: options.Bypass,
-		router: (&chain.Router{}).
-			WithLogger(options.Logger).
-			WithResolver(options.Resolver),
+		router: options.Router,
 		logger: options.Logger,
 	}
 }
@@ -47,14 +45,7 @@ func (h *relayHandler) Init(md md.Metadata) (err error) {
 		return err
 	}
 
-	h.router.WithRetry(h.md.retryCount)
-
 	return nil
-}
-
-// WithChain implements chain.Chainable interface
-func (h *relayHandler) WithChain(chain *chain.Chain) {
-	h.router.WithChain(chain)
 }
 
 // Forward implements handler.Forwarder.

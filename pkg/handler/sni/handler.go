@@ -46,9 +46,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	h := &sniHandler{
 		bypass: options.Bypass,
-		router: (&chain.Router{}).
-			WithLogger(options.Logger).
-			WithResolver(options.Resolver),
+		router: options.Router,
 		logger: log,
 	}
 
@@ -74,14 +72,7 @@ func (h *sniHandler) Init(md md.Metadata) (err error) {
 		}
 	}
 
-	h.router.WithRetry(h.md.retryCount)
-
 	return nil
-}
-
-// WithChain implements chain.Chainable interface
-func (h *sniHandler) WithChain(chain *chain.Chain) {
-	h.router.WithChain(chain)
 }
 
 func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {

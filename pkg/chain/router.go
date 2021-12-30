@@ -13,30 +13,10 @@ import (
 )
 
 type Router struct {
-	retries  int
-	chain    *Chain
-	resolver resolver.Resolver
-	logger   logger.Logger
-}
-
-func (r *Router) WithChain(chain *Chain) *Router {
-	r.chain = chain
-	return r
-}
-
-func (r *Router) WithResolver(resolver resolver.Resolver) *Router {
-	r.resolver = resolver
-	return r
-}
-
-func (r *Router) WithRetry(retries int) *Router {
-	r.retries = retries
-	return r
-}
-
-func (r *Router) WithLogger(logger logger.Logger) *Router {
-	r.logger = logger
-	return r
+	Retries  int
+	Chain    *Chain
+	Resolver resolver.Resolver
+	Logger   logger.Logger
 }
 
 func (r *Router) Dial(ctx context.Context, network, address string) (conn net.Conn, err error) {
@@ -53,27 +33,27 @@ func (r *Router) Dial(ctx context.Context, network, address string) (conn net.Co
 }
 
 func (r *Router) dial(ctx context.Context, network, address string) (conn net.Conn, err error) {
-	count := r.retries + 1
+	count := r.Retries + 1
 	if count <= 0 {
 		count = 1
 	}
-	r.logger.Debugf("dial %s/%s", address, network)
+	r.Logger.Debugf("dial %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
-		route := r.chain.GetRouteFor(network, address)
+		route := r.Chain.GetRouteFor(network, address)
 
-		if r.logger.IsLevelEnabled(logger.DebugLevel) {
+		if r.Logger.IsLevelEnabled(logger.DebugLevel) {
 			buf := bytes.Buffer{}
 			for _, node := range route.Path() {
 				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
 			}
 			fmt.Fprintf(&buf, "%s", address)
-			r.logger.Debugf("route(retry=%d) %s", i, buf.String())
+			r.Logger.Debugf("route(retry=%d) %s", i, buf.String())
 		}
 
 		address, err = r.resolve(ctx, address)
 		if err != nil {
-			r.logger.Error(err)
+			r.Logger.Error(err)
 			break
 		}
 
@@ -81,15 +61,19 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 		if err == nil {
 			break
 		}
-		r.logger.Errorf("route(retry=%d) %s", i, err)
+		r.Logger.Errorf("route(retry=%d) %s", i, err)
 	}
 
 	return
 }
 
 func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
+	if addr == "" {
+		return addr, nil
+	}
+
 	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
+	if err != nil || host == "" {
 		return "", err
 	}
 
@@ -99,10 +83,10 @@ func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
 		}
 	*/
 
-	if r.resolver != nil {
-		ips, err := r.resolver.Resolve(ctx, host)
+	if r.Resolver != nil {
+		ips, err := r.Resolver.Resolve(ctx, host)
 		if err != nil {
-			r.logger.Error(err)
+			r.Logger.Error(err)
 		}
 		if len(ips) == 0 {
 			return "", errors.New("domain not exists")
@@ -113,29 +97,29 @@ func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
 }
 
 func (r *Router) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (ln net.Listener, err error) {
-	count := r.retries + 1
+	count := r.Retries + 1
 	if count <= 0 {
 		count = 1
 	}
-	r.logger.Debugf("bind on %s/%s", address, network)
+	r.Logger.Debugf("bind on %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
-		route := r.chain.GetRouteFor(network, address)
+		route := r.Chain.GetRouteFor(network, address)
 
-		if r.logger.IsLevelEnabled(logger.DebugLevel) {
+		if r.Logger.IsLevelEnabled(logger.DebugLevel) {
 			buf := bytes.Buffer{}
 			for _, node := range route.Path() {
 				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
 			}
 			fmt.Fprintf(&buf, "%s", address)
-			r.logger.Debugf("route(retry=%d) %s", i, buf.String())
+			r.Logger.Debugf("route(retry=%d) %s", i, buf.String())
 		}
 
 		ln, err = route.Bind(ctx, network, address, opts...)
 		if err == nil {
 			break
 		}
-		r.logger.Errorf("route(retry=%d) %s", i, err)
+		r.Logger.Errorf("route(retry=%d) %s", i, err)
 	}
 
 	return

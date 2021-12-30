@@ -22,8 +22,8 @@ func init() {
 
 type forwardHandler struct {
 	group  *chain.NodeGroup
-	chain  *chain.Chain
 	bypass bypass.Bypass
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -36,6 +36,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &forwardHandler{
 		bypass: options.Bypass,
+		router: options.Router,
 		logger: options.Logger,
 	}
 }
@@ -49,12 +50,8 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 		// dummy node used by relay connector.
 		h.group = chain.NewNodeGroup(chain.NewNode("dummy", ":0"))
 	}
-	return nil
-}
 
-// WithChain implements chain.Chainable interface
-func (h *forwardHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
+	return nil
 }
 
 // Forward implements handler.Forwarder.
@@ -95,12 +92,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-
-	cc, err := r.Dial(ctx, network, target.Addr())
+	cc, err := h.router.Dial(ctx, network, target.Addr())
 	if err != nil {
 		h.logger.Error(err)
 		// TODO: the router itself may be failed due to the failed node in the router,

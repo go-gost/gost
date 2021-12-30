@@ -10,14 +10,12 @@ import (
 type metadata struct {
 	authenticator auth.Authenticator
 	readTimeout   time.Duration
-	retryCount    int
 }
 
 func (h *socks4Handler) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		users       = "users"
 		readTimeout = "readTimeout"
-		retryCount  = "retry"
 	)
 
 	if auths := mdata.GetStrings(md, users); len(auths) > 0 {
@@ -31,6 +29,5 @@ func (h *socks4Handler) parseMetadata(md mdata.Metadata) (err error) {
 	}
 
 	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
-	h.md.retryCount = mdata.GetInt(md, retryCount)
 	return
 }

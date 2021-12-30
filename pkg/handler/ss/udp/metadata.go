@@ -13,7 +13,6 @@ import (
 type metadata struct {
 	cipher      core.Cipher
 	readTimeout time.Duration
-	retryCount  int
 	bufferSize  int
 }
 
@@ -22,7 +21,6 @@ func (h *ssuHandler) parseMetadata(md mdata.Metadata) (err error) {
 		users       = "users"
 		key         = "key"
 		readTimeout = "readTimeout"
-		retryCount  = "retry"
 		bufferSize  = "bufferSize"
 	)
 
@@ -42,7 +40,6 @@ func (h *ssuHandler) parseMetadata(md mdata.Metadata) (err error) {
 	}
 
 	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
-	h.md.retryCount = mdata.GetInt(md, retryCount)
 
 	if bs := mdata.GetInt(md, bufferSize); bs > 0 {
 		h.md.bufferSize = int(math.Min(math.Max(float64(bs), 512), 64*1024))

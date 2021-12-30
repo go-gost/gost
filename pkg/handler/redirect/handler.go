@@ -22,8 +22,8 @@ func init() {
 }
 
 type redirectHandler struct {
-	chain  *chain.Chain
 	bypass bypass.Bypass
+	router *chain.Router
 	logger logger.Logger
 	md     metadata
 }
@@ -36,17 +36,13 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 
 	return &redirectHandler{
 		bypass: options.Bypass,
+		router: options.Router,
 		logger: options.Logger,
 	}
 }
 
 func (h *redirectHandler) Init(md md.Metadata) (err error) {
 	return h.parseMetadata(md)
-}
-
-// WithChain implements chain.Chainable interface
-func (h *redirectHandler) WithChain(chain *chain.Chain) {
-	h.chain = chain
 }
 
 func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -93,12 +89,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	r := (&chain.Router{}).
-		WithChain(h.chain).
-		WithRetry(h.md.retryCount).
-		WithLogger(h.logger)
-
-	cc, err := r.Dial(ctx, network, dstAddr.String())
+	cc, err := h.router.Dial(ctx, network, dstAddr.String())
 	if err != nil {
 		h.logger.Error(err)
 		return

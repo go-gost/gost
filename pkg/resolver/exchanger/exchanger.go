@@ -107,7 +107,7 @@ func NewExchanger(addr string, opts ...Option) (Exchanger, error) {
 			}
 		}
 		ex.network = "tcp"
-	case "doh":
+	case "https":
 		ex.addr = addr
 		if ex.options.tlsConfig == nil {
 			ex.options.tlsConfig = &tls.Config{
@@ -134,7 +134,7 @@ func NewExchanger(addr string, opts ...Option) (Exchanger, error) {
 }
 
 func (ex *exchanger) Exchange(ctx context.Context, msg []byte) ([]byte, error) {
-	if ex.network == "doh" {
+	if ex.network == "https" {
 		return ex.dohExchange(ctx, msg)
 	}
 	return ex.exchange(ctx, msg)

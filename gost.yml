@@ -3,29 +3,6 @@ log:
   level: debug # debug, info, warn, error, fatal
   format: json # text, json
 
-profiling:
-  addr: ":6060"
-  enabled: true
-
-# tls:
-#  cert: "cert.pem"
-#  key: "key.pem"
-#  ca: "root.ca"
-
-resolvers:
-- name: resolver-0
-  nameservers:
-  - addr: udp://8.8.8.8:53
-    chain: chain-0
-    ttl: 60s
-    prefer: ipv4
-    clientIP: 1.2.3.4
-    timeout: 3s
-  - addr: tcp://1.1.1.1:53
-  - addr: tls://1.1.1.1:853
-  - addr: https://1.0.0.1/dns-query
-    hostname: cloudflare-dns.com
-
 services:
 - name: http+tcp
   url: "http://gost:gost@:8000"
@@ -95,7 +72,7 @@ services:
       readTimeout: 5s
       retry: 3
       notls: true
-      # udpBufferSize: 4096 # range [512, 66560]
+      # udpBufferSize: 1024
   listener:
     type: tcp
     metadata:
@@ -285,7 +262,7 @@ chains:
         metadata: {}
 
 bypasses:
-- name: bypass01
+- name: bypass-0
   reverse: false
   matchers:
   - .baidu.com
@@ -313,3 +290,41 @@ bypasses:
   # From IANA Multicast Address Space Registry
   # http://www.iana.org/assignments/multicast-addresses/multicast-addresses.xhtml
   - 224.0.0.0/4         # RFC5771: Multicast/Reserved
+
+# tls:
+#  cert: "cert.pem"
+#  key: "key.pem"
+#  ca: "root.ca"
+
+resolvers:
+- name: resolver-0
+  nameservers:
+  - addr: udp://8.8.8.8:53
+    chain: chain-0
+    ttl: 60s
+    prefer: ipv4
+    clientIP: 1.2.3.4
+    timeout: 3s
+  - addr: tcp://1.1.1.1:53
+  - addr: tls://1.1.1.1:853
+  - addr: https://1.0.0.1/dns-query
+    hostname: cloudflare-dns.com
+
+hosts:
+- name: hosts-0
+  entries:
+  - ip: 127.0.0.1
+    hostname: localhost
+  - ip: 192.168.1.10
+    hostname: foo.mydomain.org
+    aliases:
+    - foo
+  - ip: 192.168.1.13
+    hostname: bar.mydomain.org
+    aliases:
+    - bar
+    - baz
+
+profiling:
+  addr: ":6060"
+  enabled: true

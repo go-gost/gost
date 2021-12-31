@@ -3,11 +3,11 @@ package chain
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"net"
 
 	"github.com/go-gost/gost/pkg/connector"
+	"github.com/go-gost/gost/pkg/hosts"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/resolver"
 )
@@ -15,6 +15,7 @@ import (
 type Router struct {
 	Retries  int
 	Chain    *Chain
+	Hosts    *hosts.Hosts
 	Resolver resolver.Resolver
 	Logger   logger.Logger
 }
@@ -77,11 +78,10 @@ func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
 		return "", err
 	}
 
-	/*
-		if ip := hosts.Lookup(host); ip != nil {
-			return net.JoinHostPort(ip.String(), port)
-		}
-	*/
+	if ip := r.Hosts.Lookup(host); ip != nil {
+		r.Logger.Debugf("hit hosts: %s -> %s", host, ip)
+		return net.JoinHostPort(ip.String(), port), nil
+	}
 
 	if r.Resolver != nil {
 		ips, err := r.Resolver.Resolve(ctx, host)
@@ -89,7 +89,7 @@ func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
 			r.Logger.Error(err)
 		}
 		if len(ips) == 0 {
-			return "", errors.New("domain not exists")
+			return "", fmt.Errorf("resolver: domain %s does not exists", host)
 		}
 		return net.JoinHostPort(ips[0].String(), port), nil
 	}

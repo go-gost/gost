@@ -47,6 +47,33 @@ type BypassConfig struct {
 	Reverse  bool `yaml:",omitempty"`
 	Matchers []string
 }
+
+type NameserverConfig struct {
+	Addr     string
+	Chain    string
+	Prefer   string
+	ClientIP string
+	Hostname string
+	TTL      time.Duration
+	Timeout  time.Duration
+}
+
+type ResolverConfig struct {
+	Name        string
+	Nameservers []NameserverConfig
+}
+
+type HostConfig struct {
+	IP       string
+	Hostname string
+	Aliases  []string
+}
+
+type HostsConfig struct {
+	Name    string
+	Entries []HostConfig
+}
+
 type ListenerConfig struct {
 	Type     string
 	Metadata map[string]interface{} `yaml:",omitempty"`
@@ -78,6 +105,8 @@ type ServiceConfig struct {
 	Addr      string           `yaml:",omitempty"`
 	Chain     string           `yaml:",omitempty"`
 	Bypass    string           `yaml:",omitempty"`
+	Resolver  string           `yaml:",omitempty"`
+	Hosts     string           `yaml:",omitempty"`
 	Listener  *ListenerConfig  `yaml:",omitempty"`
 	Handler   *HandlerConfig   `yaml:",omitempty"`
 	Forwarder *ForwarderConfig `yaml:",omitempty"`
@@ -105,12 +134,14 @@ type NodeConfig struct {
 }
 
 type Config struct {
-	Log       *LogConfig       `yaml:",omitempty"`
-	Profiling *ProfilingConfig `yaml:",omitempty"`
-	TLS       *TLSConfig       `yaml:",omitempty"`
+	Log       *LogConfig        `yaml:",omitempty"`
+	Profiling *ProfilingConfig  `yaml:",omitempty"`
+	TLS       *TLSConfig        `yaml:",omitempty"`
+	Bypasses  []*BypassConfig   `yaml:",omitempty"`
+	Resolvers []*ResolverConfig `yaml:",omitempty"`
+	Hosts     []*HostsConfig    `yaml:",omitempty"`
+	Chains    []*ChainConfig    `yaml:",omitempty"`
 	Services  []*ServiceConfig
-	Chains    []*ChainConfig  `yaml:",omitempty"`
-	Bypasses  []*BypassConfig `yaml:",omitempty"`
 }
 
 func (c *Config) Load() error {

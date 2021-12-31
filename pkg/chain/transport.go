@@ -10,7 +10,7 @@ import (
 
 type Transport struct {
 	addr      string
-	route     *Route
+	route     *route
 	dialer    dialer.Dialer
 	connector connector.Connector
 }
@@ -82,7 +82,7 @@ func (tr *Transport) Multiplex() bool {
 	return false
 }
 
-func (tr *Transport) WithRoute(r *Route) *Transport {
+func (tr *Transport) WithRoute(r *route) *Transport {
 	tr.route = r
 	return tr
 }

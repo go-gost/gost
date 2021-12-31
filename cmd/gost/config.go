@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"net"
 	"os"
 	"strings"
 
@@ -11,16 +12,21 @@ import (
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/dialer"
 	"github.com/go-gost/gost/pkg/handler"
+	hostspkg "github.com/go-gost/gost/pkg/hosts"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/pkg/resolver"
+	resolver_impl "github.com/go-gost/gost/pkg/resolver/impl"
 	"github.com/go-gost/gost/pkg/service"
 )
 
 var (
-	chains   = make(map[string]*chain.Chain)
-	bypasses = make(map[string]bypass.Bypass)
+	chains    = make(map[string]*chain.Chain)
+	bypasses  = make(map[string]bypass.Bypass)
+	resolvers = make(map[string]resolver.Resolver)
+	hosts     = make(map[string]*hostspkg.Hosts)
 )
 
 func buildService(cfg *config.Config) (services []*service.Service) {
@@ -30,6 +36,17 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 
 	for _, bypassCfg := range cfg.Bypasses {
 		bypasses[bypassCfg.Name] = bypassFromConfig(bypassCfg)
+	}
+
+	for _, resolverCfg := range cfg.Resolvers {
+		r, err := resolverFromConfig(resolverCfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		resolvers[resolverCfg.Name] = r
+	}
+	for _, hostsCfg := range cfg.Hosts {
+		hosts[hostsCfg.Name] = hostsFromConfig(hostsCfg)
 	}
 
 	for _, chainCfg := range cfg.Chains {
@@ -72,8 +89,10 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			handler.BypassOption(bypasses[svc.Bypass]),
 			handler.LoggerOption(handlerLogger),
 			handler.RouterOption(&chain.Router{
-				Chain:  chains[svc.Chain],
-				Logger: handlerLogger,
+				Chain:    chains[svc.Chain],
+				Resolver: resolvers[svc.Resolver],
+				Hosts:    hosts[svc.Hosts],
+				Logger:   handlerLogger,
 			}),
 		)
 
@@ -173,6 +192,20 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 	return c
 }
 
+func forwarderFromConfig(cfg *config.ForwarderConfig) *chain.NodeGroup {
+	if cfg == nil || len(cfg.Targets) == 0 {
+		return nil
+	}
+
+	group := &chain.NodeGroup{}
+	for _, target := range cfg.Targets {
+		if v := strings.TrimSpace(target); v != "" {
+			group.AddNode(chain.NewNode(target, target))
+		}
+	}
+	return group.WithSelector(selectorFromConfig(cfg.Selector))
+}
+
 func logFromConfig(cfg *config.LogConfig) logger.Logger {
 	if cfg == nil {
 		cfg = &config.LogConfig{}
@@ -234,16 +267,41 @@ func bypassFromConfig(cfg *config.BypassConfig) bypass.Bypass {
 	return bypass.NewBypassPatterns(cfg.Reverse, cfg.Matchers...)
 }
 
-func forwarderFromConfig(cfg *config.ForwarderConfig) *chain.NodeGroup {
-	if cfg == nil || len(cfg.Targets) == 0 {
+func resolverFromConfig(cfg *config.ResolverConfig) (resolver.Resolver, error) {
+	if cfg == nil {
+		return nil, nil
+	}
+	var nameservers []resolver_impl.NameServer
+	for _, server := range cfg.Nameservers {
+		nameservers = append(nameservers, resolver_impl.NameServer{
+			Addr:     server.Addr,
+			Chain:    chains[server.Chain],
+			TTL:      server.TTL,
+			Timeout:  server.Timeout,
+			ClientIP: net.ParseIP(server.ClientIP),
+			Prefer:   server.Prefer,
+			Hostname: server.Hostname,
+		})
+	}
+	return resolver_impl.NewResolver(nameservers)
+}
+
+func hostsFromConfig(cfg *config.HostsConfig) *hostspkg.Hosts {
+	if cfg == nil {
 		return nil
 	}
+	hosts := &hostspkg.Hosts{}
 
-	group := &chain.NodeGroup{}
-	for _, target := range cfg.Targets {
-		if v := strings.TrimSpace(target); v != "" {
-			group.AddNode(chain.NewNode(target, target))
+	for _, host := range cfg.Entries {
+		if host.IP == "" || host.Hostname == "" {
+			continue
 		}
+
+		ip := net.ParseIP(host.IP)
+		if ip == nil {
+			continue
+		}
+		hosts.AddHost(hostspkg.NewHost(ip, host.Hostname, host.Aliases...))
 	}
-	return group.WithSelector(selectorFromConfig(cfg.Selector))
+	return hosts
 }

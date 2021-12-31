@@ -15,15 +15,15 @@ var (
 	ErrEmptyRoute = errors.New("empty route")
 )
 
-type Route struct {
+type route struct {
 	nodes []*Node
 }
 
-func (r *Route) AddNode(node *Node) {
+func (r *route) AddNode(node *Node) {
 	r.nodes = append(r.nodes, node)
 }
 
-func (r *Route) connect(ctx context.Context) (conn net.Conn, err error) {
+func (r *route) connect(ctx context.Context) (conn net.Conn, err error) {
 	if r.IsEmpty() {
 		return nil, ErrEmptyRoute
 	}
@@ -67,7 +67,7 @@ func (r *Route) connect(ctx context.Context) (conn net.Conn, err error) {
 	return
 }
 
-func (r *Route) Dial(ctx context.Context, network, address string) (net.Conn, error) {
+func (r *route) Dial(ctx context.Context, network, address string) (net.Conn, error) {
 	if r.IsEmpty() {
 		return r.dialDirect(ctx, network, address)
 	}
@@ -85,7 +85,7 @@ func (r *Route) Dial(ctx context.Context, network, address string) (net.Conn, er
 	return cc, nil
 }
 
-func (r *Route) dialDirect(ctx context.Context, network, address string) (net.Conn, error) {
+func (r *route) dialDirect(ctx context.Context, network, address string) (net.Conn, error) {
 	switch network {
 	case "udp", "udp4", "udp6":
 		if address == "" {
@@ -98,7 +98,7 @@ func (r *Route) dialDirect(ctx context.Context, network, address string) (net.Co
 	return d.DialContext(ctx, network, address)
 }
 
-func (r *Route) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
+func (r *route) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	if r.IsEmpty() {
 		return r.bindLocal(ctx, network, address, opts...)
 	}
@@ -117,18 +117,18 @@ func (r *Route) Bind(ctx context.Context, network, address string, opts ...conne
 	return ln, nil
 }
 
-func (r *Route) IsEmpty() bool {
+func (r *route) IsEmpty() bool {
 	return r == nil || len(r.nodes) == 0
 }
 
-func (r *Route) Last() *Node {
+func (r *route) Last() *Node {
 	if r.IsEmpty() {
 		return nil
 	}
 	return r.nodes[len(r.nodes)-1]
 }
 
-func (r *Route) Path() (path []*Node) {
+func (r *route) Path() (path []*Node) {
 	if r == nil || len(r.nodes) == 0 {
 		return nil
 	}
@@ -142,7 +142,7 @@ func (r *Route) Path() (path []*Node) {
 	return
 }
 
-func (r *Route) bindLocal(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
+func (r *route) bindLocal(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	options := connector.BindOptions{}
 	for _, opt := range opts {
 		opt(&options)

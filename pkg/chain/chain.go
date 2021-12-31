@@ -12,16 +12,16 @@ func (c *Chain) AddNodeGroup(group *NodeGroup) {
 	c.groups = append(c.groups, group)
 }
 
-func (c *Chain) GetRoute() (r *Route) {
+func (c *Chain) GetRoute() (r *route) {
 	return c.GetRouteFor("tcp", "")
 }
 
-func (c *Chain) GetRouteFor(network, address string) (r *Route) {
+func (c *Chain) GetRouteFor(network, address string) (r *route) {
 	if c == nil || len(c.groups) == 0 {
 		return
 	}
 
-	r = &Route{}
+	r = &route{}
 	for _, group := range c.groups {
 		node := group.Next()
 		if node == nil {
@@ -36,7 +36,7 @@ func (c *Chain) GetRouteFor(network, address string) (r *Route) {
 				WithRoute(r)
 			node = node.Copy().
 				WithTransport(tr)
-			r = &Route{}
+			r = &route{}
 		}
 
 		r.AddNode(node)

@@ -51,22 +51,12 @@ func (c *Cache) Load(key CacheKey) *dns.Msg {
 		return nil
 	}
 
-	elapsed := time.Since(item.ts)
-	if item.ttl > 0 {
-		if elapsed > item.ttl {
-			c.m.Delete(key)
-			return nil
-		}
-	} else {
-		for _, rr := range item.msg.Answer {
-			if elapsed > time.Duration(rr.Header().Ttl)*time.Second {
-				c.m.Delete(key)
-				return nil
-			}
-		}
+	if time.Since(item.ts) > item.ttl {
+		c.m.Delete(key)
+		return nil
 	}
 
-	c.logger.Debugf("resolver cache hit %s", key)
+	c.logger.Debugf("resolver cache hit: %s", key)
 
 	return item.msg.Copy()
 }
@@ -76,11 +66,23 @@ func (c *Cache) Store(key CacheKey, mr *dns.Msg, ttl time.Duration) {
 		return
 	}
 
+	if ttl == 0 {
+		for _, answer := range mr.Answer {
+			v := time.Duration(answer.Header().Ttl) * time.Second
+			if ttl == 0 || ttl > v {
+				ttl = v
+			}
+		}
+	}
+	if ttl == 0 {
+		ttl = 30 * time.Second
+	}
+
 	c.m.Store(key, &cacheItem{
 		msg: mr.Copy(),
 		ts:  time.Now(),
 		ttl: ttl,
 	})
 
-	c.logger.Debugf("resolver cache store %s", key)
+	c.logger.Debugf("resolver cache store: %s, ttl: %v", key, ttl)
 }

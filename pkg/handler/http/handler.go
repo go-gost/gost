@@ -139,22 +139,6 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		resp.Header = http.Header{}
 	}
 
-	/*
-		if !Can("tcp", host, h.options.Whitelist, h.options.Blacklist) {
-			log.Logf("[http] %s - %s : Unauthorized to tcp connect to %s",
-				conn.RemoteAddr(), conn.LocalAddr(), host)
-			resp.StatusCode = http.StatusForbidden
-
-			if Debug {
-				dump, _ := httputil.DumpResponse(resp, false)
-				log.Logf("[http] %s <- %s\n%s", conn.RemoteAddr(), conn.LocalAddr(), string(dump))
-			}
-
-			resp.Write(conn)
-			return
-		}
-	*/
-
 	if h.bypass != nil && h.bypass.Contains(addr) {
 		resp.StatusCode = http.StatusForbidden
 

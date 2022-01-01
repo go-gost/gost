@@ -4,20 +4,15 @@ import (
 	"net"
 )
 
-// Host is a static mapping from hostname to IP.
-type Host struct {
+// HostMapper is a mapping from hostname to IP.
+type HostMapper interface {
+	Lookup(host string) net.IP
+}
+
+type host struct {
 	IP       net.IP
 	Hostname string
 	Aliases  []string
-}
-
-// NewHost creates a Host.
-func NewHost(ip net.IP, hostname string, aliases ...string) Host {
-	return Host{
-		IP:       ip,
-		Hostname: hostname,
-		Aliases:  aliases,
-	}
 }
 
 // Hosts is a static table lookup for hostnames.
@@ -26,12 +21,20 @@ func NewHost(ip net.IP, hostname string, aliases ...string) Host {
 // Fields of the entry are separated by any number of blanks and/or tab characters.
 // Text from a "#" character until the end of the line is a comment, and is ignored.
 type Hosts struct {
-	hosts []Host
+	mappings []host
 }
 
-// AddHost adds host(s) to the host table.
-func (h *Hosts) AddHost(host ...Host) {
-	h.hosts = append(h.hosts, host...)
+func NewHosts() *Hosts {
+	return &Hosts{}
+}
+
+// Map maps ip to hostname or aliases.
+func (h *Hosts) Map(ip net.IP, hostname string, aliases ...string) {
+	h.mappings = append(h.mappings, host{
+		IP:       ip,
+		Hostname: hostname,
+		Aliases:  aliases,
+	})
 }
 
 // Lookup searches the IP address corresponds to the given host from the host table.
@@ -40,7 +43,7 @@ func (h *Hosts) Lookup(host string) (ip net.IP) {
 		return
 	}
 
-	for _, h := range h.hosts {
+	for _, h := range h.mappings {
 		if h.Hostname == host {
 			ip = h.IP
 			break

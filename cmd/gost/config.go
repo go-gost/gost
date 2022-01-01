@@ -26,7 +26,7 @@ var (
 	chains    = make(map[string]*chain.Chain)
 	bypasses  = make(map[string]bypass.Bypass)
 	resolvers = make(map[string]resolver.Resolver)
-	hosts     = make(map[string]*hostspkg.Hosts)
+	hosts     = make(map[string]hostspkg.HostMapper)
 )
 
 func buildService(cfg *config.Config) (services []*service.Service) {
@@ -286,11 +286,11 @@ func resolverFromConfig(cfg *config.ResolverConfig) (resolver.Resolver, error) {
 	return resolver_impl.NewResolver(nameservers)
 }
 
-func hostsFromConfig(cfg *config.HostsConfig) *hostspkg.Hosts {
-	if cfg == nil {
+func hostsFromConfig(cfg *config.HostsConfig) hostspkg.HostMapper {
+	if cfg == nil || len(cfg.Entries) == 0 {
 		return nil
 	}
-	hosts := &hostspkg.Hosts{}
+	hosts := hostspkg.NewHosts()
 
 	for _, host := range cfg.Entries {
 		if host.IP == "" || host.Hostname == "" {
@@ -301,7 +301,7 @@ func hostsFromConfig(cfg *config.HostsConfig) *hostspkg.Hosts {
 		if ip == nil {
 			continue
 		}
-		hosts.AddHost(hostspkg.NewHost(ip, host.Hostname, host.Aliases...))
+		hosts.Map(ip, host.Hostname, host.Aliases...)
 	}
 	return hosts
 }

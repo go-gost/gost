@@ -7,13 +7,12 @@ services:
 - name: http+tcp
   url: "http://gost:gost@:8000"
   addr: ":28000"
-  chain: chain01
-  # bypass: bypass01
   handler:
     type: http
+    chain: chain01
+    # bypass: bypass01
     metadata:
       proxyAgent: "gost/3.0"
-      retry: 3
       auths:
       - user1:pass1
       - user2:pass2
@@ -26,10 +25,10 @@ services:
 - name: ss
   url: "ss://chacha20:gost@:8000"
   addr: ":28338"
-  # chain: chain01
-  # bypass: bypass01
   handler:
     type: ss
+    # chain: chain01
+    # bypass: bypass01
     metadata:
       method: chacha20-ietf
       password: gost
@@ -43,10 +42,10 @@ services:
 - name: socks5
   url: "socks5://gost:gost@:1080"
   addr: ":21080"
-  # chain: chain-ss
-  # bypass: bypass01
   handler:
     type: socks5
+    # chain: chain-ss
+    # bypass: bypass01
     metadata:
       auths:
        - gost:gost
@@ -112,7 +111,6 @@ services:
 
 - name: rtcp
   addr: ":28100"
-  # chain: chain-socks5
   forwarder:
     targets:
     - 192.168.8.8:80
@@ -122,6 +120,7 @@ services:
       readTimeout: 5s
   listener:
     type: rtcp
+    # chain: chain-socks5
     metadata:
       keepAlive: 15s
       mux: true
@@ -317,21 +316,6 @@ hosts:
     aliases:
     - bar
     - baz
-
-probeResistance:
-- name: pr-code404
-  type: code
-  value: 404
-  knock: www.example.com
-- name: pr-web
-  type: web
-  value: http://example.com/page.html
-- name: pr-host
-  type: host
-  value: example.com:80
-- name: pr-file
-  type: file
-  value: /path/to/file
 
 profiling:
   addr: ":6060"

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
@@ -29,10 +30,11 @@ func init() {
 }
 
 type http2Handler struct {
-	bypass bypass.Bypass
-	router *chain.Router
-	logger logger.Logger
-	md     metadata
+	bypass        bypass.Bypass
+	router        *chain.Router
+	authenticator auth.Authenticator
+	logger        logger.Logger
+	md            metadata
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
@@ -392,7 +394,7 @@ func (h *http2Handler) basicProxyAuth(proxyAuth string) (username, password stri
 
 func (h *http2Handler) authenticate(conn net.Conn, req *http.Request, resp *http.Response) (ok bool) {
 	u, p, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"))
-	if h.md.authenticator == nil || h.md.authenticator.Authenticate(u, p) {
+	if h.authenticator == nil || h.authenticator.Authenticate(u, p) {
 		return true
 	}
 

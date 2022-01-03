@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
@@ -31,11 +32,12 @@ func init() {
 }
 
 type forwardHandler struct {
-	bypass bypass.Bypass
-	config *ssh.ServerConfig
-	router *chain.Router
-	logger logger.Logger
-	md     metadata
+	bypass        bypass.Bypass
+	config        *ssh.ServerConfig
+	router        *chain.Router
+	authenticator auth.Authenticator
+	logger        logger.Logger
+	md            metadata
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
@@ -57,13 +59,13 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 	}
 
 	config := &ssh.ServerConfig{
-		PasswordCallback:  ssh_util.PasswordCallback(h.md.authenticator),
+		PasswordCallback:  ssh_util.PasswordCallback(h.authenticator),
 		PublicKeyCallback: ssh_util.PublicKeyCallback(h.md.authorizedKeys),
 	}
 
 	config.AddHostKey(h.md.signer)
 
-	if h.md.authenticator == nil && len(h.md.authorizedKeys) == 0 {
+	if h.authenticator == nil && len(h.md.authorizedKeys) == 0 {
 		config.NoClientAuth = true
 	}
 

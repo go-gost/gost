@@ -63,8 +63,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	normConfig(cfg)
-
 	log = logFromConfig(cfg.Log)
 
 	if outputCfgFile != "" {

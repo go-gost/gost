@@ -6,22 +6,22 @@ type Authenticator interface {
 }
 
 // LocalAuthenticator is an Authenticator that authenticates client by local key-value pairs.
-type LocalAuthenticator struct {
+type MapAuthenticator struct {
 	kvs map[string]string
 }
 
-// NewLocalAuthenticator creates an Authenticator that authenticates client by local infos.
-func NewLocalAuthenticator(kvs map[string]string) *LocalAuthenticator {
+// NewMapAuthenticator creates an Authenticator that authenticates client by local infos.
+func NewMapAuthenticator(kvs map[string]string) *MapAuthenticator {
 	if kvs == nil {
 		kvs = make(map[string]string)
 	}
-	return &LocalAuthenticator{
+	return &MapAuthenticator{
 		kvs: kvs,
 	}
 }
 
 // Authenticate checks the validity of the provided user-password pair.
-func (au *LocalAuthenticator) Authenticate(user, password string) bool {
+func (au *MapAuthenticator) Authenticate(user, password string) bool {
 	if au == nil {
 		return true
 	}
@@ -32,9 +32,4 @@ func (au *LocalAuthenticator) Authenticate(user, password string) bool {
 
 	v, ok := au.kvs[user]
 	return ok && (v == "" || password == v)
-}
-
-// Add adds a key-value pair to the Authenticator.
-func (au *LocalAuthenticator) Add(k, v string) {
-	au.kvs[k] = v
 }

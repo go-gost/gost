@@ -36,6 +36,11 @@ type TLSConfig struct {
 	CA   string
 }
 
+type AuthConfig struct {
+	Username string
+	Password string
+}
+
 type SelectorConfig struct {
 	Strategy    string
 	MaxFails    int
@@ -76,11 +81,18 @@ type HostsConfig struct {
 
 type ListenerConfig struct {
 	Type     string
+	Chain    string                 `yaml:",omitempty"`
+	Auths    []AuthConfig           `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
 type HandlerConfig struct {
 	Type     string
+	Chain    string                 `yaml:",omitempty"`
+	Bypass   string                 `yaml:",omitempty"`
+	Resolver string                 `yaml:",omitempty"`
+	Hosts    string                 `yaml:",omitempty"`
+	Auths    []AuthConfig           `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
@@ -91,24 +103,21 @@ type ForwarderConfig struct {
 
 type DialerConfig struct {
 	Type     string
+	Auth     *AuthConfig            `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
 type ConnectorConfig struct {
 	Type     string
+	Auth     *AuthConfig            `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
 type ServiceConfig struct {
 	Name      string
-	URL       string           `yaml:",omitempty"`
 	Addr      string           `yaml:",omitempty"`
-	Chain     string           `yaml:",omitempty"`
-	Bypass    string           `yaml:",omitempty"`
-	Resolver  string           `yaml:",omitempty"`
-	Hosts     string           `yaml:",omitempty"`
-	Listener  *ListenerConfig  `yaml:",omitempty"`
 	Handler   *HandlerConfig   `yaml:",omitempty"`
+	Listener  *ListenerConfig  `yaml:",omitempty"`
 	Forwarder *ForwarderConfig `yaml:",omitempty"`
 }
 
@@ -126,7 +135,6 @@ type HopConfig struct {
 
 type NodeConfig struct {
 	Name      string
-	URL       string           `yaml:",omitempty"`
 	Addr      string           `yaml:",omitempty"`
 	Dialer    *DialerConfig    `yaml:",omitempty"`
 	Connector *ConnectorConfig `yaml:",omitempty"`
@@ -134,14 +142,14 @@ type NodeConfig struct {
 }
 
 type Config struct {
-	Log       *LogConfig        `yaml:",omitempty"`
-	Profiling *ProfilingConfig  `yaml:",omitempty"`
-	TLS       *TLSConfig        `yaml:",omitempty"`
+	Services  []*ServiceConfig
+	Chains    []*ChainConfig    `yaml:",omitempty"`
 	Bypasses  []*BypassConfig   `yaml:",omitempty"`
 	Resolvers []*ResolverConfig `yaml:",omitempty"`
 	Hosts     []*HostsConfig    `yaml:",omitempty"`
-	Chains    []*ChainConfig    `yaml:",omitempty"`
-	Services  []*ServiceConfig
+	TLS       *TLSConfig        `yaml:",omitempty"`
+	Log       *LogConfig        `yaml:",omitempty"`
+	Profiling *ProfilingConfig  `yaml:",omitempty"`
 }
 
 func (c *Config) Load() error {

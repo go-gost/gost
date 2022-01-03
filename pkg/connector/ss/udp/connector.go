@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/go-gost/gost/pkg/common/util/socks"
@@ -12,6 +13,7 @@ import (
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
 func init() {
@@ -19,6 +21,8 @@ func init() {
 }
 
 type ssuConnector struct {
+	user   *url.Userinfo
+	cipher core.Cipher
 	md     metadata
 	logger logger.Logger
 }
@@ -30,12 +34,23 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 
 	return &ssuConnector{
+		user:   options.User,
 		logger: options.Logger,
 	}
 }
 
 func (c *ssuConnector) Init(md md.Metadata) (err error) {
-	return c.parseMetadata(md)
+	if err = c.parseMetadata(md); err != nil {
+		return
+	}
+
+	if c.user != nil {
+		method := c.user.Username()
+		password, _ := c.user.Password()
+		c.cipher, err = ss.ShadowCipher(method, password, c.md.key)
+	}
+
+	return
 }
 
 func (c *ssuConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
@@ -67,16 +82,16 @@ func (c *ssuConnector) Connect(ctx context.Context, conn net.Conn, network, addr
 
 	pc, ok := conn.(net.PacketConn)
 	if ok {
-		if c.md.cipher != nil {
-			pc = c.md.cipher.PacketConn(pc)
+		if c.cipher != nil {
+			pc = c.cipher.PacketConn(pc)
 		}
 
 		// standard UDP relay
 		return ss.UDPClientConn(pc, conn.RemoteAddr(), taddr, c.md.bufferSize), nil
 	}
 
-	if c.md.cipher != nil {
-		conn = ss.ShadowConn(c.md.cipher.StreamConn(conn), nil)
+	if c.cipher != nil {
+		conn = ss.ShadowConn(c.cipher.StreamConn(conn), nil)
 	}
 
 	// UDP over TCP

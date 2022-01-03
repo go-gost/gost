@@ -2,8 +2,6 @@ package http
 
 import (
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 
 	mdata "github.com/go-gost/gost/pkg/metadata"
@@ -11,7 +9,6 @@ import (
 
 type metadata struct {
 	connectTimeout time.Duration
-	User           *url.Userinfo
 	header         http.Header
 }
 
@@ -23,15 +20,6 @@ func (c *httpConnector) parseMetadata(md mdata.Metadata) (err error) {
 	)
 
 	c.md.connectTimeout = mdata.GetDuration(md, connectTimeout)
-
-	if v := mdata.GetString(md, user); v != "" {
-		ss := strings.SplitN(v, ":", 2)
-		if len(ss) == 1 {
-			c.md.User = url.User(ss[0])
-		} else {
-			c.md.User = url.UserPassword(ss[0], ss[1])
-		}
-	}
 
 	if mm := mdata.GetStringMapString(md, header); len(mm) > 0 {
 		hd := http.Header{}

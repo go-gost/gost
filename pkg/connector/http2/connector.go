@@ -24,6 +24,7 @@ func init() {
 }
 
 type http2Connector struct {
+	user   *url.Userinfo
 	md     metadata
 	logger logger.Logger
 }
@@ -35,6 +36,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 
 	return &http2Connector{
+		user:   options.User,
 		logger: options.Logger,
 	}
 }
@@ -74,7 +76,7 @@ func (c *http2Connector) Connect(ctx context.Context, conn net.Conn, network, ad
 		req.Header.Set("User-Agent", c.md.UserAgent)
 	}
 
-	if user := c.md.User; user != nil {
+	if user := c.user; user != nil {
 		u := user.Username()
 		p, _ := user.Password()
 		req.Header.Set("Proxy-Authorization",

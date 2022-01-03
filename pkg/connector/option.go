@@ -1,16 +1,24 @@
 package connector
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/go-gost/gost/pkg/logger"
 )
 
 type Options struct {
+	User   *url.Userinfo
 	Logger logger.Logger
 }
 
 type Option func(opts *Options)
+
+func UserOption(user *url.Userinfo) Option {
+	return func(opts *Options) {
+		opts.User = user
+	}
+}
 
 func LoggerOption(logger logger.Logger) Option {
 	return func(opts *Options) {

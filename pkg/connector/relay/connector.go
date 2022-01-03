@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/go-gost/gost/pkg/common/util/socks"
@@ -19,6 +20,7 @@ func init() {
 }
 
 type relayConnector struct {
+	user   *url.Userinfo
 	logger logger.Logger
 	md     metadata
 }
@@ -30,6 +32,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 
 	return &relayConnector{
+		user:   options.User,
 		logger: options.Logger,
 	}
 }
@@ -71,10 +74,10 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 		}
 	}
 
-	if c.md.user != nil {
-		pwd, _ := c.md.user.Password()
+	if c.user != nil {
+		pwd, _ := c.user.Password()
 		req.Features = append(req.Features, &relay.UserAuthFeature{
-			Username: c.md.user.Username(),
+			Username: c.user.Username(),
 			Password: pwd,
 		})
 	}

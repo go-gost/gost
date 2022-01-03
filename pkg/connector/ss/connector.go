@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/go-gost/gosocks5"
@@ -13,6 +14,7 @@ import (
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
 func init() {
@@ -20,6 +22,8 @@ func init() {
 }
 
 type ssConnector struct {
+	user   *url.Userinfo
+	cipher core.Cipher
 	md     metadata
 	logger logger.Logger
 }
@@ -31,12 +35,23 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 
 	return &ssConnector{
+		user:   options.User,
 		logger: options.Logger,
 	}
 }
 
 func (c *ssConnector) Init(md md.Metadata) (err error) {
-	return c.parseMetadata(md)
+	if err = c.parseMetadata(md); err != nil {
+		return
+	}
+
+	if c.user != nil {
+		method := c.user.Username()
+		password, _ := c.user.Password()
+		c.cipher, err = ss.ShadowCipher(method, password, c.md.key)
+	}
+
+	return
 }
 
 func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
@@ -80,8 +95,8 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 		defer conn.SetDeadline(time.Time{})
 	}
 
-	if c.md.cipher != nil {
-		conn = c.md.cipher.StreamConn(conn)
+	if c.cipher != nil {
+		conn = c.cipher.StreamConn(conn)
 	}
 
 	var sc net.Conn

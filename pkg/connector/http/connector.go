@@ -23,6 +23,7 @@ func init() {
 }
 
 type httpConnector struct {
+	user   *url.Userinfo
 	md     metadata
 	logger logger.Logger
 }
@@ -34,6 +35,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 
 	return &httpConnector{
+		user:   options.User,
 		logger: options.Logger,
 	}
 }
@@ -65,7 +67,7 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 	}
 	req.Header.Set("Proxy-Connection", "keep-alive")
 
-	if user := c.md.User; user != nil {
+	if user := c.user; user != nil {
 		u := user.Username()
 		p, _ := user.Password()
 		req.Header.Set("Proxy-Authorization",

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
+	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/util/socks"
@@ -21,11 +22,12 @@ func init() {
 }
 
 type socks5Handler struct {
-	selector gosocks5.Selector
-	bypass   bypass.Bypass
-	router   *chain.Router
-	logger   logger.Logger
-	md       metadata
+	selector      gosocks5.Selector
+	bypass        bypass.Bypass
+	router        *chain.Router
+	authenticator auth.Authenticator
+	logger        logger.Logger
+	md            metadata
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
@@ -47,7 +49,7 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 	}
 
 	h.selector = &serverSelector{
-		Authenticator: h.md.authenticator,
+		Authenticator: h.authenticator,
 		TLSConfig:     h.md.tlsConfig,
 		logger:        h.logger,
 		noTLS:         h.md.noTLS,

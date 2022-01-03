@@ -3,9 +3,11 @@ package main
 import (
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 
+	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/config"
@@ -54,12 +56,14 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 	}
 
 	for _, svc := range cfg.Services {
+		if svc.Listener == nil || svc.Handler == nil {
+			continue
+		}
 		serviceLogger := log.WithFields(map[string]interface{}{
 			"kind":     "service",
 			"service":  svc.Name,
 			"listener": svc.Listener.Type,
 			"handler":  svc.Handler.Type,
-			"chain":    svc.Chain,
 		})
 
 		listenerLogger := serviceLogger.WithFields(map[string]interface{}{
@@ -67,11 +71,12 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 		ln := registry.GetListener(svc.Listener.Type)(
 			listener.AddrOption(svc.Addr),
+			listener.AuthenticatorOption(authFromConfig(svc.Listener.Auths...)),
 			listener.LoggerOption(listenerLogger),
 		)
 
 		if chainable, ok := ln.(chain.Chainable); ok {
-			chainable.WithChain(chains[svc.Chain])
+			chainable.WithChain(chains[svc.Listener.Chain])
 		}
 
 		if svc.Listener.Metadata == nil {
@@ -86,12 +91,13 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 
 		h := registry.GetHandler(svc.Handler.Type)(
-			handler.BypassOption(bypasses[svc.Bypass]),
 			handler.LoggerOption(handlerLogger),
+			handler.BypassOption(bypasses[svc.Handler.Bypass]),
+			handler.AuthenticatorOption(authFromConfig(svc.Handler.Auths...)),
 			handler.RouterOption(&chain.Router{
-				Chain:    chains[svc.Chain],
-				Resolver: resolvers[svc.Resolver],
-				Hosts:    hosts[svc.Hosts],
+				Chain:    chains[svc.Handler.Chain],
+				Resolver: resolvers[svc.Handler.Resolver],
+				Hosts:    hosts[svc.Handler.Hosts],
 				Logger:   handlerLogger,
 			}),
 		)
@@ -134,14 +140,27 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 	for _, hop := range cfg.Hops {
 		group := &chain.NodeGroup{}
 		for _, v := range hop.Nodes {
-			connectorLogger := chainLogger.WithFields(map[string]interface{}{
-				"kind":      "connector",
+			nodeLogger := chainLogger.WithFields(map[string]interface{}{
+				"kind":      "node",
 				"connector": v.Connector.Type,
 				"dialer":    v.Dialer.Type,
 				"hop":       hop.Name,
 				"node":      v.Name,
 			})
+			connectorLogger := nodeLogger.WithFields(map[string]interface{}{
+				"kind": "connector",
+			})
+
+			var connectorUser *url.Userinfo
+			if auth := v.Connector.Auth; auth != nil && auth.Username != "" {
+				if auth.Password == "" {
+					connectorUser = url.User(auth.Username)
+				} else {
+					connectorUser = url.UserPassword(auth.Username, auth.Password)
+				}
+			}
 			cr := registry.GetConnector(v.Connector.Type)(
+				connector.UserOption(connectorUser),
 				connector.LoggerOption(connectorLogger),
 			)
 
@@ -152,14 +171,20 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 				connectorLogger.Fatal("init: ", err)
 			}
 
-			dialerLogger := chainLogger.WithFields(map[string]interface{}{
-				"kind":      "dialer",
-				"connector": v.Connector.Type,
-				"dialer":    v.Dialer.Type,
-				"hop":       hop.Name,
-				"node":      v.Name,
+			dialerLogger := nodeLogger.WithFields(map[string]interface{}{
+				"kind": "dialer",
 			})
+
+			var dialerUser *url.Userinfo
+			if auth := v.Dialer.Auth; auth != nil && auth.Username != "" {
+				if auth.Password == "" {
+					dialerUser = url.User(auth.Username)
+				} else {
+					dialerUser = url.UserPassword(auth.Username, auth.Password)
+				}
+			}
 			d := registry.GetDialer(v.Dialer.Type)(
+				dialer.UserOption(dialerUser),
 				dialer.LoggerOption(dialerLogger),
 			)
 
@@ -304,4 +329,19 @@ func hostsFromConfig(cfg *config.HostsConfig) hostspkg.HostMapper {
 		hosts.Map(ip, host.Hostname, host.Aliases...)
 	}
 	return hosts
+}
+
+func authFromConfig(cfgs ...config.AuthConfig) auth.Authenticator {
+	auths := make(map[string]string)
+	for _, cfg := range cfgs {
+		if cfg.Username == "" {
+			continue
+		}
+		auths[cfg.Username] = cfg.Password
+	}
+	if len(auths) > 0 {
+		return auth.NewMapAuthenticator(auths)
+	}
+
+	return nil
 }

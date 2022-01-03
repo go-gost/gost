@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/go-gost/gost/pkg/auth"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -19,11 +20,12 @@ func init() {
 type sshListener struct {
 	addr string
 	net.Listener
-	config  *ssh.ServerConfig
-	cqueue  chan net.Conn
-	errChan chan error
-	logger  logger.Logger
-	md      metadata
+	config        *ssh.ServerConfig
+	authenticator auth.Authenticator
+	cqueue        chan net.Conn
+	errChan       chan error
+	logger        logger.Logger
+	md            metadata
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
@@ -50,13 +52,13 @@ func (l *sshListener) Init(md md.Metadata) (err error) {
 	l.Listener = ln
 
 	config := &ssh.ServerConfig{
-		PasswordCallback:  ssh_util.PasswordCallback(l.md.authenticator),
+		PasswordCallback:  ssh_util.PasswordCallback(l.authenticator),
 		PublicKeyCallback: ssh_util.PublicKeyCallback(l.md.authorizedKeys),
 	}
 
 	config.AddHostKey(l.md.signer)
 
-	if l.md.authenticator == nil && len(l.md.authorizedKeys) == 0 {
+	if l.authenticator == nil && len(l.md.authorizedKeys) == 0 {
 		config.NoClientAuth = true
 	}
 

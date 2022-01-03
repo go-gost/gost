@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/url"
 	"sync"
 	"time"
 
@@ -20,6 +21,7 @@ func init() {
 }
 
 type forwardDialer struct {
+	user         *url.Userinfo
 	sessions     map[string]*sshSession
 	sessionMutex sync.Mutex
 	logger       logger.Logger
@@ -33,6 +35,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 
 	return &forwardDialer{
+		user:     options.User,
 		sessions: make(map[string]*sshSession),
 		logger:   options.Logger,
 	}
@@ -161,9 +164,9 @@ func (d *forwardDialer) initSession(ctx context.Context, addr string, conn net.C
 		// Timeout:         timeout,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	if d.md.user != nil {
-		config.User = d.md.user.Username()
-		if password, _ := d.md.user.Password(); password != "" {
+	if d.user != nil {
+		config.User = d.user.Username()
+		if password, _ := d.user.Password(); password != "" {
 			config.Auth = []ssh.AuthMethod{
 				ssh.Password(password),
 			}

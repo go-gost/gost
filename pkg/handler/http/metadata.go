@@ -4,40 +4,24 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-gost/gost/pkg/auth"
 	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
-	authenticator auth.Authenticator
-	probeResist   *probeResist
-	sni           bool
-	enableUDP     bool
-	header        http.Header
+	probeResist *probeResist
+	sni         bool
+	enableUDP   bool
+	header      http.Header
 }
 
 func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 	const (
 		header         = "header"
-		users          = "users"
 		probeResistKey = "probeResist"
 		knock          = "knock"
 		sni            = "sni"
 		enableUDP      = "udp"
 	)
-
-	if auths := mdata.GetStrings(md, users); len(auths) > 0 {
-		authenticator := auth.NewLocalAuthenticator(nil)
-		for _, auth := range auths {
-			ss := strings.SplitN(auth, ":", 2)
-			if len(ss) == 1 {
-				authenticator.Add(ss[0], "")
-			} else {
-				authenticator.Add(ss[0], ss[1])
-			}
-		}
-		h.md.authenticator = authenticator
-	}
 
 	if m := mdata.GetStringMapString(md, header); len(m) > 0 {
 		hd := http.Header{}

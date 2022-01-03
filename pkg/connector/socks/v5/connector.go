@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/go-gost/gosocks5"
@@ -23,6 +24,7 @@ func init() {
 
 type socks5Connector struct {
 	selector gosocks5.Selector
+	user     *url.Userinfo
 	logger   logger.Logger
 	md       metadata
 }
@@ -34,6 +36,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 
 	return &socks5Connector{
+		user:   options.User,
 		logger: options.Logger,
 	}
 }
@@ -49,7 +52,7 @@ func (c *socks5Connector) Init(md md.Metadata) (err error) {
 			gosocks5.MethodUserPass,
 		},
 		logger:    c.logger,
-		User:      c.md.User,
+		User:      c.user,
 		TLSConfig: c.md.tlsConfig,
 	}
 	if !c.md.noTLS {

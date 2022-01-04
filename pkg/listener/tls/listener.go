@@ -15,20 +15,20 @@ func init() {
 }
 
 type tlsListener struct {
-	addr string
 	net.Listener
-	logger logger.Logger
-	md     metadata
+	logger  logger.Logger
+	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &tlsListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -37,12 +37,12 @@ func (l *tlsListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	ln, err := net.Listen("tcp", l.addr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}
 
-	l.Listener = tls.NewListener(ln, l.md.tlsConfig)
+	l.Listener = tls.NewListener(ln, l.options.TLSConfig)
 
 	return
 }

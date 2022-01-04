@@ -20,22 +20,22 @@ func init() {
 
 type http2Listener struct {
 	server  *http.Server
-	saddr   string
 	addr    net.Addr
 	cqueue  chan net.Conn
 	errChan chan error
 	logger  logger.Logger
 	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &http2Listener{
-		saddr:  options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -45,15 +45,15 @@ func (l *http2Listener) Init(md md.Metadata) (err error) {
 	}
 
 	l.server = &http.Server{
-		Addr:      l.saddr,
+		Addr:      l.options.Addr,
 		Handler:   http.HandlerFunc(l.handleFunc),
-		TLSConfig: l.md.tlsConfig,
+		TLSConfig: l.options.TLSConfig,
 	}
 	if err := http2.ConfigureServer(l.server, nil); err != nil {
 		return err
 	}
 
-	ln, err := net.Listen("tcp", l.saddr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (l *http2Listener) Init(md md.Metadata) (err error) {
 		&util.TCPKeepAliveListener{
 			TCPListener: ln.(*net.TCPListener),
 		},
-		l.md.tlsConfig,
+		l.options.TLSConfig,
 	)
 
 	l.cqueue = make(chan net.Conn, l.md.backlog)

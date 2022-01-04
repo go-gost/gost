@@ -53,7 +53,7 @@ func (c *socks5Connector) Init(md md.Metadata) (err error) {
 		},
 		logger:    c.logger,
 		User:      c.options.User,
-		TLSConfig: c.md.tlsConfig,
+		TLSConfig: c.options.TLSConfig,
 	}
 	if !c.md.noTLS {
 		selector.methods = append(selector.methods, socks.MethodTLS)

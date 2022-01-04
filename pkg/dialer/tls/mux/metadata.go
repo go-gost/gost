@@ -1,16 +1,12 @@
 package mux
 
 import (
-	"crypto/tls"
-	"net"
 	"time"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
-	tlsConfig        *tls.Config
 	handshakeTimeout time.Duration
 
 	muxKeepAliveDisabled bool
@@ -23,12 +19,6 @@ type metadata struct {
 
 func (d *mtlsDialer) parseMetadata(md mdata.Metadata) (err error) {
 	const (
-		certFile   = "certFile"
-		keyFile    = "keyFile"
-		caFile     = "caFile"
-		secure     = "secure"
-		serverName = "serverName"
-
 		handshakeTimeout = "handshakeTimeout"
 
 		muxKeepAliveDisabled = "muxKeepAliveDisabled"
@@ -39,17 +29,6 @@ func (d *mtlsDialer) parseMetadata(md mdata.Metadata) (err error) {
 		muxMaxStreamBuffer   = "muxMaxStreamBuffer"
 	)
 
-	sn, _, _ := net.SplitHostPort(mdata.GetString(md, serverName))
-	if sn == "" {
-		sn = "localhost"
-	}
-	d.md.tlsConfig, err = tls_util.LoadClientConfig(
-		mdata.GetString(md, certFile),
-		mdata.GetString(md, keyFile),
-		mdata.GetString(md, caFile),
-		mdata.GetBool(md, secure),
-		sn,
-	)
 	d.md.handshakeTimeout = mdata.GetDuration(md, handshakeTimeout)
 
 	d.md.muxKeepAliveDisabled = mdata.GetBool(md, muxKeepAliveDisabled)

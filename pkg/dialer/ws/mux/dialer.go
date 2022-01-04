@@ -25,33 +25,36 @@ func init() {
 type mwsDialer struct {
 	sessions     map[string]*muxSession
 	sessionMutex sync.Mutex
+	tlsEnabled   bool
 	logger       logger.Logger
 	md           metadata
-	tlsEnabled   bool
+	options      dialer.Options
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &mwsDialer{
 		sessions: make(map[string]*muxSession),
 		logger:   options.Logger,
+		options:  options,
 	}
 }
 
 func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &mwsDialer{
+		tlsEnabled: true,
 		sessions:   make(map[string]*muxSession),
 		logger:     options.Logger,
-		tlsEnabled: true,
+		options:    options,
 	}
 }
 func (d *mwsDialer) Init(md md.Metadata) (err error) {
@@ -182,7 +185,7 @@ func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn)
 	url := url.URL{Scheme: "ws", Host: host, Path: d.md.path}
 	if d.tlsEnabled {
 		url.Scheme = "wss"
-		dialer.TLSClientConfig = d.md.tlsConfig
+		dialer.TLSClientConfig = d.options.TLSConfig
 	}
 
 	c, resp, err := dialer.Dial(url.String(), d.md.header)

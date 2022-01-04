@@ -1,7 +1,6 @@
 package v5
 
 import (
-	"crypto/tls"
 	"time"
 
 	mdata "github.com/go-gost/gost/pkg/metadata"
@@ -9,7 +8,6 @@ import (
 
 type metadata struct {
 	connectTimeout time.Duration
-	tlsConfig      *tls.Config
 	noTLS          bool
 }
 

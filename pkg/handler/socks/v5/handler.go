@@ -55,7 +55,7 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 
 	h.selector = &serverSelector{
 		Authenticator: auth_util.AuthFromUsers(h.options.Auths...),
-		TLSConfig:     h.md.tlsConfig,
+		TLSConfig:     h.options.TLSConfig,
 		logger:        h.logger,
 		noTLS:         h.md.noTLS,
 	}

@@ -24,17 +24,19 @@ type mtlsDialer struct {
 	sessionMutex sync.Mutex
 	logger       logger.Logger
 	md           metadata
+	options      dialer.Options
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &mtlsDialer{
 		sessions: make(map[string]*muxSession),
 		logger:   options.Logger,
+		options:  options,
 	}
 }
 
@@ -149,7 +151,7 @@ func (d *mtlsDialer) dial(ctx context.Context, network, addr string, opts *diale
 }
 
 func (d *mtlsDialer) initSession(ctx context.Context, conn net.Conn) (*muxSession, error) {
-	tlsConn := tls.Client(conn, d.md.tlsConfig)
+	tlsConn := tls.Client(conn, d.options.TLSConfig)
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		return nil, err
 	}

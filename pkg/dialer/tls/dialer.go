@@ -17,18 +17,20 @@ func init() {
 }
 
 type tlsDialer struct {
-	md     metadata
-	logger logger.Logger
+	md      metadata
+	logger  logger.Logger
+	options dialer.Options
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &tlsDialer{
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -57,7 +59,7 @@ func (d *tlsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 		defer conn.SetDeadline(time.Time{})
 	}
 
-	tlsConn := tls.Client(conn, d.md.tlsConfig)
+	tlsConn := tls.Client(conn, d.options.TLSConfig)
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		conn.Close()
 		return nil, err

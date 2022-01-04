@@ -1,11 +1,9 @@
 package mux
 
 import (
-	"crypto/tls"
 	"net/http"
 	"time"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
@@ -15,10 +13,9 @@ const (
 )
 
 type metadata struct {
-	path      string
-	backlog   int
-	tlsConfig *tls.Config
-	header    http.Header
+	path    string
+	backlog int
+	header  http.Header
 
 	handshakeTimeout  time.Duration
 	readHeaderTimeout time.Duration
@@ -40,10 +37,6 @@ func (l *mwsListener) parseMetadata(md mdata.Metadata) (err error) {
 		backlog = "backlog"
 		header  = "header"
 
-		certFile = "certFile"
-		keyFile  = "keyFile"
-		caFile   = "caFile"
-
 		handshakeTimeout  = "handshakeTimeout"
 		readHeaderTimeout = "readHeaderTimeout"
 		readBufferSize    = "readBufferSize"
@@ -57,15 +50,6 @@ func (l *mwsListener) parseMetadata(md mdata.Metadata) (err error) {
 		muxMaxReceiveBuffer  = "muxMaxReceiveBuffer"
 		muxMaxStreamBuffer   = "muxMaxStreamBuffer"
 	)
-
-	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		mdata.GetString(md, certFile),
-		mdata.GetString(md, keyFile),
-		mdata.GetString(md, caFile),
-	)
-	if err != nil {
-		return
-	}
 
 	l.md.path = mdata.GetString(md, path)
 	if l.md.path == "" {

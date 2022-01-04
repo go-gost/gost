@@ -22,35 +22,35 @@ func init() {
 
 type h2Listener struct {
 	server  *http.Server
-	saddr   string
 	addr    net.Addr
 	cqueue  chan net.Conn
 	errChan chan error
 	logger  logger.Logger
 	md      metadata
 	h2c     bool
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &h2Listener{
-		saddr:  options.Addr,
-		logger: options.Logger,
-		h2c:    true,
+		h2c:     true,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
 func NewTLSListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &h2Listener{
-		saddr:  options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -60,10 +60,10 @@ func (l *h2Listener) Init(md md.Metadata) (err error) {
 	}
 
 	l.server = &http.Server{
-		Addr: l.saddr,
+		Addr: l.options.Addr,
 	}
 
-	ln, err := net.Listen("tcp", l.saddr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return err
 	}
@@ -74,12 +74,12 @@ func (l *h2Listener) Init(md md.Metadata) (err error) {
 			http.HandlerFunc(l.handleFunc), &http2.Server{})
 	} else {
 		l.server.Handler = http.HandlerFunc(l.handleFunc)
-		l.server.TLSConfig = l.md.tlsConfig
+		l.server.TLSConfig = l.options.TLSConfig
 		if err := http2.ConfigureServer(l.server, nil); err != nil {
 			ln.Close()
 			return err
 		}
-		ln = tls.NewListener(ln, l.md.tlsConfig)
+		ln = tls.NewListener(ln, l.options.TLSConfig)
 	}
 
 	l.cqueue = make(chan net.Conn, l.md.backlog)

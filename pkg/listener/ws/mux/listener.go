@@ -21,37 +21,37 @@ func init() {
 }
 
 type mwsListener struct {
-	saddr      string
 	addr       net.Addr
 	upgrader   *websocket.Upgrader
 	srv        *http.Server
 	cqueue     chan net.Conn
 	errChan    chan error
+	tlsEnabled bool
 	logger     logger.Logger
 	md         metadata
-	tlsEnabled bool
+	options    listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &mwsListener{
-		saddr:  options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
 func NewTLSListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &mwsListener{
-		saddr:      options.Addr,
-		logger:     options.Logger,
 		tlsEnabled: true,
+		logger:     options.Logger,
+		options:    options,
 	}
 }
 
@@ -75,7 +75,7 @@ func (l *mwsListener) Init(md md.Metadata) (err error) {
 	mux := http.NewServeMux()
 	mux.Handle(path, http.HandlerFunc(l.upgrade))
 	l.srv = &http.Server{
-		Addr:              l.saddr,
+		Addr:              l.options.Addr,
 		Handler:           mux,
 		ReadHeaderTimeout: l.md.readHeaderTimeout,
 	}
@@ -83,12 +83,12 @@ func (l *mwsListener) Init(md md.Metadata) (err error) {
 	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)
 
-	ln, err := net.Listen("tcp", l.saddr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}
 	if l.tlsEnabled {
-		ln = tls.NewListener(ln, l.md.tlsConfig)
+		ln = tls.NewListener(ln, l.options.TLSConfig)
 	}
 
 	l.addr = ln.Addr()

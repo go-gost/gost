@@ -27,33 +27,36 @@ func init() {
 type h2Dialer struct {
 	clients     map[string]*http.Client
 	clientMutex sync.Mutex
+	h2c         bool
 	logger      logger.Logger
 	md          metadata
-	h2c         bool
+	options     dialer.Options
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &h2Dialer{
+		h2c:     true,
 		clients: make(map[string]*http.Client),
 		logger:  options.Logger,
-		h2c:     true,
+		options: options,
 	}
 }
 
 func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &h2Dialer{
 		clients: make(map[string]*http.Client),
 		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -95,7 +98,7 @@ func (d *h2Dialer) Dial(ctx context.Context, address string, opts ...dialer.Dial
 			}
 		} else {
 			client.Transport = &http.Transport{
-				TLSClientConfig: d.md.tlsConfig,
+				TLSClientConfig: d.options.TLSConfig,
 				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 					return d.dial(ctx, network, addr, options)
 				},

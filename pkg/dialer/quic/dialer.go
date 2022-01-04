@@ -24,17 +24,19 @@ type quicDialer struct {
 	sessionMutex sync.Mutex
 	logger       logger.Logger
 	md           metadata
+	options      dialer.Options
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &quicDialer{
 		sessions: make(map[string]*quicSession),
 		logger:   options.Logger,
+		options:  options,
 	}
 }
 
@@ -141,7 +143,7 @@ func (d *quicDialer) initSession(ctx context.Context, addr string, conn net.Conn
 		},
 	}
 
-	tlsCfg := d.md.tlsConfig
+	tlsCfg := d.options.TLSConfig
 	tlsCfg.NextProtos = []string{"http/3", "quic/v1"}
 
 	session, err := quic.DialContext(ctx, pc, udpAddr, addr, tlsCfg, quicConfig)

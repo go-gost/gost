@@ -1,11 +1,9 @@
 package ws
 
 import (
-	"crypto/tls"
 	"net/http"
 	"time"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
@@ -15,9 +13,8 @@ const (
 )
 
 type metadata struct {
-	path      string
-	backlog   int
-	tlsConfig *tls.Config
+	path    string
+	backlog int
 
 	handshakeTimeout  time.Duration
 	readHeaderTimeout time.Duration
@@ -30,10 +27,6 @@ type metadata struct {
 
 func (l *wsListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
-		certFile = "certFile"
-		keyFile  = "keyFile"
-		caFile   = "caFile"
-
 		path    = "path"
 		backlog = "backlog"
 
@@ -45,15 +38,6 @@ func (l *wsListener) parseMetadata(md mdata.Metadata) (err error) {
 
 		header = "header"
 	)
-
-	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		mdata.GetString(md, certFile),
-		mdata.GetString(md, keyFile),
-		mdata.GetString(md, caFile),
-	)
-	if err != nil {
-		return
-	}
 
 	l.md.path = mdata.GetString(md, path)
 	if l.md.path == "" {

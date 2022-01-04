@@ -1,10 +1,8 @@
 package quic
 
 import (
-	"crypto/tls"
 	"time"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
@@ -17,7 +15,6 @@ type metadata struct {
 	handshakeTimeout time.Duration
 	maxIdleTimeout   time.Duration
 
-	tlsConfig *tls.Config
 	cipherKey []byte
 	backlog   int
 }
@@ -28,23 +25,10 @@ func (l *quicListener) parseMetadata(md mdata.Metadata) (err error) {
 		handshakeTimeout = "handshakeTimeout"
 		maxIdleTimeout   = "maxIdleTimeout"
 
-		certFile = "certFile"
-		keyFile  = "keyFile"
-		caFile   = "caFile"
-
 		backlog   = "backlog"
 		cipherKey = "cipherKey"
 	)
 
-	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		mdata.GetString(md, certFile),
-		mdata.GetString(md, keyFile),
-		mdata.GetString(md, caFile),
-	)
-
-	if err != nil {
-		return
-	}
 	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog

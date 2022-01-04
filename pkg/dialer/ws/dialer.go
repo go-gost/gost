@@ -23,28 +23,31 @@ type wsDialer struct {
 	tlsEnabled bool
 	logger     logger.Logger
 	md         metadata
+	options    dialer.Options
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &wsDialer{
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
 func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &wsDialer{
 		tlsEnabled: true,
 		logger:     options.Logger,
+		options:    options,
 	}
 }
 
@@ -96,7 +99,7 @@ func (d *wsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dial
 	url := url.URL{Scheme: "ws", Host: host, Path: d.md.path}
 	if d.tlsEnabled {
 		url.Scheme = "wss"
-		dialer.TLSClientConfig = d.md.tlsConfig
+		dialer.TLSClientConfig = d.options.TLSConfig
 	}
 
 	c, resp, err := dialer.Dial(url.String(), d.md.header)

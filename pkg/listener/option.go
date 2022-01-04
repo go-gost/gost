@@ -1,15 +1,17 @@
 package listener
 
 import (
+	"crypto/tls"
 	"net/url"
 
 	"github.com/go-gost/gost/pkg/logger"
 )
 
 type Options struct {
-	Addr   string
-	Auths  []*url.Userinfo
-	Logger logger.Logger
+	Addr      string
+	Auths     []*url.Userinfo
+	TLSConfig *tls.Config
+	Logger    logger.Logger
 }
 
 type Option func(opts *Options)
@@ -23,6 +25,12 @@ func AddrOption(addr string) Option {
 func AuthsOption(auths ...*url.Userinfo) Option {
 	return func(opts *Options) {
 		opts.Auths = auths
+	}
+}
+
+func TLSConfigOption(tlsConfig *tls.Config) Option {
+	return func(opts *Options) {
+		opts.TLSConfig = tlsConfig
 	}
 }
 

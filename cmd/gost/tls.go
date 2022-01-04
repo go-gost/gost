@@ -14,6 +14,14 @@ import (
 	"github.com/go-gost/gost/pkg/config"
 )
 
+func loadServerTLSConfig(cfg *config.TLSConfig) (*tls.Config, error) {
+	return tls_util.LoadServerConfig(cfg.Cert, cfg.Key, cfg.CA)
+}
+
+func loadClientTLSConfig(cfg *config.TLSConfig) (*tls.Config, error) {
+	return tls_util.LoadClientConfig(cfg.Cert, cfg.Key, cfg.CA, cfg.Secure, cfg.ServerName)
+}
+
 func buildDefaultTLSConfig(cfg *config.TLSConfig) {
 	if cfg == nil {
 		cfg = &config.TLSConfig{

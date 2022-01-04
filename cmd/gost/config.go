@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"io"
 	"net"
 	"net/url"
@@ -68,9 +69,23 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		listenerLogger := serviceLogger.WithFields(map[string]interface{}{
 			"kind": "listener",
 		})
+
+		var tlsConfig *tls.Config
+		var err error
+
+		tlsCfg := svc.Listener.TLS
+		if tlsCfg == nil {
+			tlsCfg = &config.TLSConfig{}
+		}
+		tlsConfig, err = loadServerTLSConfig(tlsCfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		ln := registry.GetListener(svc.Listener.Type)(
 			listener.AddrOption(svc.Addr),
 			listener.AuthsOption(authsFromConfig(svc.Listener.Auths...)...),
+			listener.TLSConfigOption(tlsConfig),
 			listener.LoggerOption(listenerLogger),
 		)
 
@@ -89,6 +104,16 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			"kind": "handler",
 		})
 
+		tlsConfig = nil
+		tlsCfg = svc.Handler.TLS
+		if tlsCfg == nil {
+			tlsCfg = &config.TLSConfig{}
+		}
+		tlsConfig, err = loadServerTLSConfig(tlsCfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		h := registry.GetHandler(svc.Handler.Type)(
 			handler.RetriesOption(svc.Handler.Retries),
 			handler.ChainOption(chains[svc.Handler.Chain]),
@@ -96,6 +121,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			handler.HostsOption(hosts[svc.Handler.Hosts]),
 			handler.BypassOption(bypasses[svc.Handler.Bypass]),
 			handler.AuthsOption(authsFromConfig(svc.Handler.Auths...)...),
+			handler.TLSConfigOption(tlsConfig),
 			handler.LoggerOption(handlerLogger),
 		)
 
@@ -148,16 +174,29 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 				"kind": "connector",
 			})
 
-			var connectorUser *url.Userinfo
+			var user *url.Userinfo
 			if auth := v.Connector.Auth; auth != nil && auth.Username != "" {
 				if auth.Password == "" {
-					connectorUser = url.User(auth.Username)
+					user = url.User(auth.Username)
 				} else {
-					connectorUser = url.UserPassword(auth.Username, auth.Password)
+					user = url.UserPassword(auth.Username, auth.Password)
 				}
 			}
+
+			var tlsConfig *tls.Config
+			var err error
+			tlsCfg := v.Connector.TLS
+			if tlsCfg == nil {
+				tlsCfg = &config.TLSConfig{}
+			}
+			tlsConfig, err = loadClientTLSConfig(tlsCfg)
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			cr := registry.GetConnector(v.Connector.Type)(
-				connector.UserOption(connectorUser),
+				connector.UserOption(user),
+				connector.TLSConfigOption(tlsConfig),
 				connector.LoggerOption(connectorLogger),
 			)
 
@@ -172,16 +211,28 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 				"kind": "dialer",
 			})
 
-			var dialerUser *url.Userinfo
+			user = nil
 			if auth := v.Dialer.Auth; auth != nil && auth.Username != "" {
 				if auth.Password == "" {
-					dialerUser = url.User(auth.Username)
+					user = url.User(auth.Username)
 				} else {
-					dialerUser = url.UserPassword(auth.Username, auth.Password)
+					user = url.UserPassword(auth.Username, auth.Password)
 				}
 			}
+
+			tlsConfig = nil
+			tlsCfg = v.Dialer.TLS
+			if tlsCfg == nil {
+				tlsCfg = &config.TLSConfig{}
+			}
+			tlsConfig, err = loadClientTLSConfig(tlsCfg)
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			d := registry.GetDialer(v.Dialer.Type)(
-				dialer.UserOption(dialerUser),
+				dialer.UserOption(user),
+				dialer.TLSConfigOption(tlsConfig),
 				dialer.LoggerOption(dialerLogger),
 			)
 
@@ -328,11 +379,11 @@ func hostsFromConfig(cfg *config.HostsConfig) hostspkg.HostMapper {
 	return hosts
 }
 
-func authsFromConfig(cfgs ...config.AuthConfig) []*url.Userinfo {
+func authsFromConfig(cfgs ...*config.AuthConfig) []*url.Userinfo {
 	var auths []*url.Userinfo
 
 	for _, cfg := range cfgs {
-		if cfg.Username == "" {
+		if cfg == nil || cfg.Username == "" {
 			continue
 		}
 		auths = append(auths, url.UserPassword(cfg.Username, cfg.Password))

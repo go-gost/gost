@@ -1,16 +1,13 @@
 package v5
 
 import (
-	"crypto/tls"
 	"math"
 	"time"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
-	tlsConfig         *tls.Config
 	timeout           time.Duration
 	readTimeout       time.Duration
 	noTLS             bool
@@ -22,9 +19,6 @@ type metadata struct {
 
 func (h *socks5Handler) parseMetadata(md mdata.Metadata) (err error) {
 	const (
-		certFile          = "certFile"
-		keyFile           = "keyFile"
-		caFile            = "caFile"
 		readTimeout       = "readTimeout"
 		timeout           = "timeout"
 		noTLS             = "notls"
@@ -33,15 +27,6 @@ func (h *socks5Handler) parseMetadata(md mdata.Metadata) (err error) {
 		udpBufferSize     = "udpBufferSize"
 		compatibilityMode = "comp"
 	)
-
-	h.md.tlsConfig, err = tls_util.LoadServerConfig(
-		mdata.GetString(md, certFile),
-		mdata.GetString(md, keyFile),
-		mdata.GetString(md, caFile),
-	)
-	if err != nil {
-		return
-	}
 
 	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
 	h.md.timeout = mdata.GetDuration(md, timeout)

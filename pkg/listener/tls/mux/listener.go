@@ -16,22 +16,22 @@ func init() {
 }
 
 type mtlsListener struct {
-	addr string
 	net.Listener
 	cqueue  chan net.Conn
 	errChan chan error
 	logger  logger.Logger
 	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &mtlsListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -40,11 +40,11 @@ func (l *mtlsListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	ln, err := net.Listen("tcp", l.addr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}
-	l.Listener = tls.NewListener(ln, l.md.tlsConfig)
+	l.Listener = tls.NewListener(ln, l.options.TLSConfig)
 
 	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)

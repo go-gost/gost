@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"crypto/tls"
 	"net/url"
 	"time"
 
@@ -8,8 +9,9 @@ import (
 )
 
 type Options struct {
-	User   *url.Userinfo
-	Logger logger.Logger
+	User      *url.Userinfo
+	TLSConfig *tls.Config
+	Logger    logger.Logger
 }
 
 type Option func(opts *Options)
@@ -17,6 +19,12 @@ type Option func(opts *Options)
 func UserOption(user *url.Userinfo) Option {
 	return func(opts *Options) {
 		opts.User = user
+	}
+}
+
+func TLSConfigOption(tlsConfig *tls.Config) Option {
+	return func(opts *Options) {
+		opts.TLSConfig = tlsConfig
 	}
 }
 

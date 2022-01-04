@@ -21,23 +21,23 @@ func init() {
 }
 
 type dnsListener struct {
-	saddr   string
 	addr    net.Addr
 	server  Server
 	cqueue  chan net.Conn
 	errChan chan error
 	logger  logger.Logger
 	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &dnsListener{
-		saddr:  options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -46,7 +46,7 @@ func (l *dnsListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	l.addr, err = net.ResolveTCPAddr("tcp", l.saddr)
+	l.addr, err = net.ResolveTCPAddr("tcp", l.options.Addr)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (l *dnsListener) Init(md md.Metadata) (err error) {
 	case "tcp":
 		l.server = &dns.Server{
 			Net:          "tcp",
-			Addr:         l.saddr,
+			Addr:         l.options.Addr,
 			Handler:      l,
 			ReadTimeout:  l.md.readTimeout,
 			WriteTimeout: l.md.writeTimeout,
@@ -63,16 +63,16 @@ func (l *dnsListener) Init(md md.Metadata) (err error) {
 	case "tls":
 		l.server = &dns.Server{
 			Net:          "tcp-tls",
-			Addr:         l.saddr,
+			Addr:         l.options.Addr,
 			Handler:      l,
-			TLSConfig:    l.md.tlsConfig,
+			TLSConfig:    l.options.TLSConfig,
 			ReadTimeout:  l.md.readTimeout,
 			WriteTimeout: l.md.writeTimeout,
 		}
 	case "https":
 		l.server = &dohServer{
-			addr:      l.saddr,
-			tlsConfig: l.md.tlsConfig,
+			addr:      l.options.Addr,
+			tlsConfig: l.options.TLSConfig,
 			server: &http.Server{
 				Handler:      l,
 				ReadTimeout:  l.md.readTimeout,
@@ -80,10 +80,10 @@ func (l *dnsListener) Init(md md.Metadata) (err error) {
 			},
 		}
 	default:
-		l.addr, err = net.ResolveUDPAddr("udp", l.saddr)
+		l.addr, err = net.ResolveUDPAddr("udp", l.options.Addr)
 		l.server = &dns.Server{
 			Net:          "udp",
-			Addr:         l.saddr,
+			Addr:         l.options.Addr,
 			Handler:      l,
 			UDPSize:      l.md.readBufferSize,
 			ReadTimeout:  l.md.readTimeout,

@@ -31,9 +31,11 @@ type ProfilingConfig struct {
 }
 
 type TLSConfig struct {
-	Cert string
-	Key  string
-	CA   string
+	Cert       string
+	Key        string
+	CA         string `yaml:",omitempty"`
+	Secure     bool   `yaml:",omitempty"`
+	ServerName string `yaml:",omitempty"`
 }
 
 type AuthConfig struct {
@@ -82,7 +84,8 @@ type HostsConfig struct {
 type ListenerConfig struct {
 	Type     string
 	Chain    string                 `yaml:",omitempty"`
-	Auths    []AuthConfig           `yaml:",omitempty"`
+	Auths    []*AuthConfig          `yaml:",omitempty"`
+	TLS      *TLSConfig             `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
@@ -93,7 +96,8 @@ type HandlerConfig struct {
 	Bypass   string                 `yaml:",omitempty"`
 	Resolver string                 `yaml:",omitempty"`
 	Hosts    string                 `yaml:",omitempty"`
-	Auths    []AuthConfig           `yaml:",omitempty"`
+	Auths    []*AuthConfig          `yaml:",omitempty"`
+	TLS      *TLSConfig             `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
@@ -105,12 +109,14 @@ type ForwarderConfig struct {
 type DialerConfig struct {
 	Type     string
 	Auth     *AuthConfig            `yaml:",omitempty"`
+	TLS      *TLSConfig             `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 
 type ConnectorConfig struct {
 	Type     string
 	Auth     *AuthConfig            `yaml:",omitempty"`
+	TLS      *TLSConfig             `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
 }
 

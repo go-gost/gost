@@ -1,10 +1,8 @@
 package mux
 
 import (
-	"crypto/tls"
 	"time"
 
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
@@ -13,8 +11,6 @@ const (
 )
 
 type metadata struct {
-	tlsConfig *tls.Config
-
 	muxKeepAliveDisabled bool
 	muxKeepAliveInterval time.Duration
 	muxKeepAliveTimeout  time.Duration
@@ -27,10 +23,6 @@ type metadata struct {
 
 func (l *mtlsListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
-		certFile = "certFile"
-		keyFile  = "keyFile"
-		caFile   = "caFile"
-
 		backlog = "backlog"
 
 		muxKeepAliveDisabled = "muxKeepAliveDisabled"
@@ -40,15 +32,6 @@ func (l *mtlsListener) parseMetadata(md mdata.Metadata) (err error) {
 		muxMaxReceiveBuffer  = "muxMaxReceiveBuffer"
 		muxMaxStreamBuffer   = "muxMaxStreamBuffer"
 	)
-
-	l.md.tlsConfig, err = tls_util.LoadServerConfig(
-		mdata.GetString(md, certFile),
-		mdata.GetString(md, keyFile),
-		mdata.GetString(md, caFile),
-	)
-	if err != nil {
-		return
-	}
 
 	l.md.backlog = mdata.GetInt(md, backlog)
 	if l.md.backlog <= 0 {

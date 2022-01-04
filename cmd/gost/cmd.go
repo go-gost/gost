@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/url"
@@ -115,21 +116,46 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		}
 	}
 
+	var auths []*config.AuthConfig
+	if url.User != nil {
+		auth := &config.AuthConfig{
+			Username: url.User.Username(),
+		}
+		auth.Password, _ = url.User.Password()
+		auths = append(auths, auth)
+	}
+
 	md := make(map[string]interface{})
 	for k, v := range url.Query() {
 		if len(v) > 0 {
 			md[k] = v[0]
 		}
 	}
-
-	var auths []config.AuthConfig
-	if url.User != nil {
-		auth := config.AuthConfig{
-			Username: url.User.Username(),
+	if sauth := md["auth"]; sauth != nil {
+		if sa, _ := sauth.(string); sa != "" {
+			au, err := parseAuthFromCmd(sa)
+			if err != nil {
+				return nil, err
+			}
+			auths = append(auths, au)
 		}
-		auth.Password, _ = url.User.Password()
-		auths = append(auths, auth)
 	}
+	delete(md, "auth")
+
+	var tlsConfig *config.TLSConfig
+	if certs := md["cert"]; certs != nil {
+		cert, _ := certs.(string)
+		key, _ := md["key"].(string)
+		ca, _ := md["ca"].(string)
+		tlsConfig = &config.TLSConfig{
+			Cert: cert,
+			Key:  key,
+			CA:   ca,
+		}
+	}
+	delete(md, "cert")
+	delete(md, "key")
+	delete(md, "ca")
 
 	svc.Handler = &config.HandlerConfig{
 		Type:     handler,
@@ -138,6 +164,7 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	}
 	svc.Listener = &config.ListenerConfig{
 		Type:     listener,
+		TLS:      tlsConfig,
 		Metadata: md,
 	}
 
@@ -170,14 +197,6 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		}
 	}
 
-	md := make(map[string]interface{})
-	for k, v := range url.Query() {
-		if len(v) > 0 {
-			md[k] = v[0]
-		}
-	}
-	md["serverName"] = url.Host
-
 	var auth *config.AuthConfig
 	if url.User != nil {
 		auth = &config.AuthConfig{
@@ -186,6 +205,46 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		auth.Password, _ = url.User.Password()
 	}
 
+	md := make(map[string]interface{})
+	for k, v := range url.Query() {
+		if len(v) > 0 {
+			md[k] = v[0]
+		}
+	}
+	md["serverName"] = url.Host
+
+	if sauth := md["auth"]; sauth != nil && auth == nil {
+		if sa, _ := sauth.(string); sa != "" {
+			au, err := parseAuthFromCmd(sa)
+			if err != nil {
+				return nil, err
+			}
+			auth = au
+		}
+	}
+	delete(md, "auth")
+
+	var tlsConfig *config.TLSConfig
+	if certs := md["cert"]; certs != nil {
+		cert, _ := certs.(string)
+		key, _ := md["key"].(string)
+		ca, _ := md["ca"].(string)
+		secure, _ := md["secure"].(bool)
+		serverName, _ := md["serverName"].(string)
+		tlsConfig = &config.TLSConfig{
+			Cert:       cert,
+			Key:        key,
+			CA:         ca,
+			Secure:     secure,
+			ServerName: serverName,
+		}
+	}
+	delete(md, "cert")
+	delete(md, "key")
+	delete(md, "ca")
+	delete(md, "secure")
+	delete(md, "serverName")
+
 	node.Connector = &config.ConnectorConfig{
 		Type:     connector,
 		Auth:     auth,
@@ -193,6 +252,7 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	}
 	node.Dialer = &config.DialerConfig{
 		Type:     dialer,
+		TLS:      tlsConfig,
 		Metadata: md,
 	}
 
@@ -209,5 +269,32 @@ func normCmd(s string) (*url.URL, error) {
 		s = "auto://" + s
 	}
 
-	return url.Parse(s)
+	url, err := url.Parse(s)
+	if err != nil {
+		return nil, err
+	}
+	if url.Scheme == "https" {
+		url.Scheme = "http+tls"
+	}
+
+	return url, nil
+}
+
+func parseAuthFromCmd(sa string) (*config.AuthConfig, error) {
+	v, err := base64.StdEncoding.DecodeString(sa)
+	if err != nil {
+		return nil, err
+	}
+	cs := string(v)
+	n := strings.IndexByte(cs, ':')
+	if n < 0 {
+		return &config.AuthConfig{
+			Username: cs,
+		}, nil
+	}
+
+	return &config.AuthConfig{
+		Username: cs[:n],
+		Password: cs[n+1:],
+	}, nil
 }

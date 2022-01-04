@@ -283,9 +283,9 @@ bypasses:
   # http://www.iana.org/assignments/multicast-addresses/multicast-addresses.xhtml
   - 224.0.0.0/4         # RFC5771: Multicast/Reserved
 
-# tls:
-#  cert: "cert.pem"
-#  key: "key.pem"
+tls:
+  cert: "cert.pem"
+  key: "key.pem"
 #  ca: "root.ca"
 
 resolvers:

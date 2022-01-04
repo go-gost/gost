@@ -5,7 +5,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/common/util/socks"
@@ -14,6 +13,7 @@ import (
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
 func init() {
@@ -21,31 +21,48 @@ func init() {
 }
 
 type ssuHandler struct {
-	bypass bypass.Bypass
-	router *chain.Router
-	logger logger.Logger
-	md     metadata
+	cipher  core.Cipher
+	router  *chain.Router
+	logger  logger.Logger
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &ssuHandler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
 func (h *ssuHandler) Init(md md.Metadata) (err error) {
-	if err := h.parseMetadata(md); err != nil {
-		return err
+	if err = h.parseMetadata(md); err != nil {
+		return
 	}
 
-	return nil
+	if len(h.options.Auths) > 0 {
+		method := h.options.Auths[0].Username()
+		password, _ := h.options.Auths[0].Password()
+		h.cipher, err = ss.ShadowCipher(method, password, h.md.key)
+		if err != nil {
+			return
+		}
+	}
+
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
+
+	return
 }
 
 func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -66,14 +83,14 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	pc, ok := conn.(net.PacketConn)
 	if ok {
-		if h.md.cipher != nil {
-			pc = h.md.cipher.PacketConn(pc)
+		if h.cipher != nil {
+			pc = h.cipher.PacketConn(pc)
 		}
 		// standard UDP relay.
 		pc = ss.UDPServerConn(pc, conn.RemoteAddr(), h.md.bufferSize)
 	} else {
-		if h.md.cipher != nil {
-			conn = ss.ShadowConn(h.md.cipher.StreamConn(conn), nil)
+		if h.cipher != nil {
+			conn = ss.ShadowConn(h.cipher.StreamConn(conn), nil)
 		}
 		// UDP over TCP
 		pc = socks.UDPTunServerConn(conn)
@@ -116,7 +133,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 					return err
 				}
 
-				if h.bypass != nil && h.bypass.Contains(addr.String()) {
+				if h.options.Bypass != nil && h.options.Bypass.Contains(addr.String()) {
 					h.logger.Warn("bypass: ", addr)
 					return nil
 				}
@@ -148,7 +165,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 					return err
 				}
 
-				if h.bypass != nil && h.bypass.Contains(raddr.String()) {
+				if h.options.Bypass != nil && h.options.Bypass.Contains(raddr.String()) {
 					h.logger.Warn("bypass: ", raddr)
 					return nil
 				}

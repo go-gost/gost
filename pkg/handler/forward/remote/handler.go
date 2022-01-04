@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
@@ -20,27 +19,21 @@ func init() {
 }
 
 type forwardHandler struct {
-	group  *chain.NodeGroup
-	bypass bypass.Bypass
-	router *chain.Router
-	logger logger.Logger
-	md     metadata
+	group   *chain.NodeGroup
+	router  *chain.Router
+	logger  logger.Logger
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &forwardHandler{
-		bypass: options.Bypass,
-		router: &chain.Router{
-			Retries:  options.Router.Retries,
-			Resolver: options.Resolver,
-			Logger:   options.Logger,
-		},
-		logger: options.Logger,
+		options: options,
 	}
 }
 
@@ -48,6 +41,16 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
+
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
+
 	return
 }
 

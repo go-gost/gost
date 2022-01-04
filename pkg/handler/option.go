@@ -1,26 +1,48 @@
 package handler
 
 import (
-	"github.com/go-gost/gost/pkg/auth"
+	"net/url"
+
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
+	"github.com/go-gost/gost/pkg/hosts"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/resolver"
 )
 
 type Options struct {
-	Router        *chain.Router
-	Bypass        bypass.Bypass
-	Resolver      resolver.Resolver
-	Authenticator auth.Authenticator
-	Logger        logger.Logger
+	Retries  int
+	Chain    *chain.Chain
+	Resolver resolver.Resolver
+	Hosts    hosts.HostMapper
+	Bypass   bypass.Bypass
+	Auths    []*url.Userinfo
+	Logger   logger.Logger
 }
 
 type Option func(opts *Options)
 
-func RouterOption(router *chain.Router) Option {
+func RetriesOption(retries int) Option {
 	return func(opts *Options) {
-		opts.Router = router
+		opts.Retries = retries
+	}
+}
+
+func ChainOption(chain *chain.Chain) Option {
+	return func(opts *Options) {
+		opts.Chain = chain
+	}
+}
+
+func ResolverOption(resolver resolver.Resolver) Option {
+	return func(opts *Options) {
+		opts.Resolver = resolver
+	}
+}
+
+func HostsOption(hosts hosts.HostMapper) Option {
+	return func(opts *Options) {
+		opts.Hosts = hosts
 	}
 }
 
@@ -30,9 +52,9 @@ func BypassOption(bypass bypass.Bypass) Option {
 	}
 }
 
-func AuthenticatorOption(auth auth.Authenticator) Option {
+func AuthsOption(auths ...*url.Userinfo) Option {
 	return func(opts *Options) {
-		opts.Authenticator = auth
+		opts.Auths = auths
 	}
 }
 

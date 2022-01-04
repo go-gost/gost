@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/util/ss"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
 func init() {
@@ -22,31 +22,47 @@ func init() {
 }
 
 type ssHandler struct {
-	bypass bypass.Bypass
-	router *chain.Router
-	logger logger.Logger
-	md     metadata
+	cipher  core.Cipher
+	router  *chain.Router
+	logger  logger.Logger
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &ssHandler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
 func (h *ssHandler) Init(md md.Metadata) (err error) {
-	if err := h.parseMetadata(md); err != nil {
-		return err
+	if err = h.parseMetadata(md); err != nil {
+		return
+	}
+	if len(h.options.Auths) > 0 {
+		method := h.options.Auths[0].Username()
+		password, _ := h.options.Auths[0].Password()
+		h.cipher, err = ss.ShadowCipher(method, password, h.md.key)
+		if err != nil {
+			return
+		}
 	}
 
-	return nil
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
+
+	return
 }
 
 func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -65,8 +81,8 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
-	if h.md.cipher != nil {
-		conn = ss.ShadowConn(h.md.cipher.StreamConn(conn), nil)
+	if h.cipher != nil {
+		conn = ss.ShadowConn(h.cipher.StreamConn(conn), nil)
 	}
 
 	if h.md.readTimeout > 0 {
@@ -86,7 +102,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
-	if h.bypass != nil && h.bypass.Contains(addr.String()) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(addr.String()) {
 		h.logger.Info("bypass: ", addr.String())
 		return
 	}

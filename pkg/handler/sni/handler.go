@@ -11,7 +11,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/handler"
@@ -27,16 +26,16 @@ func init() {
 
 type sniHandler struct {
 	httpHandler handler.Handler
-	bypass      bypass.Bypass
 	router      *chain.Router
 	logger      logger.Logger
 	md          metadata
+	options     handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	log := options.Logger
@@ -45,9 +44,8 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 
 	h := &sniHandler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: log,
+		options: options,
+		logger:  log,
 	}
 
 	if f := registry.GetHandler("http"); f != nil {
@@ -70,6 +68,14 @@ func (h *sniHandler) Init(md md.Metadata) (err error) {
 		if err = h.httpHandler.Init(md); err != nil {
 			return
 		}
+	}
+
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
 	}
 
 	return nil
@@ -132,7 +138,7 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	})
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target)
 
-	if h.bypass != nil && h.bypass.Contains(target) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(target) {
 		h.logger.Info("bypass: ", target)
 		return
 	}

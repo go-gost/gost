@@ -6,9 +6,8 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
+	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
@@ -22,24 +21,21 @@ func init() {
 }
 
 type socks5Handler struct {
-	selector      gosocks5.Selector
-	bypass        bypass.Bypass
-	router        *chain.Router
-	authenticator auth.Authenticator
-	logger        logger.Logger
-	md            metadata
+	selector gosocks5.Selector
+	router   *chain.Router
+	logger   logger.Logger
+	md       metadata
+	options  handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &socks5Handler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
@@ -48,8 +44,17 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 		return
 	}
 
+	h.logger = h.options.Logger
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+
 	h.selector = &serverSelector{
-		Authenticator: h.authenticator,
+		Authenticator: auth_util.AuthFromUsers(h.options.Auths...),
 		TLSConfig:     h.md.tlsConfig,
 		logger:        h.logger,
 		noTLS:         h.md.noTLS,

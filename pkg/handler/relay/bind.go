@@ -201,7 +201,7 @@ func (h *relayHandler) tunnelServerUDP(tunnel, c net.PacketConn) (err error) {
 					return err
 				}
 
-				if h.bypass != nil && h.bypass.Contains(raddr.String()) {
+				if h.options.Bypass != nil && h.options.Bypass.Contains(raddr.String()) {
 					h.logger.Warn("bypass: ", raddr)
 					return nil
 				}
@@ -234,7 +234,7 @@ func (h *relayHandler) tunnelServerUDP(tunnel, c net.PacketConn) (err error) {
 					return err
 				}
 
-				if h.bypass != nil && h.bypass.Contains(raddr.String()) {
+				if h.options.Bypass != nil && h.options.Bypass.Contains(raddr.String()) {
 					h.logger.Warn("bypass: ", raddr)
 					return nil
 				}

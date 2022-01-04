@@ -88,6 +88,7 @@ type ListenerConfig struct {
 
 type HandlerConfig struct {
 	Type     string
+	Retries  int                    `yaml:",omitempty"`
 	Chain    string                 `yaml:",omitempty"`
 	Bypass   string                 `yaml:",omitempty"`
 	Resolver string                 `yaml:",omitempty"`

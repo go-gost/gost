@@ -30,7 +30,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 		return
 	}
 
-	if h.bypass != nil && h.bypass.Contains(address) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(address) {
 		h.logger.Info("bypass: ", address)
 		resp.Status = relay.StatusForbidden
 		resp.WriteTo(conn)

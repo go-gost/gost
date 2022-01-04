@@ -15,7 +15,6 @@ type metadata struct {
 func (c *httpConnector) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		connectTimeout = "timeout"
-		user           = "user"
 		header         = "header"
 	)
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"net/url"
 	"time"
 
 	"github.com/go-gost/gosocks5"
@@ -22,21 +21,21 @@ func init() {
 }
 
 type ssConnector struct {
-	user   *url.Userinfo
-	cipher core.Cipher
-	md     metadata
-	logger logger.Logger
+	cipher  core.Cipher
+	md      metadata
+	logger  logger.Logger
+	options connector.Options
 }
 
 func NewConnector(opts ...connector.Option) connector.Connector {
-	options := &connector.Options{}
+	options := connector.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &ssConnector{
-		user:   options.User,
-		logger: options.Logger,
+		options: options,
+		logger:  options.Logger,
 	}
 }
 
@@ -45,9 +44,9 @@ func (c *ssConnector) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	if c.user != nil {
-		method := c.user.Username()
-		password, _ := c.user.Password()
+	if c.options.User != nil {
+		method := c.options.User.Username()
+		password, _ := c.options.User.Password()
 		c.cipher, err = ss.ShadowCipher(method, password, c.md.key)
 	}
 

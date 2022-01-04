@@ -46,7 +46,7 @@ func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network
 	}
 
 	relay := handler.NewUDPRelay(socks.UDPTunServerConn(conn), pc).
-		WithBypass(h.bypass).
+		WithBypass(h.options.Bypass).
 		WithLogger(h.logger)
 	relay.SetBufferSize(h.md.udpBufferSize)
 

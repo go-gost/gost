@@ -64,7 +64,7 @@ func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, network, add
 	}
 
 	relay := handler.NewUDPRelay(socks.UDPTunServerConn(conn), pc).
-		WithBypass(h.bypass).
+		WithBypass(h.options.Bypass).
 		WithLogger(h.logger)
 
 	t := time.Now()

@@ -1,14 +1,15 @@
 package listener
 
 import (
-	"github.com/go-gost/gost/pkg/auth"
+	"net/url"
+
 	"github.com/go-gost/gost/pkg/logger"
 )
 
 type Options struct {
-	Addr          string
-	Authenticator auth.Authenticator
-	Logger        logger.Logger
+	Addr   string
+	Auths  []*url.Userinfo
+	Logger logger.Logger
 }
 
 type Option func(opts *Options)
@@ -19,9 +20,9 @@ func AddrOption(addr string) Option {
 	}
 }
 
-func AuthenticatorOption(auth auth.Authenticator) Option {
+func AuthsOption(auths ...*url.Userinfo) Option {
 	return func(opts *Options) {
-		opts.Authenticator = auth
+		opts.Auths = auths
 	}
 }
 

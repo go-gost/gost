@@ -17,8 +17,8 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
+	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -30,23 +30,21 @@ func init() {
 }
 
 type httpHandler struct {
-	bypass        bypass.Bypass
 	router        *chain.Router
 	authenticator auth.Authenticator
 	logger        logger.Logger
 	md            metadata
+	options       handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &httpHandler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
@@ -54,6 +52,16 @@ func (h *httpHandler) Init(md md.Metadata) error {
 	if err := h.parseMetadata(md); err != nil {
 		return err
 	}
+
+	h.authenticator = auth_util.AuthFromUsers(h.options.Auths...)
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
 
 	return nil
 }
@@ -141,7 +149,7 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		resp.Header = http.Header{}
 	}
 
-	if h.bypass != nil && h.bypass.Contains(addr) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		resp.StatusCode = http.StatusForbidden
 
 		if h.logger.IsLevelEnabled(logger.DebugLevel) {

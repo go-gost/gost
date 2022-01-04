@@ -8,9 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
+	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
 	"github.com/go-gost/gost/pkg/logger"
@@ -32,24 +31,21 @@ func init() {
 }
 
 type forwardHandler struct {
-	bypass        bypass.Bypass
-	config        *ssh.ServerConfig
-	router        *chain.Router
-	authenticator auth.Authenticator
-	logger        logger.Logger
-	md            metadata
+	config  *ssh.ServerConfig
+	router  *chain.Router
+	logger  logger.Logger
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &forwardHandler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
@@ -58,18 +54,28 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 		return
 	}
 
+	authenticator := auth_util.AuthFromUsers(h.options.Auths...)
+
 	config := &ssh.ServerConfig{
-		PasswordCallback:  ssh_util.PasswordCallback(h.authenticator),
+		PasswordCallback:  ssh_util.PasswordCallback(authenticator),
 		PublicKeyCallback: ssh_util.PublicKeyCallback(h.md.authorizedKeys),
 	}
 
 	config.AddHostKey(h.md.signer)
 
-	if h.authenticator == nil && len(h.md.authorizedKeys) == 0 {
+	if authenticator == nil && len(h.md.authorizedKeys) == 0 {
 		config.NoClientAuth = true
 	}
 
 	h.config = config
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
 
 	return nil
 }
@@ -161,7 +167,7 @@ func (h *forwardHandler) directPortForwardChannel(ctx context.Context, channel s
 		}
 	*/
 
-	if h.bypass != nil && h.bypass.Contains(raddr) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(raddr) {
 		h.logger.Infof("bypass %s", raddr)
 		return
 	}

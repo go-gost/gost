@@ -14,10 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
+	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
 	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
 	"github.com/go-gost/gost/pkg/logger"
@@ -30,23 +29,21 @@ func init() {
 }
 
 type http2Handler struct {
-	bypass        bypass.Bypass
 	router        *chain.Router
 	authenticator auth.Authenticator
 	logger        logger.Logger
 	md            metadata
+	options       handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &http2Handler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
@@ -55,6 +52,15 @@ func (h *http2Handler) Init(md md.Metadata) error {
 		return err
 	}
 
+	h.authenticator = auth_util.AuthFromUsers(h.options.Auths...)
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
 	return nil
 }
 
@@ -133,7 +139,7 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 		}
 	*/
 
-	if h.bypass != nil && h.bypass.Contains(addr) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		w.WriteHeader(http.StatusForbidden)
 		h.logger.Info("bypass: ", addr)
 		return
@@ -201,156 +207,6 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 			Infof("%s >-< %s", req.RemoteAddr, addr)
 		return
 	}
-}
-
-func (h *http2Handler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request) {
-	if req == nil {
-		return
-	}
-
-	if h.md.sni && !req.URL.IsAbs() && govalidator.IsDNSName(req.Host) {
-		req.URL.Scheme = "http"
-	}
-
-	network := req.Header.Get("X-Gost-Protocol")
-	if network != "udp" {
-		network = "tcp"
-	}
-
-	// Try to get the actual host.
-	// Compatible with GOST 2.x.
-	if v := req.Header.Get("Gost-Target"); v != "" {
-		if h, err := h.decodeServerName(v); err == nil {
-			req.Host = h
-		}
-	}
-	req.Header.Del("Gost-Target")
-
-	if v := req.Header.Get("X-Gost-Target"); v != "" {
-		if h, err := h.decodeServerName(v); err == nil {
-			req.Host = h
-		}
-	}
-	req.Header.Del("X-Gost-Target")
-
-	addr := req.Host
-	if _, port, _ := net.SplitHostPort(addr); port == "" {
-		addr = net.JoinHostPort(addr, "80")
-	}
-
-	fields := map[string]interface{}{
-		"dst": addr,
-	}
-	if u, _, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization")); u != "" {
-		fields["user"] = u
-	}
-	h.logger = h.logger.WithFields(fields)
-
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
-		dump, _ := httputil.DumpRequest(req, false)
-		h.logger.Debug(string(dump))
-	}
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
-
-	resp := &http.Response{
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Header:     http.Header{},
-	}
-
-	if h.md.proxyAgent != "" {
-		resp.Header.Add("Proxy-Agent", h.md.proxyAgent)
-	}
-
-	/*
-		if !Can("tcp", host, h.options.Whitelist, h.options.Blacklist) {
-			log.Logf("[http] %s - %s : Unauthorized to tcp connect to %s",
-				conn.RemoteAddr(), conn.LocalAddr(), host)
-			resp.StatusCode = http.StatusForbidden
-
-			if Debug {
-				dump, _ := httputil.DumpResponse(resp, false)
-				log.Logf("[http] %s <- %s\n%s", conn.RemoteAddr(), conn.LocalAddr(), string(dump))
-			}
-
-			resp.Write(conn)
-			return
-		}
-	*/
-
-	if h.bypass != nil && h.bypass.Contains(addr) {
-		resp.StatusCode = http.StatusForbidden
-
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			dump, _ := httputil.DumpResponse(resp, false)
-			h.logger.Debug(string(dump))
-		}
-		h.logger.Info("bypass: ", addr)
-
-		resp.Write(conn)
-		return
-	}
-
-	if !h.authenticate(conn, req, resp) {
-		return
-	}
-
-	if req.Method == "PRI" ||
-		(req.Method != http.MethodConnect && req.URL.Scheme != "http") {
-		resp.StatusCode = http.StatusBadRequest
-		resp.Write(conn)
-
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			dump, _ := httputil.DumpResponse(resp, false)
-			h.logger.Debug(string(dump))
-		}
-
-		return
-	}
-
-	req.Header.Del("Proxy-Authorization")
-
-	cc, err := h.router.Dial(ctx, network, addr)
-	if err != nil {
-		resp.StatusCode = http.StatusServiceUnavailable
-		resp.Write(conn)
-
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			dump, _ := httputil.DumpResponse(resp, false)
-			h.logger.Debug(string(dump))
-		}
-		return
-	}
-	defer cc.Close()
-
-	if req.Method == http.MethodConnect {
-		resp.StatusCode = http.StatusOK
-		resp.Status = "200 Connection established"
-
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
-			dump, _ := httputil.DumpResponse(resp, false)
-			h.logger.Debug(string(dump))
-		}
-		if err = resp.Write(conn); err != nil {
-			h.logger.Error(err)
-			return
-		}
-	} else {
-		req.Header.Del("Proxy-Connection")
-		if err = req.Write(cc); err != nil {
-			h.logger.Error(err)
-			return
-		}
-	}
-
-	start := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(start),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
 func (h *http2Handler) decodeServerName(s string) (string, error) {

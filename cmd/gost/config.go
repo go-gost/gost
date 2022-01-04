@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/config"
@@ -71,7 +70,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 		ln := registry.GetListener(svc.Listener.Type)(
 			listener.AddrOption(svc.Addr),
-			listener.AuthenticatorOption(authFromConfig(svc.Listener.Auths...)),
+			listener.AuthsOption(authsFromConfig(svc.Listener.Auths...)...),
 			listener.LoggerOption(listenerLogger),
 		)
 
@@ -91,15 +90,13 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		})
 
 		h := registry.GetHandler(svc.Handler.Type)(
-			handler.LoggerOption(handlerLogger),
+			handler.RetriesOption(svc.Handler.Retries),
+			handler.ChainOption(chains[svc.Handler.Chain]),
+			handler.ResolverOption(resolvers[svc.Handler.Resolver]),
+			handler.HostsOption(hosts[svc.Handler.Hosts]),
 			handler.BypassOption(bypasses[svc.Handler.Bypass]),
-			handler.AuthenticatorOption(authFromConfig(svc.Handler.Auths...)),
-			handler.RouterOption(&chain.Router{
-				Chain:    chains[svc.Handler.Chain],
-				Resolver: resolvers[svc.Handler.Resolver],
-				Hosts:    hosts[svc.Handler.Hosts],
-				Logger:   handlerLogger,
-			}),
+			handler.AuthsOption(authsFromConfig(svc.Handler.Auths...)...),
+			handler.LoggerOption(handlerLogger),
 		)
 
 		if forwarder, ok := h.(handler.Forwarder); ok {
@@ -331,17 +328,15 @@ func hostsFromConfig(cfg *config.HostsConfig) hostspkg.HostMapper {
 	return hosts
 }
 
-func authFromConfig(cfgs ...config.AuthConfig) auth.Authenticator {
-	auths := make(map[string]string)
+func authsFromConfig(cfgs ...config.AuthConfig) []*url.Userinfo {
+	var auths []*url.Userinfo
+
 	for _, cfg := range cfgs {
 		if cfg.Username == "" {
 			continue
 		}
-		auths[cfg.Username] = cfg.Password
-	}
-	if len(auths) > 0 {
-		return auth.NewMapAuthenticator(auths)
+		auths = append(auths, url.UserPassword(cfg.Username, cfg.Password))
 	}
 
-	return nil
+	return auths
 }

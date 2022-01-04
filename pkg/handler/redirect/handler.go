@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
@@ -22,27 +21,38 @@ func init() {
 }
 
 type redirectHandler struct {
-	bypass bypass.Bypass
-	router *chain.Router
-	logger logger.Logger
-	md     metadata
+	router  *chain.Router
+	logger  logger.Logger
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &redirectHandler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
 func (h *redirectHandler) Init(md md.Metadata) (err error) {
-	return h.parseMetadata(md)
+	if err = h.parseMetadata(md); err != nil {
+		return
+	}
+
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
+
+	return
 }
 
 func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
@@ -84,7 +94,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), dstAddr)
 
-	if h.bypass != nil && h.bypass.Contains(dstAddr.String()) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(dstAddr.String()) {
 		h.logger.Info("bypass: ", dstAddr)
 		return
 	}

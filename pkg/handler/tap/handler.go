@@ -10,14 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/bufpool"
+	"github.com/go-gost/gost/pkg/common/util/ss"
 	"github.com/go-gost/gost/pkg/handler"
 	tap_util "github.com/go-gost/gost/pkg/internal/util/tap"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+	"github.com/shadowsocks/go-shadowsocks2/core"
 	"github.com/shadowsocks/go-shadowsocks2/shadowaead"
 	"github.com/songgao/water/waterutil"
 )
@@ -27,35 +28,52 @@ func init() {
 }
 
 type tapHandler struct {
-	group  *chain.NodeGroup
-	bypass bypass.Bypass
-	routes sync.Map
-	exit   chan struct{}
-	router *chain.Router
-	logger logger.Logger
-	md     metadata
+	group   *chain.NodeGroup
+	routes  sync.Map
+	exit    chan struct{}
+	cipher  core.Cipher
+	router  *chain.Router
+	logger  logger.Logger
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &tapHandler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
-		exit:   make(chan struct{}, 1),
+		exit:    make(chan struct{}, 1),
+		options: options,
 	}
 }
 
 func (h *tapHandler) Init(md md.Metadata) (err error) {
-	if err := h.parseMetadata(md); err != nil {
-		return err
+	if err = h.parseMetadata(md); err != nil {
+		return
 	}
 
-	return nil
+	if len(h.options.Auths) > 0 {
+		method := h.options.Auths[0].Username()
+		password, _ := h.options.Auths[0].Password()
+		h.cipher, err = ss.ShadowCipher(method, password, h.md.key)
+		if err != nil {
+			return
+		}
+	}
+
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
+
+	return
 }
 
 // Forward implements handler.Forwarder.
@@ -132,8 +150,8 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 				return err
 			}
 
-			if h.md.cipher != nil {
-				pc = h.md.cipher.PacketConn(pc)
+			if h.cipher != nil {
+				pc = h.cipher.PacketConn(pc)
 			}
 
 			return h.transport(conn, pc, addr)

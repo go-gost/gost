@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/handler"
@@ -30,27 +29,22 @@ func init() {
 }
 
 type dnsHandler struct {
-	bypass     bypass.Bypass
-	router     *chain.Router
 	exchangers []exchanger.Exchanger
 	cache      *resolver_util.Cache
+	router     *chain.Router
 	logger     logger.Logger
 	md         metadata
+	options    handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
-	cache := resolver_util.NewCache().WithLogger(options.Logger)
-
 	return &dnsHandler{
-		bypass: options.Bypass,
-		router: options.Router,
-		cache:  cache,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
@@ -58,6 +52,16 @@ func (h *dnsHandler) Init(md md.Metadata) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
+
+	h.cache = resolver_util.NewCache().WithLogger(h.options.Logger)
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
 
 	for _, server := range h.md.servers {
 		server = strings.TrimSpace(server)
@@ -89,6 +93,7 @@ func (h *dnsHandler) Init(md md.Metadata) (err error) {
 		}
 		h.exchangers = append(h.exchangers, ex)
 	}
+
 	return
 }
 

@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-gost/gosocks4"
 	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
+	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -21,23 +21,21 @@ func init() {
 }
 
 type socks4Handler struct {
-	bypass        bypass.Bypass
 	router        *chain.Router
 	authenticator auth.Authenticator
 	logger        logger.Logger
 	md            metadata
+	options       handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &socks4Handler{
-		bypass: options.Bypass,
-		router: options.Router,
-		logger: options.Logger,
+		options: options,
 	}
 }
 
@@ -45,6 +43,16 @@ func (h *socks4Handler) Init(md md.Metadata) (err error) {
 	if err := h.parseMetadata(md); err != nil {
 		return err
 	}
+
+	h.authenticator = auth_util.AuthFromUsers(h.options.Auths...)
+	h.router = &chain.Router{
+		Retries:  h.options.Retries,
+		Chain:    h.options.Chain,
+		Resolver: h.options.Resolver,
+		Hosts:    h.options.Hosts,
+		Logger:   h.options.Logger,
+	}
+	h.logger = h.options.Logger
 
 	return nil
 }
@@ -105,7 +113,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 	})
 	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
-	if h.bypass != nil && h.bypass.Contains(addr) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		resp := gosocks4.NewReply(gosocks4.Rejected, nil)
 		resp.Write(conn)
 		h.logger.Debug(resp)

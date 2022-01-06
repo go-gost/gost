@@ -120,13 +120,13 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	buf := bufpool.Get(int(length) + dissector.RecordHeaderLen)
 	defer bufpool.Put(buf)
-	if _, err := io.ReadFull(conn, buf[dissector.RecordHeaderLen:]); err != nil {
+	if _, err := io.ReadFull(conn, (*buf)[dissector.RecordHeaderLen:]); err != nil {
 		h.logger.Error(err)
 		return
 	}
-	copy(buf, hdr[:])
+	copy(*buf, hdr[:])
 
-	buf, host, err := h.decodeHost(bytes.NewReader(buf))
+	opaque, host, err := h.decodeHost(bytes.NewReader(*buf))
 	if err != nil {
 		h.logger.Error(err)
 		return
@@ -149,7 +149,7 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 	defer cc.Close()
 
-	if _, err := cc.Write(buf); err != nil {
+	if _, err := cc.Write(opaque); err != nil {
 		h.logger.Error(err)
 		return
 	}

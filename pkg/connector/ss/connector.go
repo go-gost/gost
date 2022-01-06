@@ -83,7 +83,7 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 	rawaddr := bufpool.Get(512)
 	defer bufpool.Put(rawaddr)
 
-	n, err := addr.Encode(rawaddr)
+	n, err := addr.Encode(*rawaddr)
 	if err != nil {
 		c.logger.Error("encoding addr: ", err)
 		return nil, err
@@ -102,12 +102,12 @@ func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, addre
 	if c.md.noDelay {
 		sc = ss.ShadowConn(conn, nil)
 		// write the addr at once.
-		if _, err := sc.Write(rawaddr[:n]); err != nil {
+		if _, err := sc.Write((*rawaddr)[:n]); err != nil {
 			return nil, err
 		}
 	} else {
 		// cache the header
-		sc = ss.ShadowConn(conn, rawaddr[:n])
+		sc = ss.ShadowConn(conn, (*rawaddr)[:n])
 	}
 
 	return sc, nil

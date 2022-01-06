@@ -128,7 +128,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 				b := bufpool.Get(bufSize)
 				defer bufpool.Put(b)
 
-				n, addr, err := pc1.ReadFrom(b)
+				n, addr, err := pc1.ReadFrom(*b)
 				if err != nil {
 					return err
 				}
@@ -138,7 +138,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 					return nil
 				}
 
-				if _, err = pc2.WriteTo(b[:n], addr); err != nil {
+				if _, err = pc2.WriteTo((*b)[:n], addr); err != nil {
 					return err
 				}
 
@@ -160,7 +160,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 				b := bufpool.Get(bufSize)
 				defer bufpool.Put(b)
 
-				n, raddr, err := pc2.ReadFrom(b)
+				n, raddr, err := pc2.ReadFrom(*b)
 				if err != nil {
 					return err
 				}
@@ -170,7 +170,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 					return nil
 				}
 
-				if _, err = pc1.WriteTo(b[:n], raddr); err != nil {
+				if _, err = pc1.WriteTo((*b)[:n], raddr); err != nil {
 					return err
 				}
 

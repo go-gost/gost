@@ -29,7 +29,7 @@ func copyBuffer(dst io.Writer, src io.Reader) error {
 	buf := bufpool.Get(16 * 1024)
 	defer bufpool.Put(buf)
 
-	_, err := io.CopyBuffer(dst, src, buf)
+	_, err := io.CopyBuffer(dst, src, *buf)
 	return err
 }
 

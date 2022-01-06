@@ -196,7 +196,7 @@ func (h *relayHandler) tunnelServerUDP(tunnel, c net.PacketConn) (err error) {
 				b := bufpool.Get(bufSize)
 				defer bufpool.Put(b)
 
-				n, raddr, err := tunnel.ReadFrom(b)
+				n, raddr, err := tunnel.ReadFrom(*b)
 				if err != nil {
 					return err
 				}
@@ -206,7 +206,7 @@ func (h *relayHandler) tunnelServerUDP(tunnel, c net.PacketConn) (err error) {
 					return nil
 				}
 
-				if _, err := c.WriteTo(b[:n], raddr); err != nil {
+				if _, err := c.WriteTo((*b)[:n], raddr); err != nil {
 					return err
 				}
 
@@ -229,7 +229,7 @@ func (h *relayHandler) tunnelServerUDP(tunnel, c net.PacketConn) (err error) {
 				b := bufpool.Get(bufSize)
 				defer bufpool.Put(b)
 
-				n, raddr, err := c.ReadFrom(b)
+				n, raddr, err := c.ReadFrom(*b)
 				if err != nil {
 					return err
 				}
@@ -239,7 +239,7 @@ func (h *relayHandler) tunnelServerUDP(tunnel, c net.PacketConn) (err error) {
 					return nil
 				}
 
-				if _, err := tunnel.WriteTo(b[:n], raddr); err != nil {
+				if _, err := tunnel.WriteTo((*b)[:n], raddr); err != nil {
 					return err
 				}
 				h.logger.Debugf("%s <<< %s data: %d",

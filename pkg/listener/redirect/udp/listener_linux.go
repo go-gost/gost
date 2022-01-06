@@ -14,7 +14,7 @@ func (l *redirectListener) listenUDP(addr *net.UDPAddr) (*net.UDPConn, error) {
 func (l *redirectListener) accept() (conn net.Conn, err error) {
 	b := bufpool.Get(l.md.readBufferSize)
 
-	n, raddr, dstAddr, err := tproxy.ReadFromUDP(l.ln, b)
+	n, raddr, dstAddr, err := tproxy.ReadFromUDP(l.ln, *b)
 	if err != nil {
 		l.logger.Error(err)
 		return
@@ -30,7 +30,7 @@ func (l *redirectListener) accept() (conn net.Conn, err error) {
 
 	conn = &redirConn{
 		Conn: c,
-		buf:  b[:n],
+		buf:  (*b)[:n],
 		ttl:  l.md.ttl,
 	}
 	return

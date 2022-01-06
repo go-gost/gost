@@ -45,18 +45,18 @@ func (c *UDPConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 	rbuf := bufpool.Get(c.bufferSize)
 	defer bufpool.Put(rbuf)
 
-	n, _, err = c.PacketConn.ReadFrom(rbuf)
+	n, _, err = c.PacketConn.ReadFrom(*rbuf)
 	if err != nil {
 		return
 	}
 
 	saddr := gosocks5.Addr{}
-	addrLen, err := saddr.ReadFrom(bytes.NewReader(rbuf[:n]))
+	addrLen, err := saddr.ReadFrom(bytes.NewReader((*rbuf)[:n]))
 	if err != nil {
 		return
 	}
 
-	n = copy(b, rbuf[addrLen:n])
+	n = copy(b, (*rbuf)[addrLen:n])
 	addr, err = net.ResolveUDPAddr("udp", saddr.String())
 
 	return
@@ -76,13 +76,13 @@ func (c *UDPConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 		return
 	}
 
-	addrLen, err := socksAddr.Encode(wbuf)
+	addrLen, err := socksAddr.Encode(*wbuf)
 	if err != nil {
 		return
 	}
 
-	n = copy(wbuf[addrLen:], b)
-	_, err = c.PacketConn.WriteTo(wbuf[:addrLen+n], c.raddr)
+	n = copy((*wbuf)[addrLen:], b)
+	_, err = c.PacketConn.WriteTo((*wbuf)[:addrLen+n], c.raddr)
 
 	return
 }

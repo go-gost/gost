@@ -110,7 +110,7 @@ func (c *udpConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 	rbuf := bufpool.Get(c.bufferSize)
 	defer bufpool.Put(rbuf)
 
-	n, c.raddr, err = c.PacketConn.ReadFrom(rbuf)
+	n, c.raddr, err = c.PacketConn.ReadFrom(*rbuf)
 	if err != nil {
 		return
 	}
@@ -119,11 +119,11 @@ func (c *udpConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 	header := gosocks5.UDPHeader{
 		Addr: &socksAddr,
 	}
-	hlen, err := header.ReadFrom(bytes.NewReader(rbuf[:n]))
+	hlen, err := header.ReadFrom(bytes.NewReader((*rbuf)[:n]))
 	if err != nil {
 		return
 	}
-	n = copy(b, rbuf[hlen:n])
+	n = copy(b, (*rbuf)[hlen:n])
 
 	addr, err = net.ResolveUDPAddr("udp", socksAddr.String())
 	return
@@ -151,7 +151,7 @@ func (c *udpConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 		Data:   b,
 	}
 
-	buf := bytes.NewBuffer(wbuf[:0])
+	buf := bytes.NewBuffer((*wbuf)[:0])
 	_, err = dgram.WriteTo(buf)
 	if err != nil {
 		return

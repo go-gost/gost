@@ -192,7 +192,7 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 				b := bufpool.Get(h.md.bufferSize)
 				defer bufpool.Put(b)
 
-				n, err := tap.Read(b)
+				n, err := tap.Read(*b)
 				if err != nil {
 					select {
 					case h.exit <- struct{}{}:
@@ -201,22 +201,22 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 					return err
 				}
 
-				src := waterutil.MACSource(b[:n])
-				dst := waterutil.MACDestination(b[:n])
-				eType := etherType(waterutil.MACEthertype(b[:n]))
+				src := waterutil.MACSource((*b)[:n])
+				dst := waterutil.MACDestination((*b)[:n])
+				eType := etherType(waterutil.MACEthertype((*b)[:n]))
 
 				h.logger.Debugf("%s >> %s %s %d", src, dst, eType, n)
 
 				// client side, deliver frame directly.
 				if raddr != nil {
-					_, err := conn.WriteTo(b[:n], raddr)
+					_, err := conn.WriteTo((*b)[:n], raddr)
 					return err
 				}
 
 				// server side, broadcast.
 				if waterutil.IsBroadcast(dst) {
 					go h.routes.Range(func(k, v interface{}) bool {
-						conn.WriteTo(b[:n], v.(net.Addr))
+						conn.WriteTo((*b)[:n], v.(net.Addr))
 						return true
 					})
 					return nil
@@ -231,7 +231,7 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 					return nil
 				}
 
-				if _, err := conn.WriteTo(b[:n], addr); err != nil {
+				if _, err := conn.WriteTo((*b)[:n], addr); err != nil {
 					return err
 				}
 
@@ -251,21 +251,21 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 				b := bufpool.Get(h.md.bufferSize)
 				defer bufpool.Put(b)
 
-				n, addr, err := conn.ReadFrom(b)
+				n, addr, err := conn.ReadFrom(*b)
 				if err != nil &&
 					err != shadowaead.ErrShortPacket {
 					return err
 				}
 
-				src := waterutil.MACSource(b[:n])
-				dst := waterutil.MACDestination(b[:n])
-				eType := etherType(waterutil.MACEthertype(b[:n]))
+				src := waterutil.MACSource((*b)[:n])
+				dst := waterutil.MACDestination((*b)[:n])
+				eType := etherType(waterutil.MACEthertype((*b)[:n]))
 
 				h.logger.Debugf("%s >> %s %s %d", src, dst, eType, n)
 
 				// client side, deliver frame to tap device.
 				if raddr != nil {
-					_, err := tap.Write(b[:n])
+					_, err := tap.Write((*b)[:n])
 					return err
 				}
 
@@ -284,7 +284,7 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 				if waterutil.IsBroadcast(dst) {
 					go h.routes.Range(func(k, v interface{}) bool {
 						if k.(tapRouteKey) != rkey {
-							conn.WriteTo(b[:n], v.(net.Addr))
+							conn.WriteTo((*b)[:n], v.(net.Addr))
 						}
 						return true
 					})
@@ -292,11 +292,11 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 
 				if v, ok := h.routes.Load(hwAddrToTapRouteKey(dst)); ok {
 					h.logger.Debugf("find route: %s -> %s", dst, v)
-					_, err := conn.WriteTo(b[:n], v.(net.Addr))
+					_, err := conn.WriteTo((*b)[:n], v.(net.Addr))
 					return err
 				}
 
-				if _, err := tap.Write(b[:n]); err != nil {
+				if _, err := tap.Write((*b)[:n]); err != nil {
 					select {
 					case h.exit <- struct{}{}:
 					default:

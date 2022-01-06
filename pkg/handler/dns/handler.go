@@ -116,14 +116,14 @@ func (h *dnsHandler) Handle(ctx context.Context, conn net.Conn) {
 	b := bufpool.Get(4096)
 	defer bufpool.Put(b)
 
-	n, err := conn.Read(b)
+	n, err := conn.Read(*b)
 	if err != nil {
 		h.logger.Error(err)
 		return
 	}
 	h.logger.Info("read data: ", n)
 
-	reply, err := h.exchange(ctx, b[:n])
+	reply, err := h.exchange(ctx, (*b)[:n])
 	if err != nil {
 		return
 	}

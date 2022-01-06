@@ -52,7 +52,7 @@ func (r *UDPRelay) Run() (err error) {
 				b := bufpool.Get(bufSize)
 				defer bufpool.Put(b)
 
-				n, raddr, err := r.pc1.ReadFrom(b)
+				n, raddr, err := r.pc1.ReadFrom(*b)
 				if err != nil {
 					return err
 				}
@@ -64,7 +64,7 @@ func (r *UDPRelay) Run() (err error) {
 					return nil
 				}
 
-				if _, err := r.pc2.WriteTo(b[:n], raddr); err != nil {
+				if _, err := r.pc2.WriteTo((*b)[:n], raddr); err != nil {
 					return err
 				}
 
@@ -90,7 +90,7 @@ func (r *UDPRelay) Run() (err error) {
 				b := bufpool.Get(bufSize)
 				defer bufpool.Put(b)
 
-				n, raddr, err := r.pc2.ReadFrom(b)
+				n, raddr, err := r.pc2.ReadFrom(*b)
 				if err != nil {
 					return err
 				}
@@ -102,7 +102,7 @@ func (r *UDPRelay) Run() (err error) {
 					return nil
 				}
 
-				if _, err := r.pc1.WriteTo(b[:n], raddr); err != nil {
+				if _, err := r.pc1.WriteTo((*b)[:n], raddr); err != nil {
 					return err
 				}
 

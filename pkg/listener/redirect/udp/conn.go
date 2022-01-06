@@ -23,7 +23,7 @@ func (c *redirConn) Read(b []byte) (n int, err error) {
 
 	c.once.Do(func() {
 		n = copy(b, c.buf)
-		bufpool.Put(c.buf)
+		bufpool.Put(&c.buf)
 		c.buf = nil
 	})
 

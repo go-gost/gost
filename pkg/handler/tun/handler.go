@@ -193,7 +193,7 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				b := bufpool.Get(h.md.bufferSize)
 				defer bufpool.Put(b)
 
-				n, err := tun.Read(b)
+				n, err := tun.Read(*b)
 				if err != nil {
 					select {
 					case h.exit <- struct{}{}:
@@ -203,19 +203,19 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				}
 
 				var src, dst net.IP
-				if waterutil.IsIPv4(b[:n]) {
-					header, err := ipv4.ParseHeader(b[:n])
+				if waterutil.IsIPv4((*b)[:n]) {
+					header, err := ipv4.ParseHeader((*b)[:n])
 					if err != nil {
 						h.logger.Error(err)
 						return nil
 					}
 					h.logger.Debugf("%s >> %s %-4s %d/%-4d %-4x %d",
-						header.Src, header.Dst, ipProtocol(waterutil.IPv4Protocol(b[:n])),
+						header.Src, header.Dst, ipProtocol(waterutil.IPv4Protocol((*b)[:n])),
 						header.Len, header.TotalLen, header.ID, header.Flags)
 
 					src, dst = header.Src, header.Dst
-				} else if waterutil.IsIPv6(b[:n]) {
-					header, err := ipv6.ParseHeader(b[:n])
+				} else if waterutil.IsIPv6((*b)[:n]) {
+					header, err := ipv6.ParseHeader((*b)[:n])
 					if err != nil {
 						h.logger.Warn(err)
 						return nil
@@ -233,7 +233,7 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 
 				// client side, deliver packet directly.
 				if raddr != nil {
-					_, err := conn.WriteTo(b[:n], raddr)
+					_, err := conn.WriteTo((*b)[:n], raddr)
 					return err
 				}
 
@@ -245,7 +245,7 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 
 				h.logger.Debugf("find route: %s -> %s", dst, addr)
 
-				if _, err := conn.WriteTo(b[:n], addr); err != nil {
+				if _, err := conn.WriteTo((*b)[:n], addr); err != nil {
 					return err
 				}
 				return nil
@@ -264,27 +264,27 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				b := bufpool.Get(h.md.bufferSize)
 				defer bufpool.Put(b)
 
-				n, addr, err := conn.ReadFrom(b)
+				n, addr, err := conn.ReadFrom(*b)
 				if err != nil &&
 					err != shadowaead.ErrShortPacket {
 					return err
 				}
 
 				var src, dst net.IP
-				if waterutil.IsIPv4(b[:n]) {
-					header, err := ipv4.ParseHeader(b[:n])
+				if waterutil.IsIPv4((*b)[:n]) {
+					header, err := ipv4.ParseHeader((*b)[:n])
 					if err != nil {
 						h.logger.Warn(err)
 						return nil
 					}
 
 					h.logger.Debugf("%s >> %s %-4s %d/%-4d %-4x %d",
-						header.Src, header.Dst, ipProtocol(waterutil.IPv4Protocol(b[:n])),
+						header.Src, header.Dst, ipProtocol(waterutil.IPv4Protocol((*b)[:n])),
 						header.Len, header.TotalLen, header.ID, header.Flags)
 
 					src, dst = header.Src, header.Dst
-				} else if waterutil.IsIPv6(b[:n]) {
-					header, err := ipv6.ParseHeader(b[:n])
+				} else if waterutil.IsIPv6((*b)[:n]) {
+					header, err := ipv6.ParseHeader((*b)[:n])
 					if err != nil {
 						h.logger.Warn(err)
 						return nil
@@ -303,7 +303,7 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 
 				// client side, deliver packet to tun device.
 				if raddr != nil {
-					_, err := tun.Write(b[:n])
+					_, err := tun.Write((*b)[:n])
 					return err
 				}
 
@@ -321,11 +321,11 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				if addr := h.findRouteFor(dst); addr != nil {
 					h.logger.Debugf("find route: %s -> %s", dst, addr)
 
-					_, err := conn.WriteTo(b[:n], addr)
+					_, err := conn.WriteTo((*b)[:n], addr)
 					return err
 				}
 
-				if _, err := tun.Write(b[:n]); err != nil {
+				if _, err := tun.Write((*b)[:n]); err != nil {
 					select {
 					case h.exit <- struct{}{}:
 					default:

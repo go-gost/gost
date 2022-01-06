@@ -11,7 +11,8 @@ var (
 			size: 128,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 128)
+					b := make([]byte, 128)
+					return &b
 				},
 			},
 		},
@@ -19,7 +20,8 @@ var (
 			size: 512,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 512)
+					b := make([]byte, 512)
+					return &b
 				},
 			},
 		},
@@ -27,7 +29,8 @@ var (
 			size: 1024,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 1024)
+					b := make([]byte, 1024)
+					return &b
 				},
 			},
 		},
@@ -35,7 +38,8 @@ var (
 			size: 4096,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 4096)
+					b := make([]byte, 4096)
+					return &b
 				},
 			},
 		},
@@ -43,7 +47,8 @@ var (
 			size: 8192,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 8192)
+					b := make([]byte, 8192)
+					return &b
 				},
 			},
 		},
@@ -51,7 +56,8 @@ var (
 			size: 16 * 1024,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 16*1024)
+					b := make([]byte, 16*1024)
+					return &b
 				},
 			},
 		},
@@ -59,7 +65,8 @@ var (
 			size: 32 * 1024,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 32*1024)
+					b := make([]byte, 32*1024)
+					return &b
 				},
 			},
 		},
@@ -67,7 +74,8 @@ var (
 			size: 64 * 1024,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 64*1024)
+					b := make([]byte, 64*1024)
+					return &b
 				},
 			},
 		},
@@ -75,27 +83,31 @@ var (
 			size: 65 * 1024,
 			pool: sync.Pool{
 				New: func() interface{} {
-					return make([]byte, 65*1024)
+					b := make([]byte, 65*1024)
+					return &b
 				},
 			},
 		},
 	}
 )
 
-// Get returns a buffer size.
-func Get(size int) []byte {
+// Get returns a buffer of specified size.
+func Get(size int) *[]byte {
 	for i := range pools {
 		if size <= pools[i].size {
-			return pools[i].pool.Get().([]byte)[:size]
+			b := pools[i].pool.Get().(*[]byte)
+			*b = (*b)[:size]
+			return b
 		}
 	}
-	return make([]byte, size)
+	b := make([]byte, size)
+	return &b
 }
 
-func Put(b []byte) {
+func Put(b *[]byte) {
 	for i := range pools {
-		if cap(b) == pools[i].size {
-			pools[i].pool.Put(b[:cap(b)])
+		if cap(*b) == pools[i].size {
+			pools[i].pool.Put(b)
 		}
 	}
 }

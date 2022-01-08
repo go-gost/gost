@@ -31,11 +31,11 @@ type ProfilingConfig struct {
 }
 
 type TLSConfig struct {
-	Cert       string
-	Key        string
+	Cert       string `yaml:",omitempty"`
+	Key        string `yaml:",omitempty"`
 	CA         string `yaml:",omitempty"`
 	Secure     bool   `yaml:",omitempty"`
-	ServerName string `yaml:",omitempty"`
+	ServerName string `yaml:"serverName,omitempty"`
 }
 
 type AuthConfig struct {
@@ -59,7 +59,7 @@ type NameserverConfig struct {
 	Addr     string
 	Chain    string
 	Prefer   string
-	ClientIP string
+	ClientIP string `yaml:"clientIP"`
 	Hostname string
 	TTL      time.Duration
 	Timeout  time.Duration

@@ -1,9 +1,5 @@
 package chain
 
-type Chainable interface {
-	WithChain(chain *Chain)
-}
-
 type Chain struct {
 	groups []*NodeGroup
 }

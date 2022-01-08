@@ -17,34 +17,25 @@ func init() {
 }
 
 type rudpListener struct {
-	addr   string
-	laddr  *net.UDPAddr
-	chain  *chain.Chain
-	ln     net.Listener
-	md     metadata
-	router *chain.Router
-	logger logger.Logger
-	closed chan struct{}
+	laddr   *net.UDPAddr
+	ln      net.Listener
+	router  *chain.Router
+	closed  chan struct{}
+	logger  logger.Logger
+	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &rudpListener{
-		addr:   options.Addr,
-		closed: make(chan struct{}),
-		router: &chain.Router{
-			Logger: options.Logger,
-		},
-		logger: options.Logger,
+		closed:  make(chan struct{}),
+		logger:  options.Logger,
+		options: options,
 	}
-}
-
-// implements chain.Chainable interface
-func (l *rudpListener) WithChain(chain *chain.Chain) {
-	l.router.Chain = chain
 }
 
 func (l *rudpListener) Init(md md.Metadata) (err error) {
@@ -52,12 +43,16 @@ func (l *rudpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveUDPAddr("udp", l.addr)
+	laddr, err := net.ResolveUDPAddr("udp", l.options.Addr)
 	if err != nil {
 		return
 	}
 
 	l.laddr = laddr
+	l.router = &chain.Router{
+		Chain:  l.options.Chain,
+		Logger: l.logger,
+	}
 
 	return
 }

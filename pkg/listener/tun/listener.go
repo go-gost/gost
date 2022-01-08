@@ -15,22 +15,22 @@ func init() {
 }
 
 type tunListener struct {
-	saddr  string
-	addr   net.Addr
-	cqueue chan net.Conn
-	closed chan struct{}
-	logger logger.Logger
-	md     metadata
+	addr    net.Addr
+	cqueue  chan net.Conn
+	closed  chan struct{}
+	logger  logger.Logger
+	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &tunListener{
-		saddr:  options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -39,7 +39,7 @@ func (l *tunListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	l.addr, err = net.ResolveUDPAddr("udp", l.saddr)
+	l.addr, err = net.ResolveUDPAddr("udp", l.options.Addr)
 	if err != nil {
 		return
 	}

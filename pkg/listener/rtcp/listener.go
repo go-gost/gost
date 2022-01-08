@@ -17,34 +17,25 @@ func init() {
 }
 
 type rtcpListener struct {
-	addr   string
-	laddr  net.Addr
-	chain  *chain.Chain
-	ln     net.Listener
-	md     metadata
-	router *chain.Router
-	logger logger.Logger
-	closed chan struct{}
+	laddr   net.Addr
+	ln      net.Listener
+	md      metadata
+	router  *chain.Router
+	logger  logger.Logger
+	closed  chan struct{}
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &rtcpListener{
-		addr:   options.Addr,
-		closed: make(chan struct{}),
-		router: &chain.Router{
-			Logger: options.Logger,
-		},
-		logger: options.Logger,
+		closed:  make(chan struct{}),
+		logger:  options.Logger,
+		options: options,
 	}
-}
-
-// implements chain.Chainable interface
-func (l *rtcpListener) WithChain(chain *chain.Chain) {
-	l.router.Chain = chain
 }
 
 func (l *rtcpListener) Init(md md.Metadata) (err error) {
@@ -52,12 +43,16 @@ func (l *rtcpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveTCPAddr("tcp", l.addr)
+	laddr, err := net.ResolveTCPAddr("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}
 
 	l.laddr = laddr
+	l.router = &chain.Router{
+		Chain:  l.options.Chain,
+		Logger: l.logger,
+	}
 
 	return
 }

@@ -30,6 +30,10 @@ func (m MapMetadata) Get(key string) interface{} {
 	return nil
 }
 
+func (m MapMetadata) Del(key string) {
+	delete(m, key)
+}
+
 func GetBool(md Metadata, key string) (v bool) {
 	if md == nil || !md.IsExists(key) {
 		return

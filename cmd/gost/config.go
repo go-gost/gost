@@ -56,8 +56,15 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 	}
 
 	for _, svc := range cfg.Services {
-		if svc.Listener == nil || svc.Handler == nil {
-			continue
+		if svc.Listener == nil {
+			svc.Listener = &config.ListenerConfig{
+				Type: "tcp",
+			}
+		}
+		if svc.Handler == nil {
+			svc.Handler = &config.HandlerConfig{
+				Type: "auto",
+			}
 		}
 		serviceLogger := log.WithFields(map[string]interface{}{
 			"kind":     "service",
@@ -88,10 +95,6 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 			listener.TLSConfigOption(tlsConfig),
 			listener.LoggerOption(listenerLogger),
 		)
-
-		if chainable, ok := ln.(chain.Chainable); ok {
-			chainable.WithChain(chains[svc.Listener.Chain])
-		}
 
 		if svc.Listener.Metadata == nil {
 			svc.Listener.Metadata = make(map[string]interface{})
@@ -292,9 +295,9 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 	switch cfg.Output {
 	case "none":
 		return logger.Nop()
-	case "stdout", "":
+	case "stdout":
 		out = os.Stdout
-	case "stderr":
+	case "stderr", "":
 		out = os.Stderr
 	default:
 		f, err := os.OpenFile(cfg.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)

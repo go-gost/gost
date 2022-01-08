@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-gost/gost/pkg/config"
+	"github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 )
 
@@ -67,7 +68,11 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		service.Name = fmt.Sprintf("service-%d", i)
 		if chain != nil {
-			service.Handler.Chain = chain.Name
+			if service.Listener.Type == "rtcp" || service.Listener.Type == "rudp" {
+				service.Listener.Chain = chain.Name
+			} else {
+				service.Handler.Chain = chain.Name
+			}
 		}
 		cfg.Services = append(cfg.Services, service)
 	}
@@ -125,37 +130,30 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		auths = append(auths, auth)
 	}
 
-	md := make(map[string]interface{})
+	md := metadata.MapMetadata{}
 	for k, v := range url.Query() {
 		if len(v) > 0 {
 			md[k] = v[0]
 		}
 	}
-	if sauth := md["auth"]; sauth != nil {
-		if sa, _ := sauth.(string); sa != "" {
-			au, err := parseAuthFromCmd(sa)
-			if err != nil {
-				return nil, err
-			}
-			auths = append(auths, au)
-		}
-	}
-	delete(md, "auth")
 
-	var tlsConfig *config.TLSConfig
-	if certs := md["cert"]; certs != nil {
-		cert, _ := certs.(string)
-		key, _ := md["key"].(string)
-		ca, _ := md["ca"].(string)
-		tlsConfig = &config.TLSConfig{
-			Cert: cert,
-			Key:  key,
-			CA:   ca,
+	if sa := metadata.GetString(md, "auth"); sa != "" {
+		au, err := parseAuthFromCmd(sa)
+		if err != nil {
+			return nil, err
 		}
+		auths = append(auths, au)
 	}
-	delete(md, "cert")
-	delete(md, "key")
-	delete(md, "ca")
+	md.Del("auth")
+
+	tlsConfig := &config.TLSConfig{
+		Cert: metadata.GetString(md, "cert"),
+		Key:  metadata.GetString(md, "key"),
+		CA:   metadata.GetString(md, "ca"),
+	}
+	md.Del("cert")
+	md.Del("key")
+	md.Del("ca")
 
 	svc.Handler = &config.HandlerConfig{
 		Type:     handler,
@@ -205,45 +203,33 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		auth.Password, _ = url.User.Password()
 	}
 
-	md := make(map[string]interface{})
+	md := metadata.MapMetadata{}
 	for k, v := range url.Query() {
 		if len(v) > 0 {
 			md[k] = v[0]
 		}
 	}
-	md["serverName"] = url.Host
 
-	if sauth := md["auth"]; sauth != nil && auth == nil {
-		if sa, _ := sauth.(string); sa != "" {
-			au, err := parseAuthFromCmd(sa)
-			if err != nil {
-				return nil, err
-			}
-			auth = au
+	if sauth := metadata.GetString(md, "auth"); sauth != "" && auth == nil {
+		au, err := parseAuthFromCmd(sauth)
+		if err != nil {
+			return nil, err
 		}
+		auth = au
 	}
-	delete(md, "auth")
+	md.Del("auth")
 
-	var tlsConfig *config.TLSConfig
-	if certs := md["cert"]; certs != nil {
-		cert, _ := certs.(string)
-		key, _ := md["key"].(string)
-		ca, _ := md["ca"].(string)
-		secure, _ := md["secure"].(bool)
-		serverName, _ := md["serverName"].(string)
-		tlsConfig = &config.TLSConfig{
-			Cert:       cert,
-			Key:        key,
-			CA:         ca,
-			Secure:     secure,
-			ServerName: serverName,
-		}
+	tlsConfig := &config.TLSConfig{
+		CA:         metadata.GetString(md, "ca"),
+		Secure:     metadata.GetBool(md, "secure"),
+		ServerName: metadata.GetString(md, "serverName"),
 	}
-	delete(md, "cert")
-	delete(md, "key")
-	delete(md, "ca")
-	delete(md, "secure")
-	delete(md, "serverName")
+	if tlsConfig.ServerName == "" {
+		tlsConfig.ServerName = url.Hostname()
+	}
+	md.Del("ca")
+	md.Del("secure")
+	md.Del("serverName")
 
 	node.Connector = &config.ConnectorConfig{
 		Type:     connector,

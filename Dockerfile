@@ -12,7 +12,7 @@ ADD . /src
 
 WORKDIR /src
 
-RUN cd cmd/gost && go env && go build -v
+RUN cd cmd/gost && go env && go build 
 
 FROM alpine:latest
 

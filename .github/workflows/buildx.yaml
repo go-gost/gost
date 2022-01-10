@@ -19,13 +19,12 @@ jobs:
       run: |
         DOCKER_IMAGE=${{ secrets.DOCKER_IMAGE }}
         VERSION=latest
-        SHORTREF=${GITHUB_SHA::8}
 
         # If this is git tag, use the tag name as a docker tag
         if [[ $GITHUB_REF == refs/tags/* ]]; then
           VERSION=${GITHUB_REF#refs/tags/v}
         fi
-        TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${SHORTREF}"
+        TAGS="${DOCKER_IMAGE}:${VERSION}"
 
         # If the VERSION looks like a version number, assume that
         # this is the most recent version of the image and also

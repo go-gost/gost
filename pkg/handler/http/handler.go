@@ -274,7 +274,7 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 		return true
 	}
 
-	pr := h.md.probeResist
+	pr := h.md.probeResistance
 	// probing resistance is enabled, and knocking host is mismatch.
 	if pr != nil && (pr.Knock == "" || !strings.EqualFold(req.URL.Hostname(), pr.Knock)) {
 		resp.StatusCode = http.StatusServiceUnavailable // default status code

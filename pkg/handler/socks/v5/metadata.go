@@ -8,7 +8,6 @@ import (
 )
 
 type metadata struct {
-	timeout           time.Duration
 	readTimeout       time.Duration
 	noTLS             bool
 	enableBind        bool
@@ -20,7 +19,6 @@ type metadata struct {
 func (h *socks5Handler) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		readTimeout       = "readTimeout"
-		timeout           = "timeout"
 		noTLS             = "notls"
 		enableBind        = "bind"
 		enableUDP         = "udp"
@@ -29,7 +27,6 @@ func (h *socks5Handler) parseMetadata(md mdata.Metadata) (err error) {
 	)
 
 	h.md.readTimeout = mdata.GetDuration(md, readTimeout)
-	h.md.timeout = mdata.GetDuration(md, timeout)
 	h.md.noTLS = mdata.GetBool(md, noTLS)
 	h.md.enableBind = mdata.GetBool(md, enableBind)
 	h.md.enableUDP = mdata.GetBool(md, enableUDP)

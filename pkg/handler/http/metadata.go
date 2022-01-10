@@ -8,16 +8,16 @@ import (
 )
 
 type metadata struct {
-	probeResist *probeResist
-	sni         bool
-	enableUDP   bool
-	header      http.Header
+	probeResistance *probeResistance
+	sni             bool
+	enableUDP       bool
+	header          http.Header
 }
 
 func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 	const (
 		header         = "header"
-		probeResistKey = "probeResist"
+		probeResistKey = "probeResistance"
 		knock          = "knock"
 		sni            = "sni"
 		enableUDP      = "udp"
@@ -33,7 +33,7 @@ func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 
 	if v := mdata.GetString(md, probeResistKey); v != "" {
 		if ss := strings.SplitN(v, ":", 2); len(ss) == 2 {
-			h.md.probeResist = &probeResist{
+			h.md.probeResistance = &probeResistance{
 				Type:  ss[0],
 				Value: ss[1],
 				Knock: mdata.GetString(md, knock),
@@ -46,7 +46,7 @@ func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
 	return nil
 }
 
-type probeResist struct {
+type probeResistance struct {
 	Type  string
 	Value string
 	Knock string

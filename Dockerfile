@@ -1,18 +1,10 @@
-FROM --platform=$BUILDPLATFORM golang:1-alpine as builder
+FROM golang:1-alpine as builder
 
-# Convert TARGETPLATFORM to GOARCH format
-# https://github.com/tonistiigi/xx
-COPY --from=tonistiigi/xx:golang / /
-
-ARG TARGETPLATFORM
-
-RUN apk add --no-cache musl-dev git gcc
+RUN apk add --no-cache musl-dev gcc
 
 ADD . /src
 
 WORKDIR /src
-
-ENV GO111MODULE=on
 
 RUN cd cmd/gost && go env && go build -v
 

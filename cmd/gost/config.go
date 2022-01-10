@@ -319,11 +319,11 @@ func selectorFromConfig(cfg *config.SelectorConfig) chain.Selector {
 
 	var strategy chain.Strategy
 	switch cfg.Strategy {
-	case "round":
+	case "round", "rr":
 		strategy = chain.RoundRobinStrategy()
-	case "random":
+	case "random", "rand":
 		strategy = chain.RandomStrategy()
-	case "fifo":
+	case "fifo", "ha":
 		strategy = chain.FIFOStrategy()
 	default:
 		strategy = chain.RoundRobinStrategy()

@@ -15,22 +15,22 @@ import (
 )
 
 func loadServerTLSConfig(cfg *config.TLSConfig) (*tls.Config, error) {
-	return tls_util.LoadServerConfig(cfg.Cert, cfg.Key, cfg.CA)
+	return tls_util.LoadServerConfig(cfg.CertFile, cfg.KeyFile, cfg.CAFile)
 }
 
 func loadClientTLSConfig(cfg *config.TLSConfig) (*tls.Config, error) {
-	return tls_util.LoadClientConfig(cfg.Cert, cfg.Key, cfg.CA, cfg.Secure, cfg.ServerName)
+	return tls_util.LoadClientConfig(cfg.CertFile, cfg.KeyFile, cfg.CAFile, cfg.Secure, cfg.ServerName)
 }
 
 func buildDefaultTLSConfig(cfg *config.TLSConfig) {
 	if cfg == nil {
 		cfg = &config.TLSConfig{
-			Cert: "cert.pem",
-			Key:  "key.pem",
+			CertFile: "cert.pem",
+			KeyFile:  "key.pem",
 		}
 	}
 
-	tlsConfig, err := loadConfig(cfg.Cert, cfg.Key)
+	tlsConfig, err := loadConfig(cfg.CertFile, cfg.KeyFile)
 	if err != nil {
 		// generate random self-signed certificate.
 		cert, err := genCertificate()

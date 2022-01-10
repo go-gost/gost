@@ -147,13 +147,17 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	md.Del("auth")
 
 	tlsConfig := &config.TLSConfig{
-		Cert: metadata.GetString(md, "cert"),
-		Key:  metadata.GetString(md, "key"),
-		CA:   metadata.GetString(md, "ca"),
+		CertFile: metadata.GetString(md, "certFile"),
+		KeyFile:  metadata.GetString(md, "keyFile"),
+		CAFile:   metadata.GetString(md, "caFile"),
 	}
-	md.Del("cert")
-	md.Del("key")
-	md.Del("ca")
+	md.Del("certFile")
+	md.Del("keyFile")
+	md.Del("caFile")
+
+	if tlsConfig.CertFile == "" {
+		tlsConfig = nil
+	}
 
 	svc.Handler = &config.HandlerConfig{
 		Type:     handler,
@@ -220,16 +224,20 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	md.Del("auth")
 
 	tlsConfig := &config.TLSConfig{
-		CA:         metadata.GetString(md, "ca"),
+		CAFile:     metadata.GetString(md, "caFile"),
 		Secure:     metadata.GetBool(md, "secure"),
 		ServerName: metadata.GetString(md, "serverName"),
 	}
 	if tlsConfig.ServerName == "" {
 		tlsConfig.ServerName = url.Hostname()
 	}
-	md.Del("ca")
+	md.Del("caFile")
 	md.Del("secure")
 	md.Del("serverName")
+
+	if !tlsConfig.Secure && tlsConfig.CAFile == "" {
+		tlsConfig = nil
+	}
 
 	node.Connector = &config.ConnectorConfig{
 		Type:     connector,

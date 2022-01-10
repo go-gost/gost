@@ -31,9 +31,9 @@ type ProfilingConfig struct {
 }
 
 type TLSConfig struct {
-	Cert       string `yaml:",omitempty"`
-	Key        string `yaml:",omitempty"`
-	CA         string `yaml:",omitempty"`
+	CertFile   string `yaml:"certFile,omitempty"`
+	KeyFile    string `yaml:"keyFile,omitempty"`
+	CAFile     string `yaml:"caFile,omitempty"`
 	Secure     bool   `yaml:",omitempty"`
 	ServerName string `yaml:"serverName,omitempty"`
 }
@@ -45,8 +45,8 @@ type AuthConfig struct {
 
 type SelectorConfig struct {
 	Strategy    string
-	MaxFails    int
-	FailTimeout time.Duration
+	MaxFails    int           `yaml:"maxFails"`
+	FailTimeout time.Duration `yaml:"failTimeout"`
 }
 
 type BypassConfig struct {
@@ -143,9 +143,9 @@ type HopConfig struct {
 type NodeConfig struct {
 	Name      string
 	Addr      string           `yaml:",omitempty"`
-	Dialer    *DialerConfig    `yaml:",omitempty"`
-	Connector *ConnectorConfig `yaml:",omitempty"`
 	Bypass    string           `yaml:",omitempty"`
+	Connector *ConnectorConfig `yaml:",omitempty"`
+	Dialer    *DialerConfig    `yaml:",omitempty"`
 }
 
 type Config struct {

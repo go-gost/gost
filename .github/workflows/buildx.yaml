@@ -1,4 +1,5 @@
-# ref: https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/
+# ref: https://docs.docker.com/ci-cd/github-actions/
+# https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/
 
 name: Docker
 
@@ -70,5 +71,5 @@ jobs:
         platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8
         push: true
         tags: ${{ steps.prepare.outputs.tags }}
-        cache-from: type=registry,ref=${{ steps.prepare.outputs.docker_image }}:buildcache
-        cache-to: type=registry,ref=${{ steps.prepare.outputs.docker_image }}:buildcache,mode=max
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

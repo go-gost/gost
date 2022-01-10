@@ -2,6 +2,12 @@ FROM golang:1-alpine as builder
 
 RUN apk add --no-cache musl-dev gcc
 
+WORKDIR /mod
+
+ADD go.mod go.sum ./
+
+RUN go mod download
+
 ADD . /src
 
 WORKDIR /src

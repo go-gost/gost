@@ -66,18 +66,22 @@ func (c *ClientConn) SetWriteDeadline(t time.Time) error {
 
 // a dummy HTTP2 server conn used by HTTP2 handler
 type ServerConn struct {
-	r      *http.Request
-	w      http.ResponseWriter
-	cancel context.CancelFunc
+	r          *http.Request
+	w          http.ResponseWriter
+	localAddr  net.Addr
+	remoteAddr net.Addr
+	cancel     context.CancelFunc
 }
 
-func NewServerConn(w http.ResponseWriter, r *http.Request) *ServerConn {
+func NewServerConn(w http.ResponseWriter, r *http.Request, localAddr, remoteAddr net.Addr) *ServerConn {
 	ctx, cancel := context.WithCancel(r.Context())
 
 	return &ServerConn{
-		r:      r.Clone(ctx),
-		w:      w,
-		cancel: cancel,
+		r:          r.Clone(ctx),
+		w:          w,
+		localAddr:  localAddr,
+		remoteAddr: remoteAddr,
+		cancel:     cancel,
 	}
 }
 
@@ -112,13 +116,11 @@ func (c *ServerConn) Close() error {
 }
 
 func (c *ServerConn) LocalAddr() net.Addr {
-	addr, _ := net.ResolveTCPAddr("tcp", c.r.Host)
-	return addr
+	return c.localAddr
 }
 
 func (c *ServerConn) RemoteAddr() net.Addr {
-	addr, _ := net.ResolveTCPAddr("tcp", c.r.RemoteAddr)
-	return addr
+	return c.remoteAddr
 }
 
 func (c *ServerConn) SetDeadline(t time.Time) error {

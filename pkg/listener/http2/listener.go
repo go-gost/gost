@@ -106,7 +106,8 @@ func (l *http2Listener) Close() (err error) {
 }
 
 func (l *http2Listener) handleFunc(w http.ResponseWriter, r *http.Request) {
-	conn := http2_util.NewServerConn(w, r)
+	raddr, _ := net.ResolveTCPAddr("tcp", r.RemoteAddr)
+	conn := http2_util.NewServerConn(w, r, l.addr, raddr)
 	select {
 	case l.cqueue <- conn:
 	default:

@@ -287,22 +287,29 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 			if !strings.HasPrefix(url, "http") {
 				url = "http://" + url
 			}
-			if r, err := http.Get(url); err == nil {
-				resp = r
-				defer r.Body.Close()
+			r, err := http.Get(url)
+			if err != nil {
+				h.logger.Error(err)
+				break
 			}
+			resp = r
+			defer resp.Body.Close()
 		case "host":
 			cc, err := net.Dial("tcp", pr.Value)
-			if err == nil {
-				defer cc.Close()
-
-				req.Write(cc)
-				handler.Transport(conn, cc)
-				return
+			if err != nil {
+				h.logger.Error(err)
+				break
 			}
+			defer cc.Close()
+
+			req.Write(cc)
+			handler.Transport(conn, cc)
+			return
 		case "file":
 			f, _ := os.Open(pr.Value)
 			if f != nil {
+				defer f.Close()
+
 				resp.StatusCode = http.StatusOK
 				if finfo, _ := f.Stat(); finfo != nil {
 					resp.ContentLength = finfo.Size()
@@ -313,6 +320,9 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 		}
 	}
 
+	if resp.Header == nil {
+		resp.Header = http.Header{}
+	}
 	if resp.StatusCode == 0 {
 		resp.StatusCode = http.StatusProxyAuthRequired
 		resp.Header.Add("Proxy-Authenticate", "Basic realm=\"gost\"")
@@ -325,7 +335,6 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 
 		h.logger.Info("proxy authentication required")
 	} else {
-		resp.Header = http.Header{}
 		resp.Header.Set("Server", "nginx/1.20.1")
 		resp.Header.Set("Date", time.Now().Format(http.TimeFormat))
 		if resp.StatusCode == http.StatusOK {

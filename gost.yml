@@ -5,7 +5,6 @@ log:
 
 services:
 - name: http+tcp
-  url: "http://gost:gost@:8000"
   addr: ":28000"
   handler:
     type: http
@@ -23,7 +22,6 @@ services:
     metadata:
       keepAlive: 15s
 - name: ss
-  url: "ss://chacha20:gost@:8000"
   addr: ":28338"
   handler:
     type: ss
@@ -40,7 +38,6 @@ services:
     metadata:
       keepAlive: 15s
 - name: socks5
-  url: "socks5://gost:gost@:1080"
   addr: ":21080"
   handler:
     type: socks5
@@ -59,7 +56,6 @@ services:
     metadata:
       keepAlive: 15s
 - name: socks5+tcp
-  url: "socks5://gost:gost@:1080"
   addr: ":21081"
   handler:
     type: socks5
@@ -74,7 +70,6 @@ services:
     metadata:
       keepAlive: 15s
 - name: forward
-  url: "socks5://gost:gost@:1080"
   addr: ":10053"
   forwarder:
     targets:
@@ -161,7 +156,6 @@ chains:
     nodes:
     - name: node01
       addr: ":8081"
-      url: "http://gost:gost@:8081"
       # bypass: bypass01
       connector:
         type: http
@@ -173,7 +167,6 @@ chains:
         metadata: {}
     - name: node02
       addr: ":8082"
-      url: "http://gost:gost@:8082"
       # bypass: bypass01
       connector:
         type: http
@@ -192,7 +185,6 @@ chains:
     nodes:
     - name: node03
       addr: ":8083"
-      url: "http://gost:gost@:8083"
       # bypass: bypass01
       connector:
         type: http
@@ -222,7 +214,6 @@ chains:
     nodes:
     - name: node01
       addr: ":21080"
-      url: "http://gost:gost@:8081"
       # bypass: bypass01
       connector:
         type: socks5

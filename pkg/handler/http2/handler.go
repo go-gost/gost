@@ -1,11 +1,15 @@
 package http2
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"hash/crc32"
+	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -130,33 +134,22 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 		w.Header().Set("Proxy-Agent", h.md.proxyAgent)
 	}
 
-	/*
-		if !Can("tcp", host, h.options.Whitelist, h.options.Blacklist) {
-			log.Logf("[http2] %s - %s : Unauthorized to tcp connect to %s",
-				r.RemoteAddr, laddr, host)
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-	*/
-
 	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		w.WriteHeader(http.StatusForbidden)
 		h.logger.Info("bypass: ", addr)
 		return
 	}
 
-	/*
-		resp := &http.Response{
-			ProtoMajor: 2,
-			ProtoMinor: 0,
-			Header:     http.Header{},
-			Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
-		}
+	resp := &http.Response{
+		ProtoMajor: 2,
+		ProtoMinor: 0,
+		Header:     http.Header{},
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+	}
 
-		if !h.authenticate(w, r, resp) {
-			return
-		}
-	*/
+	if !h.authenticate(w, req, resp) {
+		return
+	}
 
 	// delete the proxy related headers.
 	req.Header.Del("Proxy-Authorization")
@@ -248,17 +241,16 @@ func (h *http2Handler) basicProxyAuth(proxyAuth string) (username, password stri
 	return cs[:s], cs[s+1:], true
 }
 
-func (h *http2Handler) authenticate(conn net.Conn, req *http.Request, resp *http.Response) (ok bool) {
-	u, p, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"))
+func (h *http2Handler) authenticate(w http.ResponseWriter, r *http.Request, resp *http.Response) (ok bool) {
+	u, p, _ := h.basicProxyAuth(r.Header.Get("Proxy-Authorization"))
 	if h.authenticator == nil || h.authenticator.Authenticate(u, p) {
 		return true
 	}
 
-	pr := h.md.probeResist
+	pr := h.md.probeResistance
 	// probing resistance is enabled, and knocking host is mismatch.
-	if pr != nil && (pr.Knock == "" || !strings.EqualFold(req.URL.Hostname(), pr.Knock)) {
+	if pr != nil && (pr.Knock == "" || !strings.EqualFold(r.URL.Hostname(), pr.Knock)) {
 		resp.StatusCode = http.StatusServiceUnavailable // default status code
-
 		switch pr.Type {
 		case "code":
 			resp.StatusCode, _ = strconv.Atoi(pr.Value)
@@ -267,22 +259,30 @@ func (h *http2Handler) authenticate(conn net.Conn, req *http.Request, resp *http
 			if !strings.HasPrefix(url, "http") {
 				url = "http://" + url
 			}
-			if r, err := http.Get(url); err == nil {
-				resp = r
-				defer r.Body.Close()
+			r, err := http.Get(url)
+			if err != nil {
+				h.logger.Error(err)
+				break
 			}
+			resp = r
+			defer resp.Body.Close()
 		case "host":
 			cc, err := net.Dial("tcp", pr.Value)
-			if err == nil {
-				defer cc.Close()
-
-				req.Write(cc)
-				handler.Transport(conn, cc)
-				return
+			if err != nil {
+				h.logger.Error(err)
+				break
 			}
+			defer cc.Close()
+
+			if err := h.forwardRequest(w, r, cc); err != nil {
+				h.logger.Error(err)
+			}
+			return
 		case "file":
 			f, _ := os.Open(pr.Value)
 			if f != nil {
+				defer f.Close()
+
 				resp.StatusCode = http.StatusOK
 				if finfo, _ := f.Stat(); finfo != nil {
 					resp.ContentLength = finfo.Size()
@@ -296,7 +296,7 @@ func (h *http2Handler) authenticate(conn net.Conn, req *http.Request, resp *http
 	if resp.StatusCode == 0 {
 		resp.StatusCode = http.StatusProxyAuthRequired
 		resp.Header.Add("Proxy-Authenticate", "Basic realm=\"gost\"")
-		if strings.ToLower(req.Header.Get("Proxy-Connection")) == "keep-alive" {
+		if strings.ToLower(r.Header.Get("Proxy-Connection")) == "keep-alive" {
 			// XXX libcurl will keep sending auth request in same conn
 			// which we don't supported yet.
 			resp.Header.Add("Connection", "close")
@@ -318,6 +318,31 @@ func (h *http2Handler) authenticate(conn net.Conn, req *http.Request, resp *http
 		h.logger.Debug(string(dump))
 	}
 
-	resp.Write(conn)
+	h.writeResponse(w, resp)
+
 	return
+}
+func (h *http2Handler) forwardRequest(w http.ResponseWriter, r *http.Request, rw io.ReadWriter) (err error) {
+	if err = r.Write(rw); err != nil {
+		return
+	}
+
+	resp, err := http.ReadResponse(bufio.NewReader(rw), r)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	return h.writeResponse(w, resp)
+}
+
+func (h *http2Handler) writeResponse(w http.ResponseWriter, resp *http.Response) error {
+	for k, v := range resp.Header {
+		for _, vv := range v {
+			w.Header().Add(k, vv)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	_, err := io.Copy(flushWriter{w}, resp.Body)
+	return err
 }

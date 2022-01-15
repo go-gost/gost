@@ -76,9 +76,9 @@ func (l *phtListener) Init(md md.Metadata) (err error) {
 	l.addr = ln.Addr()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/authorize", l.handleAuthorize)
-	mux.HandleFunc("/push", l.handlePush)
-	mux.HandleFunc("/pull", l.handlePull)
+	mux.HandleFunc(l.md.authorizePath, l.handleAuthorize)
+	mux.HandleFunc(l.md.pushPath, l.handlePush)
+	mux.HandleFunc(l.md.pullPath, l.handlePull)
 
 	l.server = &http.Server{
 		Addr:    l.options.Addr,

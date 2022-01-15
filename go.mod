@@ -35,6 +35,7 @@ require (
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
+	github.com/rs/xid v1.3.0
 	github.com/shadowsocks/go-shadowsocks2 v0.1.4
 	github.com/shadowsocks/shadowsocks-go v0.0.0-20200409064450-3e585ff90601
 	github.com/sirupsen/logrus v1.8.1
@@ -62,3 +63,5 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+require github.com/marten-seemann/qpack v0.2.1 // indirect

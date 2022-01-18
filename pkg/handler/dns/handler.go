@@ -63,7 +63,7 @@ func (h *dnsHandler) Init(md md.Metadata) (err error) {
 	}
 	h.logger = h.options.Logger
 
-	for _, server := range h.md.servers {
+	for _, server := range h.md.dns {
 		server = strings.TrimSpace(server)
 		if server == "" {
 			continue

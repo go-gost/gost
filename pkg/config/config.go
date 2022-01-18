@@ -57,12 +57,12 @@ type BypassConfig struct {
 
 type NameserverConfig struct {
 	Addr     string
-	Chain    string
-	Prefer   string
-	ClientIP string `yaml:"clientIP"`
-	Hostname string
-	TTL      time.Duration
-	Timeout  time.Duration
+	Chain    string        `yaml:",omitempty"`
+	Prefer   string        `yaml:",omitempty"`
+	ClientIP string        `yaml:"clientIP,omitempty"`
+	Hostname string        `yaml:",omitempty"`
+	TTL      time.Duration `yaml:",omitempty"`
+	Timeout  time.Duration `yaml:",omitempty"`
 }
 
 type ResolverConfig struct {

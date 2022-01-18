@@ -75,6 +75,28 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 		}
 		cfg.Services = append(cfg.Services, service)
+
+		md := metadata.MapMetadata(service.Handler.Metadata)
+		if v := metadata.GetString(md, "resolver"); v != "" {
+			resolverCfg := &config.ResolverConfig{
+				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
+			}
+			for _, rs := range strings.Split(v, ",") {
+				if rs == "" {
+					continue
+				}
+				resolverCfg.Nameservers = append(
+					resolverCfg.Nameservers,
+					config.NameserverConfig{
+						Addr: rs,
+					},
+				)
+			}
+			service.Handler.Resolver = resolverCfg.Name
+			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
+			md.Del("resolver")
+		}
+
 	}
 
 	return cfg, nil
@@ -157,6 +179,10 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 
 	if tlsConfig.CertFile == "" {
 		tlsConfig = nil
+	}
+
+	if v := metadata.GetString(md, "dns"); v != "" {
+		md.Set("dns", strings.Split(v, ","))
 	}
 
 	svc.Handler = &config.HandlerConfig{
@@ -259,7 +285,7 @@ func normCmd(s string) (*url.URL, error) {
 		return nil, ErrInvalidCmd
 	}
 
-	if !strings.Contains(s, "://") {
+	if s[0] == ':' {
 		s = "auto://" + s
 	}
 

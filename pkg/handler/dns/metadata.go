@@ -2,7 +2,6 @@ package dns
 
 import (
 	"net"
-	"strings"
 	"time"
 
 	mdata "github.com/go-gost/gost/pkg/metadata"
@@ -14,8 +13,7 @@ type metadata struct {
 	timeout     time.Duration
 	clientIP    net.IP
 	// nameservers
-	servers []string
-	dns     []string // compatible with v2
+	dns []string
 }
 
 func (h *dnsHandler) parseMetadata(md mdata.Metadata) (err error) {
@@ -24,7 +22,6 @@ func (h *dnsHandler) parseMetadata(md mdata.Metadata) (err error) {
 		ttl         = "ttl"
 		timeout     = "timeout"
 		clientIP    = "clientIP"
-		servers     = "servers"
 		dns         = "dns"
 	)
 
@@ -38,11 +35,7 @@ func (h *dnsHandler) parseMetadata(md mdata.Metadata) (err error) {
 	if sip != "" {
 		h.md.clientIP = net.ParseIP(sip)
 	}
-	h.md.servers = mdata.GetStrings(md, servers)
-	h.md.dns = strings.Split(mdata.GetString(md, dns), ",")
-	if len(h.md.dns) > 0 {
-		h.md.servers = append(h.md.servers, h.md.dns...)
-	}
+	h.md.dns = mdata.GetStrings(md, dns)
 
 	return
 }

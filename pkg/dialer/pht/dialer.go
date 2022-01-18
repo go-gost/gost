@@ -24,6 +24,7 @@ func init() {
 
 type phtDialer struct {
 	tlsEnabled bool
+	client     *http.Client
 	md         metadata
 	logger     logger.Logger
 	options    dialer.Options
@@ -55,10 +56,10 @@ func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
 }
 
 func (d *phtDialer) Init(md md.Metadata) (err error) {
-	return d.parseMetadata(md)
-}
+	if err = d.parseMetadata(md); err != nil {
+		return
+	}
 
-func (d *phtDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (net.Conn, error) {
 	tr := &http.Transport{
 		// Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -75,11 +76,15 @@ func (d *phtDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 		tr.TLSClientConfig = d.options.TLSConfig
 	}
 
-	client := &http.Client{
+	d.client = &http.Client{
 		Timeout:   60 * time.Second,
 		Transport: tr,
 	}
-	token, err := d.authorize(ctx, client, addr)
+	return nil
+}
+
+func (d *phtDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (net.Conn, error) {
+	token, err := d.authorize(ctx, addr)
 	if err != nil {
 		d.logger.Error(err)
 		return nil, err
@@ -88,7 +93,7 @@ func (d *phtDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 	c := &conn{
 		cid:        token,
 		addr:       addr,
-		client:     client,
+		client:     d.client,
 		tlsEnabled: d.tlsEnabled,
 		rxc:        make(chan []byte, 128),
 		closed:     make(chan struct{}),
@@ -100,7 +105,7 @@ func (d *phtDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 	return c, nil
 }
 
-func (d *phtDialer) authorize(ctx context.Context, client *http.Client, addr string) (token string, err error) {
+func (d *phtDialer) authorize(ctx context.Context, addr string) (token string, err error) {
 	var url string
 	if d.tlsEnabled {
 		url = fmt.Sprintf("https://%s%s", addr, d.md.authorizePath)
@@ -117,7 +122,7 @@ func (d *phtDialer) authorize(ctx context.Context, client *http.Client, addr str
 		d.logger.Debug(string(dump))
 	}
 
-	resp, err := client.Do(r)
+	resp, err := d.client.Do(r)
 	if err != nil {
 		return
 	}

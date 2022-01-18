@@ -71,6 +71,8 @@ type exchanger struct {
 }
 
 // NewExchanger create an Exchanger.
+// The addr should be URL-like format,
+// e.g. udp://1.1.1.1:53, tls://1.1.1.1:853, https://1.0.0.1/dns-query
 func NewExchanger(addr string, opts ...Option) (Exchanger, error) {
 	var options Options
 	for _, opt := range opts {
@@ -83,6 +85,10 @@ func NewExchanger(addr string, opts ...Option) (Exchanger, error) {
 	u, err := url.Parse(addr)
 	if err != nil {
 		return nil, err
+	}
+
+	if options.timeout <= 0 {
+		options.timeout = 5 * time.Second
 	}
 
 	ex := &exchanger{

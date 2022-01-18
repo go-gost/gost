@@ -359,7 +359,15 @@ func resolverFromConfig(cfg *config.ResolverConfig) (resolver.Resolver, error) {
 			Hostname: server.Hostname,
 		})
 	}
-	return resolver_impl.NewResolver(nameservers)
+
+	logger := log.WithFields(map[string]interface{}{
+		"kind":     "resolver",
+		"resolver": cfg.Name,
+	})
+	return resolver_impl.NewResolver(
+		nameservers,
+		resolver_impl.LoggerResolverOption(logger),
+	)
 }
 
 func hostsFromConfig(cfg *config.HostsConfig) hostspkg.HostMapper {

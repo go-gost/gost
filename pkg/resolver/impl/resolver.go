@@ -48,7 +48,6 @@ type resolver struct {
 	servers []NameServer
 	cache   *resolver_util.Cache
 	options resolverOptions
-	logger  logger.Logger
 }
 
 func NewResolver(nameservers []NameServer, opts ...ResolverOption) (resolverpkg.Resolver, error) {
@@ -87,7 +86,6 @@ func NewResolver(nameservers []NameServer, opts ...ResolverOption) (resolverpkg.
 		servers: servers,
 		cache:   cache,
 		options: options,
-		logger:  options.logger,
 	}, nil
 }
 
@@ -104,11 +102,11 @@ func (r *resolver) Resolve(ctx context.Context, host string) (ips []net.IP, err 
 	for _, server := range r.servers {
 		ips, err = r.resolve(ctx, &server, host)
 		if err != nil {
-			r.logger.Error(err)
+			r.options.logger.Error(err)
 			continue
 		}
 
-		r.logger.Debugf("resolve %s via %s: %v", host, server.exchanger.String(), ips)
+		r.options.logger.Debugf("resolve %s via %s: %v", host, server.exchanger.String(), ips)
 
 		if len(ips) > 0 {
 			break

@@ -56,7 +56,7 @@ func (c *Cache) Load(key CacheKey) *dns.Msg {
 		return nil
 	}
 
-	c.logger.Debugf("resolver cache hit: %s", key)
+	c.logger.Debugf("hit resolver cache: %s", key)
 
 	return item.msg.Copy()
 }

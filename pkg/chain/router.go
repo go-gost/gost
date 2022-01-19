@@ -79,9 +79,9 @@ func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
 	}
 
 	if r.Hosts != nil {
-		if ip := r.Hosts.Lookup(host); ip != nil {
-			r.Logger.Debugf("hit hosts: %s -> %s", host, ip)
-			return net.JoinHostPort(ip.String(), port), nil
+		if ips, _ := r.Hosts.Lookup("ip", host); len(ips) > 0 {
+			r.Logger.Debugf("hit host mapper: %s -> %s", host, ips)
+			return net.JoinHostPort(ips[0].String(), port), nil
 		}
 	}
 

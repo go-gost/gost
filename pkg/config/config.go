@@ -70,15 +70,15 @@ type ResolverConfig struct {
 	Nameservers []NameserverConfig
 }
 
-type HostConfig struct {
+type HostMappingConfig struct {
 	IP       string
 	Hostname string
 	Aliases  []string `yaml:",omitempty"`
 }
 
 type HostsConfig struct {
-	Name    string
-	Entries []HostConfig
+	Name     string
+	Mappings []HostMappingConfig
 }
 
 type ListenerConfig struct {

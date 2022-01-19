@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-gost/gost/pkg/logger"
 	glob "github.com/gobwas/glob"
 )
 
@@ -105,30 +106,48 @@ type Bypass interface {
 	Contains(addr string) bool
 }
 
+type bypassOptions struct {
+	logger logger.Logger
+}
+
+type BypassOption func(opts *bypassOptions)
+
+func LoggerBypassOption(logger logger.Logger) BypassOption {
+	return func(opts *bypassOptions) {
+		opts.logger = logger
+	}
+}
+
 type bypass struct {
 	matchers []Matcher
 	reversed bool
+	options  bypassOptions
 }
 
 // NewBypass creates and initializes a new Bypass using matchers as its match rules.
 // The rules will be reversed if the reversed is true.
-func NewBypass(reversed bool, matchers ...Matcher) Bypass {
+func NewBypass(reversed bool, matchers []Matcher, opts ...BypassOption) Bypass {
+	options := bypassOptions{}
+	for _, opt := range opts {
+		opt(&options)
+	}
 	return &bypass{
 		matchers: matchers,
 		reversed: reversed,
+		options:  options,
 	}
 }
 
 // NewBypassPatterns creates and initializes a new Bypass using matcher patterns as its match rules.
 // The rules will be reversed if the reverse is true.
-func NewBypassPatterns(reversed bool, patterns ...string) Bypass {
+func NewBypassPatterns(reversed bool, patterns []string, opts ...BypassOption) Bypass {
 	var matchers []Matcher
 	for _, pattern := range patterns {
 		if m := NewMatcher(pattern); m != nil {
 			matchers = append(matchers, m)
 		}
 	}
-	return NewBypass(reversed, matchers...)
+	return NewBypass(reversed, matchers, opts...)
 }
 
 func (bp *bypass) Contains(addr string) bool {
@@ -153,6 +172,11 @@ func (bp *bypass) Contains(addr string) bool {
 			break
 		}
 	}
-	return !bp.reversed && matched ||
+
+	b := !bp.reversed && matched ||
 		bp.reversed && !matched
+	if b {
+		bp.options.logger.Debugf("bypass: %s", addr)
+	}
+	return b
 }

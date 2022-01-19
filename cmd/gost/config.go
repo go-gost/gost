@@ -340,7 +340,14 @@ func bypassFromConfig(cfg *config.BypassConfig) bypass.Bypass {
 	if cfg == nil {
 		return nil
 	}
-	return bypass.NewBypassPatterns(cfg.Reverse, cfg.Matchers...)
+	return bypass.NewBypassPatterns(
+		cfg.Reverse,
+		cfg.Matchers,
+		bypass.LoggerBypassOption(log.WithFields(map[string]interface{}{
+			"kind":   "bypass",
+			"bypass": cfg.Name,
+		})),
+	)
 }
 
 func resolverFromConfig(cfg *config.ResolverConfig) (resolver.Resolver, error) {
@@ -371,12 +378,16 @@ func resolverFromConfig(cfg *config.ResolverConfig) (resolver.Resolver, error) {
 }
 
 func hostsFromConfig(cfg *config.HostsConfig) hostspkg.HostMapper {
-	if cfg == nil || len(cfg.Entries) == 0 {
+	if cfg == nil || len(cfg.Mappings) == 0 {
 		return nil
 	}
 	hosts := hostspkg.NewHosts()
+	hosts.Logger = log.WithFields(map[string]interface{}{
+		"kind":  "hosts",
+		"hosts": cfg.Name,
+	})
 
-	for _, host := range cfg.Entries {
+	for _, host := range cfg.Mappings {
 		if host.IP == "" || host.Hostname == "" {
 			continue
 		}

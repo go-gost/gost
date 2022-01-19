@@ -105,7 +105,10 @@ func GetString(md Metadata, key string) (v string) {
 }
 
 func GetStrings(md Metadata, key string) (ss []string) {
-	if v, _ := md.Get(key).([]interface{}); len(v) > 0 {
+	switch v := md.Get(key).(type) {
+	case []string:
+		ss = v
+	case []interface{}:
 		for _, vv := range v {
 			if s, ok := vv.(string); ok {
 				ss = append(ss, s)

@@ -164,11 +164,11 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				if len(ss) != 2 {
 					continue
 				}
-				hostsCfg.Entries = append(
-					hostsCfg.Entries,
-					config.HostConfig{
-						IP:       ss[0],
-						Hostname: ss[1],
+				hostsCfg.Mappings = append(
+					hostsCfg.Mappings,
+					config.HostMappingConfig{
+						Hostname: ss[0],
+						IP:       ss[1],
 					},
 				)
 			}

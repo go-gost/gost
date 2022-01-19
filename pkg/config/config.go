@@ -73,7 +73,7 @@ type ResolverConfig struct {
 type HostConfig struct {
 	IP       string
 	Hostname string
-	Aliases  []string
+	Aliases  []string `yaml:",omitempty"`
 }
 
 type HostsConfig struct {

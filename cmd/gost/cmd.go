@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"strings"
 
@@ -50,9 +51,49 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		nodeConfig.Name = "node-0"
 
+		md := metadata.MapMetadata(nodeConfig.Connector.Metadata)
+		if v := metadata.GetString(md, "bypass"); v != "" {
+			bypassCfg := &config.BypassConfig{
+				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
+			}
+			if v[0] == '~' {
+				bypassCfg.Reverse = true
+				v = v[1:]
+			}
+			for _, s := range strings.Split(v, ",") {
+				if s == "" {
+					continue
+				}
+				bypassCfg.Matchers = append(bypassCfg.Matchers, s)
+			}
+			nodeConfig.Bypass = bypassCfg.Name
+			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
+			md.Del("bypass")
+		}
+
+		var nodes []*config.NodeConfig
+		if v := metadata.GetString(md, "ip"); v != "" {
+			_, port, err := net.SplitHostPort(nodeConfig.Addr)
+			if err != nil {
+				return nil, err
+			}
+			ips := parseIP(v, port)
+			for i := range ips {
+				nodeCfg := &config.NodeConfig{}
+				*nodeCfg = *nodeConfig
+				nodeCfg.Name = fmt.Sprintf("node-%d", i)
+				nodeCfg.Addr = ips[i]
+				nodes = append(nodes, nodeCfg)
+			}
+			md.Del("ip")
+		}
+		if len(nodes) == 0 {
+			nodes = append(nodes, nodeConfig)
+		}
+
 		chain.Hops = append(chain.Hops, &config.HopConfig{
 			Name:  fmt.Sprintf("hop-%d", i),
-			Nodes: []*config.NodeConfig{nodeConfig},
+			Nodes: nodes,
 		})
 	}
 
@@ -77,6 +118,24 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		cfg.Services = append(cfg.Services, service)
 
 		md := metadata.MapMetadata(service.Handler.Metadata)
+		if v := metadata.GetString(md, "bypass"); v != "" {
+			bypassCfg := &config.BypassConfig{
+				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
+			}
+			if v[0] == '~' {
+				bypassCfg.Reverse = true
+				v = v[1:]
+			}
+			for _, s := range strings.Split(v, ",") {
+				if s == "" {
+					continue
+				}
+				bypassCfg.Matchers = append(bypassCfg.Matchers, s)
+			}
+			service.Handler.Bypass = bypassCfg.Name
+			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
+			md.Del("bypass")
+		}
 		if v := metadata.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
 				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
@@ -95,6 +154,27 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			service.Handler.Resolver = resolverCfg.Name
 			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
 			md.Del("resolver")
+		}
+		if v := metadata.GetString(md, "hosts"); v != "" {
+			hostsCfg := &config.HostsConfig{
+				Name: fmt.Sprintf("hosts-%d", len(cfg.Hosts)),
+			}
+			for _, s := range strings.Split(v, ",") {
+				ss := strings.SplitN(s, ":", 2)
+				if len(ss) != 2 {
+					continue
+				}
+				hostsCfg.Entries = append(
+					hostsCfg.Entries,
+					config.HostConfig{
+						IP:       ss[0],
+						Hostname: ss[1],
+					},
+				)
+			}
+			service.Handler.Hosts = hostsCfg.Name
+			cfg.Hosts = append(cfg.Hosts, hostsCfg)
+			md.Del("hosts")
 		}
 
 	}
@@ -285,7 +365,7 @@ func normCmd(s string) (*url.URL, error) {
 		return nil, ErrInvalidCmd
 	}
 
-	if s[0] == ':' {
+	if s[0] == ':' || !strings.Contains(s, "://") {
 		s = "auto://" + s
 	}
 
@@ -317,4 +397,25 @@ func parseAuthFromCmd(sa string) (*config.AuthConfig, error) {
 		Username: cs[:n],
 		Password: cs[n+1:],
 	}, nil
+}
+
+func parseIP(s, port string) (ips []string) {
+	if s == "" {
+		return nil
+	}
+	if port == "" {
+		port = "8080"
+	}
+
+	for _, v := range strings.Split(s, ",") {
+		if v == "" {
+			continue
+		}
+		if _, _, err := net.SplitHostPort(v); err != nil {
+			v = net.JoinHostPort(v, port) // assume the port is missing
+		}
+		ips = append(ips, v)
+	}
+
+	return
 }

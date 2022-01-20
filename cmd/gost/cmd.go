@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/metadata"
@@ -72,28 +73,21 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 
 		var nodes []*config.NodeConfig
-		if v := metadata.GetString(md, "ip"); v != "" {
-			_, port, err := net.SplitHostPort(nodeConfig.Addr)
-			if err != nil {
-				return nil, err
+		for _, host := range strings.Split(nodeConfig.Addr, ",") {
+			if host == "" {
+				continue
 			}
-			ips := parseIP(v, port)
-			for i := range ips {
-				nodeCfg := &config.NodeConfig{}
-				*nodeCfg = *nodeConfig
-				nodeCfg.Name = fmt.Sprintf("node-%d", i)
-				nodeCfg.Addr = ips[i]
-				nodes = append(nodes, nodeCfg)
-			}
-			md.Del("ip")
-		}
-		if len(nodes) == 0 {
-			nodes = append(nodes, nodeConfig)
+			nodeCfg := &config.NodeConfig{}
+			*nodeCfg = *nodeConfig
+			nodeCfg.Name = fmt.Sprintf("node-%d", len(nodes))
+			nodeCfg.Addr = host
+			nodes = append(nodes, nodeCfg)
 		}
 
 		chain.Hops = append(chain.Hops, &config.HopConfig{
-			Name:  fmt.Sprintf("hop-%d", i),
-			Nodes: nodes,
+			Name:     fmt.Sprintf("hop-%d", i),
+			Selector: parseSelector(md),
+			Nodes:    nodes,
 		})
 	}
 
@@ -265,6 +259,10 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		md.Set("dns", strings.Split(v, ","))
 	}
 
+	if svc.Forwarder != nil {
+		svc.Forwarder.Selector = parseSelector(md)
+	}
+
 	svc.Handler = &config.HandlerConfig{
 		Type:     handler,
 		Auths:    auths,
@@ -397,6 +395,34 @@ func parseAuthFromCmd(sa string) (*config.AuthConfig, error) {
 		Username: cs[:n],
 		Password: cs[n+1:],
 	}, nil
+}
+
+func parseSelector(md metadata.MapMetadata) *config.SelectorConfig {
+	strategy := metadata.GetString(md, "strategy")
+	maxFails := metadata.GetInt(md, "maxFails")
+	failTimeout := metadata.GetDuration(md, "failTimeout")
+	if strategy == "" && maxFails <= 0 && failTimeout <= 0 {
+		return nil
+	}
+	if strategy == "" {
+		strategy = "round"
+	}
+	if maxFails <= 0 {
+		maxFails = 1
+	}
+	if failTimeout <= 0 {
+		failTimeout = time.Second
+	}
+
+	md.Del("strategy")
+	md.Del("maxFails")
+	md.Del("failTimeout")
+
+	return &config.SelectorConfig{
+		Strategy:    strategy,
+		MaxFails:    maxFails,
+		FailTimeout: failTimeout,
+	}
 }
 
 func parseIP(s, port string) (ips []string) {

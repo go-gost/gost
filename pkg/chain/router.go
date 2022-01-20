@@ -74,8 +74,11 @@ func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
 	}
 
 	host, port, err := net.SplitHostPort(addr)
-	if err != nil || host == "" {
+	if err != nil {
 		return "", err
+	}
+	if host == "" {
+		return addr, nil
 	}
 
 	if r.Hosts != nil {

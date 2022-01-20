@@ -93,6 +93,10 @@ func GetDuration(md Metadata, key string) (v time.Duration) {
 		return time.Duration(vv) * time.Second
 	case string:
 		v, _ = time.ParseDuration(vv)
+		if v == 0 {
+			n, _ := strconv.Atoi(vv)
+			v = time.Duration(n) * time.Second
+		}
 	}
 	return
 }

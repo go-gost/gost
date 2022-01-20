@@ -5,27 +5,27 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"time"
 
 	"github.com/go-gost/gost/pkg/logger"
 )
 
-type conn struct {
-	cid        string
-	addr       string
+type clientConn struct {
 	client     *http.Client
-	tlsEnabled bool
+	pushURL    string
+	pullURL    string
 	buf        []byte
 	rxc        chan []byte
 	closed     chan struct{}
-	md         metadata
+	localAddr  net.Addr
+	remoteAddr net.Addr
 	logger     logger.Logger
 }
 
-func (c *conn) Read(b []byte) (n int, err error) {
+func (c *clientConn) Read(b []byte) (n int, err error) {
 	if len(c.buf) == 0 {
 		select {
 		case c.buf = <-c.rxc:
@@ -41,7 +41,7 @@ func (c *conn) Read(b []byte) (n int, err error) {
 	return
 }
 
-func (c *conn) Write(b []byte) (n int, err error) {
+func (c *clientConn) Write(b []byte) (n int, err error) {
 	if len(b) == 0 {
 		return
 	}
@@ -49,15 +49,13 @@ func (c *conn) Write(b []byte) (n int, err error) {
 	buf := bytes.NewBufferString(base64.StdEncoding.EncodeToString(b))
 	buf.WriteByte('\n')
 
-	var url string
-	if c.tlsEnabled {
-		url = fmt.Sprintf("https://%s%s?token=%s", c.addr, c.md.pushPath, c.cid)
-	} else {
-		url = fmt.Sprintf("http://%s%s?token=%s", c.addr, c.md.pushPath, c.cid)
-	}
-	r, err := http.NewRequest(http.MethodPost, url, buf)
+	r, err := http.NewRequest(http.MethodPost, c.pushURL, buf)
 	if err != nil {
 		return
+	}
+	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+		dump, _ := httputil.DumpRequest(r, false)
+		c.logger.Debug(string(dump))
 	}
 
 	resp, err := c.client.Do(r)
@@ -65,6 +63,11 @@ func (c *conn) Write(b []byte) (n int, err error) {
 		return
 	}
 	defer resp.Body.Close()
+
+	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+		dump, _ := httputil.DumpResponse(resp, false)
+		c.logger.Debug(string(dump))
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = errors.New(resp.Status)
@@ -75,20 +78,18 @@ func (c *conn) Write(b []byte) (n int, err error) {
 	return
 }
 
-func (c *conn) readLoop() {
+func (c *clientConn) readLoop() {
 	defer c.Close()
 
-	var url string
-	if c.tlsEnabled {
-		url = fmt.Sprintf("https://%s%s?token=%s", c.addr, c.md.pullPath, c.cid)
-	} else {
-		url = fmt.Sprintf("http://%s%s?token=%s", c.addr, c.md.pullPath, c.cid)
-	}
 	for {
 		err := func() error {
-			r, err := http.NewRequest(http.MethodGet, url, nil)
+			r, err := http.NewRequest(http.MethodGet, c.pullURL, nil)
 			if err != nil {
 				return err
+			}
+			if c.logger.IsLevelEnabled(logger.DebugLevel) {
+				dump, _ := httputil.DumpRequest(r, false)
+				c.logger.Debug(string(dump))
 			}
 
 			resp, err := c.client.Do(r)
@@ -96,6 +97,11 @@ func (c *conn) readLoop() {
 				return err
 			}
 			defer resp.Body.Close()
+
+			if c.logger.IsLevelEnabled(logger.DebugLevel) {
+				dump, _ := httputil.DumpResponse(resp, false)
+				c.logger.Debug(string(dump))
+			}
 
 			if resp.StatusCode != http.StatusOK {
 				return errors.New(resp.Status)
@@ -124,20 +130,15 @@ func (c *conn) readLoop() {
 	}
 }
 
-func (c *conn) LocalAddr() net.Addr {
-	return &net.TCPAddr{}
+func (c *clientConn) LocalAddr() net.Addr {
+	return c.localAddr
 }
 
-func (c *conn) RemoteAddr() net.Addr {
-	addr, _ := net.ResolveTCPAddr("tcp", c.addr)
-	if addr == nil {
-		addr = &net.TCPAddr{}
-	}
-
-	return addr
+func (c *clientConn) RemoteAddr() net.Addr {
+	return c.remoteAddr
 }
 
-func (c *conn) Close() error {
+func (c *clientConn) Close() error {
 	select {
 	case <-c.closed:
 	default:
@@ -146,14 +147,14 @@ func (c *conn) Close() error {
 	return nil
 }
 
-func (c *conn) SetReadDeadline(t time.Time) error {
+func (c *clientConn) SetReadDeadline(t time.Time) error {
 	return nil
 }
 
-func (c *conn) SetWriteDeadline(t time.Time) error {
+func (c *clientConn) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 
-func (c *conn) SetDeadline(t time.Time) error {
+func (c *clientConn) SetDeadline(t time.Time) error {
 	return nil
 }

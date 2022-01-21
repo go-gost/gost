@@ -55,6 +55,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/listener/ftcp"
 	_ "github.com/go-gost/gost/pkg/listener/http2"
 	_ "github.com/go-gost/gost/pkg/listener/http2/h2"
+	_ "github.com/go-gost/gost/pkg/listener/http3"
 	_ "github.com/go-gost/gost/pkg/listener/kcp"
 	_ "github.com/go-gost/gost/pkg/listener/obfs/http"
 	_ "github.com/go-gost/gost/pkg/listener/obfs/tls"

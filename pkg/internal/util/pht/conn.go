@@ -158,3 +158,17 @@ func (c *clientConn) SetWriteDeadline(t time.Time) error {
 func (c *clientConn) SetDeadline(t time.Time) error {
 	return nil
 }
+
+type serverConn struct {
+	net.Conn
+	remoteAddr net.Addr
+	localAddr  net.Addr
+}
+
+func (c *serverConn) LocalAddr() net.Addr {
+	return c.localAddr
+}
+
+func (c *serverConn) RemoteAddr() net.Addr {
+	return c.remoteAddr
+}

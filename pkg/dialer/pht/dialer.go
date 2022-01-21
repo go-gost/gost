@@ -74,7 +74,7 @@ func (d *phtDialer) Init(md md.Metadata) (err error) {
 
 	d.client = &pht_util.Client{
 		Client: &http.Client{
-			Timeout:   60 * time.Second,
+			// Timeout:   60 * time.Second,
 			Transport: tr,
 		},
 		AuthorizePath: d.md.authorizePath,

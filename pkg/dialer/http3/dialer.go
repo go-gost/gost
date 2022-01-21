@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/go-gost/gost/pkg/dialer"
 	pht_util "github.com/go-gost/gost/pkg/internal/util/pht"
@@ -47,7 +46,7 @@ func (d *http3Dialer) Init(md md.Metadata) (err error) {
 	}
 	d.client = &pht_util.Client{
 		Client: &http.Client{
-			Timeout:   60 * time.Second,
+			// Timeout:   60 * time.Second,
 			Transport: tr,
 		},
 		AuthorizePath: d.md.authorizePath,

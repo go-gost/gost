@@ -5,44 +5,18 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/bypass"
+	"github.com/go-gost/gost/pkg/hosts"
+	"github.com/go-gost/gost/pkg/resolver"
 )
 
 type Node struct {
-	name      string
-	addr      string
-	transport *Transport
-	bypass    bypass.Bypass
-	marker    *FailMarker
-}
-
-func NewNode(name, addr string) *Node {
-	return &Node{
-		name:   name,
-		addr:   addr,
-		marker: &FailMarker{},
-	}
-}
-
-func (node *Node) Name() string {
-	return node.name
-}
-
-func (node *Node) Addr() string {
-	return node.addr
-}
-
-func (node *Node) Marker() *FailMarker {
-	return node.marker
-}
-
-func (node *Node) WithTransport(tr *Transport) *Node {
-	node.transport = tr
-	return node
-}
-
-func (node *Node) WithBypass(bp bypass.Bypass) *Node {
-	node.bypass = bp
-	return node
+	Name      string
+	Addr      string
+	Transport *Transport
+	Bypass    bypass.Bypass
+	Resolver  resolver.Resolver
+	Hosts     hosts.HostMapper
+	Marker    *FailMarker
 }
 
 func (node *Node) Copy() *Node {

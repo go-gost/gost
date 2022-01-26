@@ -52,7 +52,26 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		nodeConfig.Name = "node-0"
 
+		var nodes []*config.NodeConfig
+		for _, host := range strings.Split(nodeConfig.Addr, ",") {
+			if host == "" {
+				continue
+			}
+			nodeCfg := &config.NodeConfig{}
+			*nodeCfg = *nodeConfig
+			nodeCfg.Name = fmt.Sprintf("node-%d", len(nodes))
+			nodeCfg.Addr = host
+			nodes = append(nodes, nodeCfg)
+		}
+
 		md := metadata.MapMetadata(nodeConfig.Connector.Metadata)
+
+		hopConfig := &config.HopConfig{
+			Name:     fmt.Sprintf("hop-%d", i),
+			Selector: parseSelector(md),
+			Nodes:    nodes,
+		}
+
 		if v := metadata.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
 				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
@@ -67,28 +86,52 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				}
 				bypassCfg.Matchers = append(bypassCfg.Matchers, s)
 			}
-			nodeConfig.Bypass = bypassCfg.Name
+			hopConfig.Bypass = bypassCfg.Name
 			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
 			md.Del("bypass")
 		}
-
-		var nodes []*config.NodeConfig
-		for _, host := range strings.Split(nodeConfig.Addr, ",") {
-			if host == "" {
-				continue
+		if v := metadata.GetString(md, "resolver"); v != "" {
+			resolverCfg := &config.ResolverConfig{
+				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
 			}
-			nodeCfg := &config.NodeConfig{}
-			*nodeCfg = *nodeConfig
-			nodeCfg.Name = fmt.Sprintf("node-%d", len(nodes))
-			nodeCfg.Addr = host
-			nodes = append(nodes, nodeCfg)
+			for _, rs := range strings.Split(v, ",") {
+				if rs == "" {
+					continue
+				}
+				resolverCfg.Nameservers = append(
+					resolverCfg.Nameservers,
+					config.NameserverConfig{
+						Addr: rs,
+					},
+				)
+			}
+			hopConfig.Resolver = resolverCfg.Name
+			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
+			md.Del("resolver")
+		}
+		if v := metadata.GetString(md, "hosts"); v != "" {
+			hostsCfg := &config.HostsConfig{
+				Name: fmt.Sprintf("hosts-%d", len(cfg.Hosts)),
+			}
+			for _, s := range strings.Split(v, ",") {
+				ss := strings.SplitN(s, ":", 2)
+				if len(ss) != 2 {
+					continue
+				}
+				hostsCfg.Mappings = append(
+					hostsCfg.Mappings,
+					config.HostMappingConfig{
+						Hostname: ss[0],
+						IP:       ss[1],
+					},
+				)
+			}
+			hopConfig.Hosts = hostsCfg.Name
+			cfg.Hosts = append(cfg.Hosts, hostsCfg)
+			md.Del("hosts")
 		}
 
-		chain.Hops = append(chain.Hops, &config.HopConfig{
-			Name:     fmt.Sprintf("hop-%d", i),
-			Selector: parseSelector(md),
-			Nodes:    nodes,
-		})
+		chain.Hops = append(chain.Hops, hopConfig)
 	}
 
 	for i, svc := range services {
@@ -126,7 +169,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				}
 				bypassCfg.Matchers = append(bypassCfg.Matchers, s)
 			}
-			service.Handler.Bypass = bypassCfg.Name
+			service.Bypass = bypassCfg.Name
 			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
 			md.Del("bypass")
 		}
@@ -145,7 +188,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 					},
 				)
 			}
-			service.Handler.Resolver = resolverCfg.Name
+			service.Resolver = resolverCfg.Name
 			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
 			md.Del("resolver")
 		}
@@ -166,11 +209,10 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 					},
 				)
 			}
-			service.Handler.Hosts = hostsCfg.Name
+			service.Hosts = hostsCfg.Name
 			cfg.Hosts = append(cfg.Hosts, hostsCfg)
 			md.Del("hosts")
 		}
-
 	}
 
 	return cfg, nil

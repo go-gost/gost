@@ -119,12 +119,12 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		}
 
 		h := registry.GetHandler(svc.Handler.Type)(
+			handler.AuthsOption(authsFromConfig(svc.Handler.Auths...)...),
 			handler.RetriesOption(svc.Handler.Retries),
 			handler.ChainOption(chains[svc.Handler.Chain]),
-			handler.ResolverOption(resolvers[svc.Handler.Resolver]),
-			handler.HostsOption(hosts[svc.Handler.Hosts]),
-			handler.BypassOption(bypasses[svc.Handler.Bypass]),
-			handler.AuthsOption(authsFromConfig(svc.Handler.Auths...)...),
+			handler.BypassOption(bypasses[svc.Bypass]),
+			handler.ResolverOption(resolvers[svc.Resolver]),
+			handler.HostsOption(hosts[svc.Hosts]),
 			handler.TLSConfigOption(tlsConfig),
 			handler.LoggerOption(handlerLogger),
 		)
@@ -252,9 +252,25 @@ func chainFromConfig(cfg *config.ChainConfig) *chain.Chain {
 				WithDialer(d).
 				WithAddr(v.Addr)
 
-			node := chain.NewNode(v.Name, v.Addr).
-				WithTransport(tr).
-				WithBypass(bypasses[v.Bypass])
+			if v.Bypass == "" {
+				v.Bypass = hop.Bypass
+			}
+			if v.Resolver == "" {
+				v.Resolver = hop.Resolver
+			}
+			if v.Hosts == "" {
+				v.Hosts = hop.Hosts
+			}
+
+			node := &chain.Node{
+				Name:      v.Name,
+				Addr:      v.Addr,
+				Transport: tr,
+				Bypass:    bypasses[v.Bypass],
+				Resolver:  resolvers[v.Resolver],
+				Hosts:     hosts[v.Hosts],
+				Marker:    &chain.FailMarker{},
+			}
 			group.AddNode(node)
 		}
 
@@ -277,7 +293,11 @@ func forwarderFromConfig(cfg *config.ForwarderConfig) *chain.NodeGroup {
 	group := &chain.NodeGroup{}
 	for _, target := range cfg.Targets {
 		if v := strings.TrimSpace(target); v != "" {
-			group.AddNode(chain.NewNode(target, target))
+			group.AddNode(&chain.Node{
+				Name:   target,
+				Addr:   target,
+				Marker: &chain.FailMarker{},
+			})
 		}
 	}
 	return group.WithSelector(selectorFromConfig(cfg.Selector))

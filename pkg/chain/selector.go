@@ -141,8 +141,8 @@ func (f *failFilter) Filter(nodes ...*Node) []*Node {
 	}
 	var nl []*Node
 	for _, node := range nodes {
-		if node.Marker().FailCount() < int64(maxFails) ||
-			time.Since(time.Unix(node.Marker().FailTime(), 0)) >= failTimeout {
+		if node.Marker.FailCount() < int64(maxFails) ||
+			time.Since(time.Unix(node.Marker.FailTime(), 0)) >= failTimeout {
 			nl = append(nl, node)
 		}
 	}
@@ -161,7 +161,7 @@ func InvalidFilter() Filter {
 func (f *invalidFilter) Filter(nodes ...*Node) []*Node {
 	var nl []*Node
 	for _, node := range nodes {
-		_, sport, _ := net.SplitHostPort(node.Addr())
+		_, sport, _ := net.SplitHostPort(node.Addr)
 		if port, _ := strconv.Atoi(sport); port > 0 {
 			nl = append(nl, node)
 		}

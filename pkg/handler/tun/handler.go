@@ -112,7 +112,7 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	target := h.group.Next()
 	if target != nil {
-		raddr, err = net.ResolveUDPAddr(network, target.Addr())
+		raddr, err = net.ResolveUDPAddr(network, target.Addr)
 		if err != nil {
 			log.Error(err)
 			return
@@ -120,7 +120,7 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) {
 		log = log.WithFields(map[string]interface{}{
 			"dst": fmt.Sprintf("%s/%s", raddr.String(), raddr.Network()),
 		})
-		log.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
+		log.Infof("%s >> %s", conn.RemoteAddr(), target.Addr)
 	}
 
 	h.handleLoop(ctx, conn, raddr, cc.Config(), log)

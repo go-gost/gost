@@ -25,17 +25,17 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	}
 
 	log = log.WithFields(map[string]interface{}{
-		"dst": fmt.Sprintf("%s/%s", target.Addr(), network),
+		"dst": fmt.Sprintf("%s/%s", target.Addr, network),
 		"cmd": "forward",
 	})
 
-	log.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
+	log.Infof("%s >> %s", conn.RemoteAddr(), target.Addr)
 
-	cc, err := h.router.Dial(ctx, network, target.Addr())
+	cc, err := h.router.Dial(ctx, network, target.Addr)
 	if err != nil {
 		// TODO: the router itself may be failed due to the failed node in the router,
 		// the dead marker may be a wrong operation.
-		target.Marker().Mark()
+		target.Marker.Mark()
 
 		resp.Status = relay.StatusHostUnreachable
 		resp.WriteTo(conn)
@@ -44,7 +44,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 		return
 	}
 	defer cc.Close()
-	target.Marker().Reset()
+	target.Marker.Reset()
 
 	if h.md.noDelay {
 		if _, err := resp.WriteTo(conn); err != nil {
@@ -79,9 +79,9 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	}
 
 	t := time.Now()
-	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr())
+	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr)
 	handler.Transport(conn, cc)
 	log.WithFields(map[string]interface{}{
 		"duration": time.Since(t),
-	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr())
+	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr)
 }

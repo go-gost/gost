@@ -23,15 +23,15 @@ func (c *Chain) GetRouteFor(network, address string) (r *route) {
 		if node == nil {
 			return
 		}
-		if node.bypass != nil && node.bypass.Contains(address) {
+		if node.Bypass != nil && node.Bypass.Contains(address) {
 			break
 		}
 
-		if node.transport.Multiplex() {
-			tr := node.transport.Copy().
+		if node.Transport.Multiplex() {
+			tr := node.Transport.Copy().
 				WithRoute(r)
-			node = node.Copy().
-				WithTransport(tr)
+			node = node.Copy()
+			node.Transport = tr
 			r = &route{}
 		}
 

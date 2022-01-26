@@ -29,35 +29,35 @@ func (r *route) connect(ctx context.Context) (conn net.Conn, err error) {
 	}
 
 	node := r.nodes[0]
-	cc, err := node.transport.Dial(ctx, r.nodes[0].Addr())
+	cc, err := node.Transport.Dial(ctx, r.nodes[0].Addr)
 	if err != nil {
-		node.Marker().Mark()
+		node.Marker.Mark()
 		return
 	}
 
-	cn, err := node.transport.Handshake(ctx, cc)
+	cn, err := node.Transport.Handshake(ctx, cc)
 	if err != nil {
 		cc.Close()
-		node.Marker().Mark()
+		node.Marker.Mark()
 		return
 	}
-	node.Marker().Reset()
+	node.Marker.Reset()
 
 	preNode := node
 	for _, node := range r.nodes[1:] {
-		cc, err = preNode.transport.Connect(ctx, cn, "tcp", node.Addr())
+		cc, err = preNode.Transport.Connect(ctx, cn, "tcp", node.Addr)
 		if err != nil {
 			cn.Close()
-			node.Marker().Mark()
+			node.Marker.Mark()
 			return
 		}
-		cc, err = node.transport.Handshake(ctx, cc)
+		cc, err = node.Transport.Handshake(ctx, cc)
 		if err != nil {
 			cn.Close()
-			node.Marker().Mark()
+			node.Marker.Mark()
 			return
 		}
-		node.Marker().Reset()
+		node.Marker.Reset()
 
 		cn = cc
 		preNode = node
@@ -77,7 +77,7 @@ func (r *route) Dial(ctx context.Context, network, address string) (net.Conn, er
 		return nil, err
 	}
 
-	cc, err := r.Last().transport.Connect(ctx, conn, network, address)
+	cc, err := r.Last().Transport.Connect(ctx, conn, network, address)
 	if err != nil {
 		conn.Close()
 		return nil, err
@@ -108,7 +108,7 @@ func (r *route) Bind(ctx context.Context, network, address string, opts ...conne
 		return nil, err
 	}
 
-	ln, err := r.Last().transport.Bind(ctx, conn, network, address, opts...)
+	ln, err := r.Last().Transport.Bind(ctx, conn, network, address, opts...)
 	if err != nil {
 		conn.Close()
 		return nil, err
@@ -134,8 +134,8 @@ func (r *route) Path() (path []*Node) {
 	}
 
 	for _, node := range r.nodes {
-		if node.transport != nil && node.transport.route != nil {
-			path = append(path, node.transport.route.Path()...)
+		if node.Transport != nil && node.Transport.route != nil {
+			path = append(path, node.Transport.route.Path()...)
 		}
 		path = append(path, node)
 	}

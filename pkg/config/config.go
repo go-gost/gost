@@ -93,9 +93,6 @@ type HandlerConfig struct {
 	Type     string
 	Retries  int                    `yaml:",omitempty"`
 	Chain    string                 `yaml:",omitempty"`
-	Bypass   string                 `yaml:",omitempty"`
-	Resolver string                 `yaml:",omitempty"`
-	Hosts    string                 `yaml:",omitempty"`
 	Auths    []*AuthConfig          `yaml:",omitempty"`
 	TLS      *TLSConfig             `yaml:",omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty"`
@@ -123,6 +120,9 @@ type ConnectorConfig struct {
 type ServiceConfig struct {
 	Name      string
 	Addr      string           `yaml:",omitempty"`
+	Bypass    string           `yaml:",omitempty"`
+	Resolver  string           `yaml:",omitempty"`
+	Hosts     string           `yaml:",omitempty"`
 	Handler   *HandlerConfig   `yaml:",omitempty"`
 	Listener  *ListenerConfig  `yaml:",omitempty"`
 	Forwarder *ForwarderConfig `yaml:",omitempty"`
@@ -137,6 +137,9 @@ type ChainConfig struct {
 type HopConfig struct {
 	Name     string
 	Selector *SelectorConfig `yaml:",omitempty"`
+	Bypass   string          `yaml:",omitempty"`
+	Resolver string          `yaml:",omitempty"`
+	Hosts    string          `yaml:",omitempty"`
 	Nodes    []*NodeConfig
 }
 
@@ -144,6 +147,8 @@ type NodeConfig struct {
 	Name      string
 	Addr      string           `yaml:",omitempty"`
 	Bypass    string           `yaml:",omitempty"`
+	Resolver  string           `yaml:",omitempty"`
+	Hosts     string           `yaml:",omitempty"`
 	Connector *ConnectorConfig `yaml:",omitempty"`
 	Dialer    *DialerConfig    `yaml:",omitempty"`
 }

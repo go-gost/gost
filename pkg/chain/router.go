@@ -46,7 +46,7 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 		if r.Logger.IsLevelEnabled(logger.DebugLevel) {
 			buf := bytes.Buffer{}
 			for _, node := range route.Path() {
-				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
+				fmt.Fprintf(&buf, "%s@%s > ", node.Name, node.Addr)
 			}
 			fmt.Fprintf(&buf, "%s", address)
 			r.Logger.Debugf("route(retry=%d) %s", i, buf.String())
@@ -114,7 +114,7 @@ func (r *Router) Bind(ctx context.Context, network, address string, opts ...conn
 		if r.Logger.IsLevelEnabled(logger.DebugLevel) {
 			buf := bytes.Buffer{}
 			for _, node := range route.Path() {
-				fmt.Fprintf(&buf, "%s@%s > ", node.Name(), node.Addr())
+				fmt.Fprintf(&buf, "%s@%s > ", node.Name, node.Addr)
 			}
 			fmt.Fprintf(&buf, "%s", address)
 			r.Logger.Debugf("route(retry=%d) %s", i, buf.String())

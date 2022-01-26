@@ -23,20 +23,20 @@ func init() {
 }
 
 type httpConnector struct {
-	user   *url.Userinfo
-	md     metadata
-	logger logger.Logger
+	user    *url.Userinfo
+	md      metadata
+	options connector.Options
 }
 
 func NewConnector(opts ...connector.Option) connector.Connector {
-	options := &connector.Options{}
+	options := connector.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &httpConnector{
-		user:   options.User,
-		logger: options.Logger,
+		user:    options.User,
+		options: options,
 	}
 }
 
@@ -45,13 +45,13 @@ func (c *httpConnector) Init(md md.Metadata) (err error) {
 }
 
 func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	c.logger = c.logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]interface{}{
 		"local":   conn.LocalAddr().String(),
 		"remote":  conn.RemoteAddr().String(),
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect %s/%s", address, network)
+	log.Infof("connect %s/%s", address, network)
 
 	req := &http.Request{
 		Method:     http.MethodConnect,
@@ -78,20 +78,20 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 	case "tcp", "tcp4", "tcp6":
 		if _, ok := conn.(net.PacketConn); ok {
 			err := fmt.Errorf("tcp over udp is unsupported")
-			c.logger.Error(err)
+			log.Error(err)
 			return nil, err
 		}
 	case "udp", "udp4", "udp6":
 		req.Header.Set("X-Gost-Protocol", "udp")
 	default:
 		err := fmt.Errorf("network %s is unsupported", network)
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
 
-	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpRequest(req, false)
-		c.logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
 
 	if c.md.connectTimeout > 0 {
@@ -110,9 +110,9 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 	}
 	defer resp.Body.Close()
 
-	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpResponse(resp, false)
-		c.logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
 
 	if resp.StatusCode != http.StatusOK {

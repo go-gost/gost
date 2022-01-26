@@ -3,7 +3,6 @@ package main
 import (
 	// Register connectors
 	_ "github.com/go-gost/gost/pkg/connector/forward"
-	_ "github.com/go-gost/gost/pkg/connector/forward/ssh"
 	_ "github.com/go-gost/gost/pkg/connector/http"
 	_ "github.com/go-gost/gost/pkg/connector/http2"
 	_ "github.com/go-gost/gost/pkg/connector/relay"
@@ -12,9 +11,9 @@ import (
 	_ "github.com/go-gost/gost/pkg/connector/socks/v5"
 	_ "github.com/go-gost/gost/pkg/connector/ss"
 	_ "github.com/go-gost/gost/pkg/connector/ss/udp"
+	_ "github.com/go-gost/gost/pkg/connector/sshd"
 
 	// Register dialers
-	_ "github.com/go-gost/gost/pkg/dialer/forward/ssh"
 	_ "github.com/go-gost/gost/pkg/dialer/ftcp"
 	_ "github.com/go-gost/gost/pkg/dialer/http2"
 	_ "github.com/go-gost/gost/pkg/dialer/http2/h2"
@@ -25,6 +24,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/dialer/pht"
 	_ "github.com/go-gost/gost/pkg/dialer/quic"
 	_ "github.com/go-gost/gost/pkg/dialer/ssh"
+	_ "github.com/go-gost/gost/pkg/dialer/sshd"
 	_ "github.com/go-gost/gost/pkg/dialer/tcp"
 	_ "github.com/go-gost/gost/pkg/dialer/tls"
 	_ "github.com/go-gost/gost/pkg/dialer/tls/mux"

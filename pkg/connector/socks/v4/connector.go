@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-gost/gosocks4"
 	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -22,20 +21,20 @@ func init() {
 }
 
 type socks4Connector struct {
-	user   *url.Userinfo
-	md     metadata
-	logger logger.Logger
+	user    *url.Userinfo
+	md      metadata
+	options connector.Options
 }
 
 func NewConnector(opts ...connector.Option) connector.Connector {
-	options := &connector.Options{}
+	options := connector.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &socks4Connector{
-		user:   options.User,
-		logger: options.Logger,
+		user:    options.User,
+		options: options,
 	}
 }
 
@@ -44,24 +43,24 @@ func (c *socks4Connector) Init(md md.Metadata) (err error) {
 }
 
 func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	c.logger = c.logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]interface{}{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect %s/%s", address, network)
+	log.Infof("connect %s/%s", address, network)
 
 	switch network {
 	case "tcp", "tcp4", "tcp6":
 		if _, ok := conn.(net.PacketConn); ok {
 			err := fmt.Errorf("tcp over udp is unsupported")
-			c.logger.Error(err)
+			log.Error(err)
 			return nil, err
 		}
 	default:
 		err := fmt.Errorf("network %s is unsupported", network)
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -70,7 +69,7 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 	if c.md.disable4a {
 		taddr, err := net.ResolveTCPAddr("tcp4", address)
 		if err != nil {
-			c.logger.Error("resolve: ", err)
+			log.Error("resolve: ", err)
 			return nil, err
 		}
 		if len(taddr.IP) == 0 {
@@ -105,21 +104,21 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 	}
 	req := gosocks4.NewRequest(gosocks4.CmdConnect, addr, userid)
 	if err := req.Write(conn); err != nil {
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
-	c.logger.Debug(req)
+	log.Debug(req)
 
 	reply, err := gosocks4.ReadReply(conn)
 	if err != nil {
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
-	c.logger.Debug(reply)
+	log.Debug(reply)
 
 	if reply.Code != gosocks4.Granted {
 		err = errors.New("host unreachable")
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
 

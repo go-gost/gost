@@ -10,16 +10,17 @@ import (
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/common/util/udp"
 	"github.com/go-gost/gost/pkg/connector"
+	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/relay"
 )
 
 // Bind implements connector.Binder.
 func (c *relayConnector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
-	c.logger = c.logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]interface{}{
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("bind on %s/%s", address, network)
+	log.Infof("bind on %s/%s", address, network)
 
 	options := connector.BindOptions{}
 	for _, opt := range opts {
@@ -28,21 +29,22 @@ func (c *relayConnector) Bind(ctx context.Context, conn net.Conn, network, addre
 
 	switch network {
 	case "tcp", "tcp4", "tcp6":
-		return c.bindTCP(ctx, conn, network, address)
+		return c.bindTCP(ctx, conn, network, address, log)
 	case "udp", "udp4", "udp6":
-		return c.bindUDP(ctx, conn, network, address, &options)
+		return c.bindUDP(ctx, conn, network, address, &options, log)
 	default:
 		err := fmt.Errorf("network %s is unsupported", network)
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
 }
 
-func (c *relayConnector) bindTCP(ctx context.Context, conn net.Conn, network, address string) (net.Listener, error) {
+func (c *relayConnector) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) (net.Listener, error) {
 	laddr, err := c.bind(conn, relay.BIND, network, address)
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("bind on %s/%s OK", laddr, laddr.Network())
 
 	session, err := mux.ServerSession(conn)
 	if err != nil {
@@ -52,15 +54,16 @@ func (c *relayConnector) bindTCP(ctx context.Context, conn net.Conn, network, ad
 	return &tcpListener{
 		addr:    laddr,
 		session: session,
-		logger:  c.logger,
+		logger:  log,
 	}, nil
 }
 
-func (c *relayConnector) bindUDP(ctx context.Context, conn net.Conn, network, address string, opts *connector.BindOptions) (net.Listener, error) {
+func (c *relayConnector) bindUDP(ctx context.Context, conn net.Conn, network, address string, opts *connector.BindOptions, log logger.Logger) (net.Listener, error) {
 	laddr, err := c.bind(conn, relay.FUDP|relay.BIND, network, address)
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("bind on %s/%s OK", laddr, laddr.Network())
 
 	ln := udp.NewListener(
 		socks.UDPTunClientPacketConn(conn),
@@ -68,7 +71,7 @@ func (c *relayConnector) bindUDP(ctx context.Context, conn net.Conn, network, ad
 		opts.Backlog,
 		opts.UDPDataQueueSize, opts.UDPDataBufferSize,
 		opts.UDPConnTTL,
-		c.logger)
+		log)
 
 	return ln, nil
 }
@@ -125,7 +128,6 @@ func (c *relayConnector) bind(conn net.Conn, cmd uint8, network, address string)
 	if err != nil {
 		return nil, err
 	}
-	c.logger.Debugf("bind on %s/%s OK", baddr, baddr.Network())
 
 	return baddr, nil
 }

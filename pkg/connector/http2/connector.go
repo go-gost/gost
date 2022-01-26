@@ -24,20 +24,20 @@ func init() {
 }
 
 type http2Connector struct {
-	user   *url.Userinfo
-	md     metadata
-	logger logger.Logger
+	user    *url.Userinfo
+	md      metadata
+	options connector.Options
 }
 
 func NewConnector(opts ...connector.Option) connector.Connector {
-	options := &connector.Options{}
+	options := connector.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &http2Connector{
-		user:   options.User,
-		logger: options.Logger,
+		user:    options.User,
+		options: options,
 	}
 }
 
@@ -46,18 +46,18 @@ func (c *http2Connector) Init(md md.Metadata) (err error) {
 }
 
 func (c *http2Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	c.logger = c.logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]interface{}{
 		"local":   conn.LocalAddr().String(),
 		"remote":  conn.RemoteAddr().String(),
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect %s/%s", address, network)
+	log.Infof("connect %s/%s", address, network)
 
 	cc, ok := conn.(*http2_util.ClientConn)
 	if !ok {
 		err := errors.New("wrong connection type")
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -83,9 +83,9 @@ func (c *http2Connector) Connect(ctx context.Context, conn net.Conn, network, ad
 			"Basic "+base64.StdEncoding.EncodeToString([]byte(u+":"+p)))
 	}
 
-	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpRequest(req, false)
-		c.logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
 
 	if c.md.connectTimeout > 0 {
@@ -95,19 +95,19 @@ func (c *http2Connector) Connect(ctx context.Context, conn net.Conn, network, ad
 
 	resp, err := cc.Client().Do(req.WithContext(ctx))
 	if err != nil {
-		c.logger.Error(err)
+		log.Error(err)
 		cc.Close()
 		return nil, err
 	}
 
-	if c.logger.IsLevelEnabled(logger.DebugLevel) {
+	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpResponse(resp, false)
-		c.logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
 		err = fmt.Errorf("%s", resp.Status)
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
 

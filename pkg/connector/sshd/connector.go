@@ -1,4 +1,4 @@
-package ssh
+package sshd
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-gost/gost/pkg/connector"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -16,33 +15,33 @@ func init() {
 	registry.RegiserConnector("sshd", NewConnector)
 }
 
-type forwardConnector struct {
-	logger logger.Logger
+type sshdConnector struct {
+	options connector.Options
 }
 
 func NewConnector(opts ...connector.Option) connector.Connector {
-	options := &connector.Options{}
+	options := connector.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
-	return &forwardConnector{
-		logger: options.Logger,
+	return &sshdConnector{
+		options: options,
 	}
 }
 
-func (c *forwardConnector) Init(md md.Metadata) (err error) {
+func (c *sshdConnector) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-func (c *forwardConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	c.logger = c.logger.WithFields(map[string]interface{}{
+func (c *sshdConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
+	log := c.options.Logger.WithFields(map[string]interface{}{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect %s/%s", address, network)
+	log.Infof("connect %s/%s", address, network)
 
 	cc, ok := conn.(*ssh_util.ClientConn)
 	if !ok {
@@ -51,7 +50,7 @@ func (c *forwardConnector) Connect(ctx context.Context, conn net.Conn, network, 
 
 	conn, err := cc.Client().Dial(network, address)
 	if err != nil {
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -59,12 +58,14 @@ func (c *forwardConnector) Connect(ctx context.Context, conn net.Conn, network, 
 }
 
 // Bind implements connector.Binder.
-func (c *forwardConnector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
-	c.logger = c.logger.WithFields(map[string]interface{}{
+func (c *sshdConnector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
+	log := c.options.Logger.WithFields(map[string]interface{}{
+		"remote":  conn.RemoteAddr().String(),
+		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("bind on %s/%s", address, network)
+	log.Infof("bind on %s/%s", address, network)
 
 	cc, ok := conn.(*ssh_util.ClientConn)
 	if !ok {

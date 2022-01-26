@@ -1,4 +1,4 @@
-package ssh
+package sshd
 
 import (
 	"io/ioutil"
@@ -13,7 +13,7 @@ type metadata struct {
 	signer           ssh.Signer
 }
 
-func (d *forwardDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *sshdDialer) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		handshakeTimeout = "handshakeTimeout"
 		privateKeyFile   = "privateKeyFile"

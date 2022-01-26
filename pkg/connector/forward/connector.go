@@ -5,7 +5,6 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -15,17 +14,17 @@ func init() {
 }
 
 type forwardConnector struct {
-	logger logger.Logger
+	options connector.Options
 }
 
 func NewConnector(opts ...connector.Option) connector.Connector {
-	options := &connector.Options{}
+	options := connector.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &forwardConnector{
-		logger: options.Logger,
+		options: options,
 	}
 }
 
@@ -34,13 +33,13 @@ func (c *forwardConnector) Init(md md.Metadata) (err error) {
 }
 
 func (c *forwardConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	c.logger = c.logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]interface{}{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect %s/%s", address, network)
+	log.Infof("connect %s/%s", address, network)
 
 	return conn, nil
 }

@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/go-gost/relay"
@@ -20,20 +19,20 @@ func init() {
 }
 
 type relayConnector struct {
-	user   *url.Userinfo
-	logger logger.Logger
-	md     metadata
+	user    *url.Userinfo
+	md      metadata
+	options connector.Options
 }
 
 func NewConnector(opts ...connector.Option) connector.Connector {
-	options := &connector.Options{}
+	options := connector.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &relayConnector{
-		user:   options.User,
-		logger: options.Logger,
+		user:    options.User,
+		options: options,
 	}
 }
 
@@ -42,13 +41,13 @@ func (c *relayConnector) Init(md md.Metadata) (err error) {
 }
 
 func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	c.logger = c.logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]interface{}{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
 	})
-	c.logger.Infof("connect %s/%s", address, network)
+	log.Infof("connect %s/%s", address, network)
 
 	if c.md.connectTimeout > 0 {
 		conn.SetDeadline(time.Now().Add(c.md.connectTimeout))
@@ -68,7 +67,7 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 			if err != nil {
 				return nil, err
 			}
-			c.logger.Debugf("associate on %s OK", baddr)
+			log.Debugf("associate on %s OK", baddr)
 
 			return socks.UDPTunClientConn(conn, nil), nil
 		}
@@ -123,7 +122,7 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 		conn = cc
 	default:
 		err := fmt.Errorf("network %s is unsupported", network)
-		c.logger.Error(err)
+		log.Error(err)
 		return nil, err
 	}
 

@@ -10,7 +10,6 @@ import (
 	"github.com/go-gost/gost/pkg/chain"
 	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/go-gost/relay"
@@ -24,7 +23,6 @@ type relayHandler struct {
 	group         *chain.NodeGroup
 	router        *chain.Router
 	authenticator auth.Authenticator
-	logger        logger.Logger
 	md            metadata
 	options       handler.Options
 }
@@ -53,7 +51,6 @@ func (h *relayHandler) Init(md md.Metadata) (err error) {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 	return nil
 }
 
@@ -66,14 +63,14 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -84,14 +81,14 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	req := relay.Request{}
 	if _, err := req.ReadFrom(conn); err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 
 	conn.SetReadDeadline(time.Time{})
 
 	if req.Version != relay.Version1 {
-		h.logger.Error("bad version")
+		log.Error("bad version")
 		return
 	}
 
@@ -109,7 +106,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	if user != "" {
-		h.logger = h.logger.WithFields(map[string]interface{}{"user": user})
+		log = log.WithFields(map[string]interface{}{"user": user})
 	}
 
 	resp := relay.Response{
@@ -119,7 +116,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	if h.authenticator != nil && !h.authenticator.Authenticate(user, pass) {
 		resp.Status = relay.StatusUnauthorized
 		resp.WriteTo(conn)
-		h.logger.Error("unauthorized")
+		log.Error("unauthorized")
 		return
 	}
 
@@ -132,18 +129,18 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 		if address != "" {
 			resp.Status = relay.StatusForbidden
 			resp.WriteTo(conn)
-			h.logger.Error("forward mode, connect is forbidden")
+			log.Error("forward mode, connect is forbidden")
 			return
 		}
 		// forward mode
-		h.handleForward(ctx, conn, network)
+		h.handleForward(ctx, conn, network, log)
 		return
 	}
 
 	switch req.Flags & relay.CmdMask {
 	case 0, relay.CONNECT:
-		h.handleConnect(ctx, conn, network, address)
+		h.handleConnect(ctx, conn, network, address, log)
 	case relay.BIND:
-		h.handleBind(ctx, conn, network, address)
+		h.handleBind(ctx, conn, network, address, log)
 	}
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/util/ss"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/shadowsocks/go-shadowsocks2/core"
@@ -24,7 +23,6 @@ func init() {
 type ssHandler struct {
 	cipher  core.Cipher
 	router  *chain.Router
-	logger  logger.Logger
 	md      metadata
 	options handler.Options
 }
@@ -60,7 +58,6 @@ func (h *ssHandler) Init(md md.Metadata) (err error) {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 
 	return
 }
@@ -69,14 +66,14 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -91,19 +88,19 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	addr := &gosocks5.Addr{}
 	if _, err := addr.ReadFrom(conn); err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		io.Copy(ioutil.Discard, conn)
 		return
 	}
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"dst": addr.String(),
 	})
 
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
+	log.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(addr.String()) {
-		h.logger.Info("bypass: ", addr.String())
+		log.Info("bypass: ", addr.String())
 		return
 	}
 
@@ -114,11 +111,9 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer cc.Close()
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
+	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(t),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	log.WithFields(map[string]interface{}{
+		"duration": time.Since(t),
+	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }

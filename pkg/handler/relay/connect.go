@@ -7,16 +7,17 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/relay"
 )
 
-func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string) {
-	h.logger = h.logger.WithFields(map[string]interface{}{
+func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+	log = log.WithFields(map[string]interface{}{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "connect",
 	})
 
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), address)
+	log.Infof("%s >> %s", conn.RemoteAddr(), address)
 
 	resp := relay.Response{
 		Version: relay.Version1,
@@ -26,12 +27,12 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	if address == "" {
 		resp.Status = relay.StatusBadRequest
 		resp.WriteTo(conn)
-		h.logger.Error("target not specified")
+		log.Error("target not specified")
 		return
 	}
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(address) {
-		h.logger.Info("bypass: ", address)
+		log.Info("bypass: ", address)
 		resp.Status = relay.StatusForbidden
 		resp.WriteTo(conn)
 		return
@@ -47,7 +48,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 
 	if h.md.noDelay {
 		if _, err := resp.WriteTo(conn); err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 			return
 		}
 	}
@@ -78,11 +79,9 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	}
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), address)
+	log.Infof("%s <-> %s", conn.RemoteAddr(), address)
 	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(t),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), address)
+	log.WithFields(map[string]interface{}{
+		"duration": time.Since(t),
+	}).Infof("%s >-< %s", conn.RemoteAddr(), address)
 }

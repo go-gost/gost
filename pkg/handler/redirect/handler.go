@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -22,7 +21,6 @@ func init() {
 
 type redirectHandler struct {
 	router  *chain.Router
-	logger  logger.Logger
 	md      metadata
 	options handler.Options
 }
@@ -50,7 +48,6 @@ func (h *redirectHandler) Init(md md.Metadata) (err error) {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 
 	return
 }
@@ -59,14 +56,14 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -83,35 +80,33 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 	if network == "tcp" {
 		dstAddr, conn, err = h.getOriginalDstAddr(conn)
 		if err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 			return
 		}
 	}
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"dst": fmt.Sprintf("%s/%s", dstAddr, network),
 	})
 
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), dstAddr)
+	log.Infof("%s >> %s", conn.RemoteAddr(), dstAddr)
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(dstAddr.String()) {
-		h.logger.Info("bypass: ", dstAddr)
+		log.Info("bypass: ", dstAddr)
 		return
 	}
 
 	cc, err := h.router.Dial(ctx, network, dstAddr.String())
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 	defer cc.Close()
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), dstAddr)
+	log.Infof("%s <-> %s", conn.RemoteAddr(), dstAddr)
 	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(t),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), dstAddr)
+	log.WithFields(map[string]interface{}{
+		"duration": time.Since(t),
+	}).Infof("%s >-< %s", conn.RemoteAddr(), dstAddr)
 }

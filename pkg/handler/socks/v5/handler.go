@@ -10,7 +10,6 @@ import (
 	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -23,7 +22,6 @@ func init() {
 type socks5Handler struct {
 	selector gosocks5.Selector
 	router   *chain.Router
-	logger   logger.Logger
 	md       metadata
 	options  handler.Options
 }
@@ -44,7 +42,6 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	h.logger = h.options.Logger
 	h.router = &chain.Router{
 		Retries:  h.options.Retries,
 		Chain:    h.options.Chain,
@@ -56,7 +53,7 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 	h.selector = &serverSelector{
 		Authenticator: auth_util.AuthFromUsers(h.options.Auths...),
 		TLSConfig:     h.options.TLSConfig,
-		logger:        h.logger,
+		logger:        h.options.Logger,
 		noTLS:         h.md.noTLS,
 	}
 
@@ -68,14 +65,14 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	start := time.Now()
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -87,30 +84,30 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 	conn = gosocks5.ServerConn(conn, h.selector)
 	req, err := gosocks5.ReadRequest(conn)
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
-	h.logger.Debug(req)
+	log.Debug(req)
 	conn.SetReadDeadline(time.Time{})
 
 	address := req.Addr.String()
 
 	switch req.Cmd {
 	case gosocks5.CmdConnect:
-		h.handleConnect(ctx, conn, "tcp", address)
+		h.handleConnect(ctx, conn, "tcp", address, log)
 	case gosocks5.CmdBind:
-		h.handleBind(ctx, conn, "tcp", address)
+		h.handleBind(ctx, conn, "tcp", address, log)
 	case socks.CmdMuxBind:
-		h.handleMuxBind(ctx, conn, "tcp", address)
+		h.handleMuxBind(ctx, conn, "tcp", address, log)
 	case gosocks5.CmdUdp:
-		h.handleUDP(ctx, conn)
+		h.handleUDP(ctx, conn, log)
 	case socks.CmdUDPTun:
-		h.handleUDPTun(ctx, conn, "udp", address)
+		h.handleUDPTun(ctx, conn, "udp", address, log)
 	default:
-		h.logger.Errorf("unknown cmd: %d", req.Cmd)
+		log.Errorf("unknown cmd: %d", req.Cmd)
 		resp := gosocks5.NewReply(gosocks5.CmdUnsupported, nil)
 		resp.Write(conn)
-		h.logger.Debug(resp)
+		log.Debug(resp)
 		return
 	}
 }

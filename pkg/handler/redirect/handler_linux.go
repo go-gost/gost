@@ -13,7 +13,6 @@ func (h *redirectHandler) getOriginalDstAddr(conn net.Conn) (addr net.Addr, c ne
 	tc, ok := conn.(*net.TCPConn)
 	if !ok {
 		err = errors.New("wrong connection type, must be TCP")
-		h.logger.Error(err)
 		return
 	}
 

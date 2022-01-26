@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/relay"
 )
 
-func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string) {
+func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string, log logger.Logger) {
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,
@@ -19,15 +20,16 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	if target == nil {
 		resp.Status = relay.StatusServiceUnavailable
 		resp.WriteTo(conn)
-		h.logger.Error("no target available")
+		log.Error("no target available")
 		return
 	}
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"dst": fmt.Sprintf("%s/%s", target.Addr(), network),
+		"cmd": "forward",
 	})
 
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
+	log.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
 
 	cc, err := h.router.Dial(ctx, network, target.Addr())
 	if err != nil {
@@ -37,7 +39,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 
 		resp.Status = relay.StatusHostUnreachable
 		resp.WriteTo(conn)
-		h.logger.Error(err)
+		log.Error(err)
 
 		return
 	}
@@ -46,7 +48,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 
 	if h.md.noDelay {
 		if _, err := resp.WriteTo(conn); err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 			return
 		}
 	}
@@ -77,11 +79,9 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	}
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr())
+	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr())
 	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(t),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), target.Addr())
+	log.WithFields(map[string]interface{}{
+		"duration": time.Since(t),
+	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr())
 }

@@ -35,7 +35,6 @@ type tunHandler struct {
 	exit    chan struct{}
 	cipher  core.Cipher
 	router  *chain.Router
-	logger  logger.Logger
 	md      metadata
 	options handler.Options
 }
@@ -73,7 +72,6 @@ func (h *tunHandler) Init(md md.Metadata) (err error) {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 
 	return
 }
@@ -87,21 +85,23 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer os.Exit(0)
 	defer conn.Close()
 
+	log := h.options.Logger
+
 	cc, ok := conn.(*tun_util.Conn)
 	if !ok || cc.Config() == nil {
-		h.logger.Error("invalid connection")
+		log.Error("invalid connection")
 		return
 	}
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -114,19 +114,19 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) {
 	if target != nil {
 		raddr, err = net.ResolveUDPAddr(network, target.Addr())
 		if err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 			return
 		}
-		h.logger = h.logger.WithFields(map[string]interface{}{
+		log = log.WithFields(map[string]interface{}{
 			"dst": fmt.Sprintf("%s/%s", raddr.String(), raddr.Network()),
 		})
-		h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
+		log.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
 	}
 
-	h.handleLoop(ctx, conn, raddr, cc.Config())
+	h.handleLoop(ctx, conn, raddr, cc.Config(), log)
 }
 
-func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Addr, config *tun_util.Config) {
+func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Addr, config *tun_util.Config, log logger.Logger) {
 	var tempDelay time.Duration
 	for {
 		err := func() error {
@@ -155,10 +155,10 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 				pc = h.cipher.PacketConn(pc)
 			}
 
-			return h.transport(conn, pc, addr)
+			return h.transport(conn, pc, addr, log)
 		}()
 		if err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 		}
 
 		select {
@@ -184,7 +184,7 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 
 }
 
-func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr) error {
+func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr, log logger.Logger) error {
 	errc := make(chan error, 1)
 
 	go func() {
@@ -206,10 +206,10 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				if waterutil.IsIPv4((*b)[:n]) {
 					header, err := ipv4.ParseHeader((*b)[:n])
 					if err != nil {
-						h.logger.Error(err)
+						log.Error(err)
 						return nil
 					}
-					h.logger.Debugf("%s >> %s %-4s %d/%-4d %-4x %d",
+					log.Debugf("%s >> %s %-4s %d/%-4d %-4x %d",
 						header.Src, header.Dst, ipProtocol(waterutil.IPv4Protocol((*b)[:n])),
 						header.Len, header.TotalLen, header.ID, header.Flags)
 
@@ -217,17 +217,17 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				} else if waterutil.IsIPv6((*b)[:n]) {
 					header, err := ipv6.ParseHeader((*b)[:n])
 					if err != nil {
-						h.logger.Warn(err)
+						log.Warn(err)
 						return nil
 					}
-					h.logger.Debugf("%s >> %s %s %d %d",
+					log.Debugf("%s >> %s %s %d %d",
 						header.Src, header.Dst,
 						ipProtocol(waterutil.IPProtocol(header.NextHeader)),
 						header.PayloadLen, header.TrafficClass)
 
 					src, dst = header.Src, header.Dst
 				} else {
-					h.logger.Warn("unknown packet, discarded")
+					log.Warn("unknown packet, discarded")
 					return nil
 				}
 
@@ -239,11 +239,11 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 
 				addr := h.findRouteFor(dst)
 				if addr == nil {
-					h.logger.Warnf("no route for %s -> %s", src, dst)
+					log.Warnf("no route for %s -> %s", src, dst)
 					return nil
 				}
 
-				h.logger.Debugf("find route: %s -> %s", dst, addr)
+				log.Debugf("find route: %s -> %s", dst, addr)
 
 				if _, err := conn.WriteTo((*b)[:n], addr); err != nil {
 					return err
@@ -274,11 +274,11 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				if waterutil.IsIPv4((*b)[:n]) {
 					header, err := ipv4.ParseHeader((*b)[:n])
 					if err != nil {
-						h.logger.Warn(err)
+						log.Warn(err)
 						return nil
 					}
 
-					h.logger.Debugf("%s >> %s %-4s %d/%-4d %-4x %d",
+					log.Debugf("%s >> %s %-4s %d/%-4d %-4x %d",
 						header.Src, header.Dst, ipProtocol(waterutil.IPv4Protocol((*b)[:n])),
 						header.Len, header.TotalLen, header.ID, header.Flags)
 
@@ -286,18 +286,18 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				} else if waterutil.IsIPv6((*b)[:n]) {
 					header, err := ipv6.ParseHeader((*b)[:n])
 					if err != nil {
-						h.logger.Warn(err)
+						log.Warn(err)
 						return nil
 					}
 
-					h.logger.Debugf("%s > %s %s %d %d",
+					log.Debugf("%s > %s %s %d %d",
 						header.Src, header.Dst,
 						ipProtocol(waterutil.IPProtocol(header.NextHeader)),
 						header.PayloadLen, header.TrafficClass)
 
 					src, dst = header.Src, header.Dst
 				} else {
-					h.logger.Warn("unknown packet, discarded")
+					log.Warn("unknown packet, discarded")
 					return nil
 				}
 
@@ -310,16 +310,16 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 				rkey := ipToTunRouteKey(src)
 				if actual, loaded := h.routes.LoadOrStore(rkey, addr); loaded {
 					if actual.(net.Addr).String() != addr.String() {
-						h.logger.Debugf("update route: %s -> %s (old %s)",
+						log.Debugf("update route: %s -> %s (old %s)",
 							src, addr, actual.(net.Addr))
 						h.routes.Store(rkey, addr)
 					}
 				} else {
-					h.logger.Warnf("no route for %s -> %s", src, addr)
+					log.Warnf("no route for %s -> %s", src, addr)
 				}
 
 				if addr := h.findRouteFor(dst); addr != nil {
-					h.logger.Debugf("find route: %s -> %s", dst, addr)
+					log.Debugf("find route: %s -> %s", dst, addr)
 
 					_, err := conn.WriteTo((*b)[:n], addr)
 					return err

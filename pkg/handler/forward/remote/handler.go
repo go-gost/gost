@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 )
@@ -21,7 +20,6 @@ func init() {
 type forwardHandler struct {
 	group   *chain.NodeGroup
 	router  *chain.Router
-	logger  logger.Logger
 	md      metadata
 	options handler.Options
 }
@@ -49,7 +47,6 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 
 	return
 }
@@ -63,21 +60,21 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	target := h.group.Next()
 	if target == nil {
-		h.logger.Error("no target available")
+		log.Error("no target available")
 		return
 	}
 
@@ -86,15 +83,15 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 		network = "udp"
 	}
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"dst": fmt.Sprintf("%s/%s", target.Addr(), network),
 	})
 
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
+	log.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
 
 	cc, err := h.router.Dial(ctx, network, target.Addr())
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		// TODO: the router itself may be failed due to the failed node in the router,
 		// the dead marker may be a wrong operation.
 		target.Marker().Mark()
@@ -104,11 +101,9 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 	target.Marker().Reset()
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr())
+	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr())
 	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(t),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), target.Addr())
+	log.WithFields(map[string]interface{}{
+		"duration": time.Since(t),
+	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr())
 }

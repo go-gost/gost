@@ -23,7 +23,6 @@ func init() {
 type socks4Handler struct {
 	router        *chain.Router
 	authenticator auth.Authenticator
-	logger        logger.Logger
 	md            metadata
 	options       handler.Options
 }
@@ -52,7 +51,6 @@ func (h *socks4Handler) Init(md md.Metadata) (err error) {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 
 	return nil
 }
@@ -62,14 +60,14 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	start := time.Now()
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -80,10 +78,10 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	req, err := gosocks4.ReadRequest(conn)
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
-	h.logger.Debug(req)
+	log.Debug(req)
 
 	conn.SetReadDeadline(time.Time{})
 
@@ -91,33 +89,33 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 		!h.authenticator.Authenticate(string(req.Userid), "") {
 		resp := gosocks4.NewReply(gosocks4.RejectedUserid, nil)
 		resp.Write(conn)
-		h.logger.Debug(resp)
+		log.Debug(resp)
 		return
 	}
 
 	switch req.Cmd {
 	case gosocks4.CmdConnect:
-		h.handleConnect(ctx, conn, req)
+		h.handleConnect(ctx, conn, req, log)
 	case gosocks4.CmdBind:
 		h.handleBind(ctx, conn, req)
 	default:
-		h.logger.Errorf("unknown cmd: %d", req.Cmd)
+		log.Errorf("unknown cmd: %d", req.Cmd)
 	}
 }
 
-func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request) {
+func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, log logger.Logger) {
 	addr := req.Addr.String()
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"dst": addr,
 	})
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
+	log.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		resp := gosocks4.NewReply(gosocks4.Rejected, nil)
 		resp.Write(conn)
-		h.logger.Debug(resp)
-		h.logger.Info("bypass: ", addr)
+		log.Debug(resp)
+		log.Info("bypass: ", addr)
 		return
 	}
 
@@ -125,7 +123,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 	if err != nil {
 		resp := gosocks4.NewReply(gosocks4.Failed, nil)
 		resp.Write(conn)
-		h.logger.Debug(resp)
+		log.Debug(resp)
 		return
 	}
 
@@ -133,19 +131,17 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 
 	resp := gosocks4.NewReply(gosocks4.Granted, nil)
 	if err := resp.Write(conn); err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
-	h.logger.Debug(resp)
+	log.Debug(resp)
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
+	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(t),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	log.WithFields(map[string]interface{}{
+		"duration": time.Since(t),
+	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
 func (h *socks4Handler) handleBind(ctx context.Context, conn net.Conn, req *gosocks4.Request) {

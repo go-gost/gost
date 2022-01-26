@@ -164,7 +164,7 @@ func (d *sshDialer) dial(ctx context.Context, network, addr string, opts *dialer
 
 func (d *sshDialer) initSession(ctx context.Context, addr string, conn net.Conn) (*sshSession, error) {
 	config := ssh.ClientConfig{
-		// Timeout:         timeout,
+		Timeout:         30 * time.Second,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	if d.md.user != nil {

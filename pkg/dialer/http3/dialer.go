@@ -15,6 +15,7 @@ import (
 
 func init() {
 	registry.RegisterDialer("http3", NewDialer)
+	registry.RegisterDialer("h3", NewDialer)
 }
 
 type http3Dialer struct {

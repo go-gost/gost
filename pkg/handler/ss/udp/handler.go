@@ -23,7 +23,6 @@ func init() {
 type ssuHandler struct {
 	cipher  core.Cipher
 	router  *chain.Router
-	logger  logger.Logger
 	md      metadata
 	options handler.Options
 }
@@ -60,7 +59,6 @@ func (h *ssuHandler) Init(md md.Metadata) (err error) {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 
 	return
 }
@@ -69,14 +67,14 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -99,26 +97,25 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 	// obtain a udp connection
 	c, err := h.router.Dial(ctx, "udp", "") // UDP association
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 	defer c.Close()
 
 	cc, ok := c.(net.PacketConn)
 	if !ok {
-		h.logger.Errorf("wrong connection type")
+		log.Errorf("wrong connection type")
 		return
 	}
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
-	h.relayPacket(pc, cc)
-	h.logger.
-		WithFields(map[string]interface{}{"duration": time.Since(t)}).
+	log.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
+	h.relayPacket(pc, cc, log)
+	log.WithFields(map[string]interface{}{"duration": time.Since(t)}).
 		Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
 }
 
-func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
+func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.Logger) (err error) {
 	bufSize := h.md.bufferSize
 	errc := make(chan error, 2)
 
@@ -134,7 +131,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 				}
 
 				if h.options.Bypass != nil && h.options.Bypass.Contains(addr.String()) {
-					h.logger.Warn("bypass: ", addr)
+					log.Warn("bypass: ", addr)
 					return nil
 				}
 
@@ -142,7 +139,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 					return err
 				}
 
-				h.logger.Debugf("%s >>> %s data: %d",
+				log.Debugf("%s >>> %s data: %d",
 					pc2.LocalAddr(), addr, n)
 				return nil
 			}()
@@ -166,7 +163,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 				}
 
 				if h.options.Bypass != nil && h.options.Bypass.Contains(raddr.String()) {
-					h.logger.Warn("bypass: ", raddr)
+					log.Warn("bypass: ", raddr)
 					return nil
 				}
 
@@ -174,7 +171,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn) (err error) {
 					return err
 				}
 
-				h.logger.Debugf("%s <<< %s data: %d",
+				log.Debugf("%s <<< %s data: %d",
 					pc2.LocalAddr(), raddr, n)
 				return nil
 			}()

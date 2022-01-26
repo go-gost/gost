@@ -35,7 +35,6 @@ func init() {
 type http2Handler struct {
 	router        *chain.Router
 	authenticator auth.Authenticator
-	logger        logger.Logger
 	md            metadata
 	options       handler.Options
 }
@@ -64,7 +63,6 @@ func (h *http2Handler) Init(md md.Metadata) error {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 	return nil
 }
 
@@ -72,29 +70,29 @@ func (h *http2Handler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	cc, ok := conn.(*http2_util.ServerConn)
 	if !ok {
-		h.logger.Error("wrong connection type")
+		log.Error("wrong connection type")
 		return
 	}
-	h.roundTrip(ctx, cc.Writer(), cc.Request())
+	h.roundTrip(ctx, cc.Writer(), cc.Request(), log)
 }
 
 // NOTE: there is an issue (golang/go#43989) will cause the client hangs
 // when server returns an non-200 status code,
 // May be fixed in go1.18.
-func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request) {
+func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.Logger) {
 	// Try to get the actual host.
 	// Compatible with GOST 2.x.
 	if v := req.Header.Get("Gost-Target"); v != "" {
@@ -122,21 +120,21 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 	if u, _, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization")); u != "" {
 		fields["user"] = u
 	}
-	h.logger = h.logger.WithFields(fields)
+	log = log.WithFields(fields)
 
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
+	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpRequest(req, false)
-		h.logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
-	h.logger.Infof("%s >> %s", req.RemoteAddr, addr)
+	log.Infof("%s >> %s", req.RemoteAddr, addr)
 
-	if h.md.proxyAgent != "" {
-		w.Header().Set("Proxy-Agent", h.md.proxyAgent)
+	for k := range h.md.header {
+		w.Header().Set(k, h.md.header.Get(k))
 	}
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		w.WriteHeader(http.StatusForbidden)
-		h.logger.Info("bypass: ", addr)
+		log.Info("bypass: ", addr)
 		return
 	}
 
@@ -147,7 +145,7 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 		Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
 	}
 
-	if !h.authenticate(w, req, resp) {
+	if !h.authenticate(w, req, resp, log) {
 		return
 	}
 
@@ -157,7 +155,7 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 
 	cc, err := h.router.Dial(ctx, "tcp", addr)
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
@@ -174,30 +172,28 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 			// we take over the underly connection
 			conn, _, err := hj.Hijack()
 			if err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			defer conn.Close()
 
 			start := time.Now()
-			h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
+			log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 			handler.Transport(conn, cc)
-			h.logger.
-				WithFields(map[string]interface{}{
-					"duration": time.Since(start),
-				}).
-				Infof("%s >-< %s", conn.RemoteAddr(), addr)
+			log.WithFields(map[string]interface{}{
+				"duration": time.Since(start),
+			}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
+
+			return
 		}
 
 		start := time.Now()
-		h.logger.Infof("%s <-> %s", req.RemoteAddr, addr)
+		log.Infof("%s <-> %s", req.RemoteAddr, addr)
 		handler.Transport(&readWriter{r: req.Body, w: flushWriter{w}}, cc)
-		h.logger.
-			WithFields(map[string]interface{}{
-				"duration": time.Since(start),
-			}).
-			Infof("%s >-< %s", req.RemoteAddr, addr)
+		log.WithFields(map[string]interface{}{
+			"duration": time.Since(start),
+		}).Infof("%s >-< %s", req.RemoteAddr, addr)
 		return
 	}
 }
@@ -241,7 +237,7 @@ func (h *http2Handler) basicProxyAuth(proxyAuth string) (username, password stri
 	return cs[:s], cs[s+1:], true
 }
 
-func (h *http2Handler) authenticate(w http.ResponseWriter, r *http.Request, resp *http.Response) (ok bool) {
+func (h *http2Handler) authenticate(w http.ResponseWriter, r *http.Request, resp *http.Response, log logger.Logger) (ok bool) {
 	u, p, _ := h.basicProxyAuth(r.Header.Get("Proxy-Authorization"))
 	if h.authenticator == nil || h.authenticator.Authenticate(u, p) {
 		return true
@@ -261,7 +257,7 @@ func (h *http2Handler) authenticate(w http.ResponseWriter, r *http.Request, resp
 			}
 			r, err := http.Get(url)
 			if err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 				break
 			}
 			resp = r
@@ -269,13 +265,13 @@ func (h *http2Handler) authenticate(w http.ResponseWriter, r *http.Request, resp
 		case "host":
 			cc, err := net.Dial("tcp", pr.Value)
 			if err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 				break
 			}
 			defer cc.Close()
 
 			if err := h.forwardRequest(w, r, cc); err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 			}
 			return
 		case "file":
@@ -303,7 +299,7 @@ func (h *http2Handler) authenticate(w http.ResponseWriter, r *http.Request, resp
 			resp.Header.Add("Proxy-Connection", "close")
 		}
 
-		h.logger.Info("proxy authentication required")
+		log.Info("proxy authentication required")
 	} else {
 		resp.Header = http.Header{}
 		resp.Header.Set("Server", "nginx/1.20.1")
@@ -313,9 +309,9 @@ func (h *http2Handler) authenticate(w http.ResponseWriter, r *http.Request, resp
 		}
 	}
 
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
+	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpResponse(resp, false)
-		h.logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
 
 	h.writeResponse(w, resp)

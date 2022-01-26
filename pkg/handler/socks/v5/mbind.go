@@ -9,43 +9,44 @@ import (
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/common/util/mux"
 	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/logger"
 )
 
-func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string) {
-	h.logger = h.logger.WithFields(map[string]interface{}{
+func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+	log = log.WithFields(map[string]interface{}{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "mbind",
 	})
 
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), address)
+	log.Infof("%s >> %s", conn.RemoteAddr(), address)
 
 	if !h.md.enableBind {
 		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
 		reply.Write(conn)
-		h.logger.Debug(reply)
-		h.logger.Error("BIND is diabled")
+		log.Debug(reply)
+		log.Error("BIND is diabled")
 		return
 	}
 
-	h.muxBindLocal(ctx, conn, network, address)
+	h.muxBindLocal(ctx, conn, network, address, log)
 }
 
-func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network, address string) {
+func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
 	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		reply := gosocks5.NewReply(gosocks5.Failure, nil)
 		if err := reply.Write(conn); err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 		}
-		h.logger.Debug(reply)
+		log.Debug(reply)
 		return
 	}
 
 	socksAddr := gosocks5.Addr{}
 	err = socksAddr.ParseFrom(ln.Addr().String())
 	if err != nil {
-		h.logger.Warn(err)
+		log.Warn(err)
 	}
 
 	// Issue: may not reachable when host has multi-interface
@@ -53,26 +54,26 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network
 	socksAddr.Type = 0
 	reply := gosocks5.NewReply(gosocks5.Succeeded, &socksAddr)
 	if err := reply.Write(conn); err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		ln.Close()
 		return
 	}
-	h.logger.Debug(reply)
+	log.Debug(reply)
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"bind": fmt.Sprintf("%s/%s", ln.Addr(), ln.Addr().Network()),
 	})
 
-	h.logger.Debugf("bind on %s OK", ln.Addr())
+	log.Debugf("bind on %s OK", ln.Addr())
 
-	h.serveMuxBind(ctx, conn, ln)
+	h.serveMuxBind(ctx, conn, ln, log)
 }
 
-func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.Listener) {
+func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) {
 	// Upgrade connection to multiplex stream.
 	session, err := mux.ClientSession(conn)
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 	defer session.Close()
@@ -82,7 +83,7 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 		for {
 			conn, err := session.Accept()
 			if err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 				return
 			}
 			conn.Close() // we do not handle incoming connections.
@@ -92,17 +93,21 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 	for {
 		rc, err := ln.Accept()
 		if err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 			return
 		}
-		h.logger.Debugf("peer %s accepted", rc.RemoteAddr())
+		log.Debugf("peer %s accepted", rc.RemoteAddr())
 
 		go func(c net.Conn) {
 			defer c.Close()
 
+			log = log.WithFields(map[string]interface{}{
+				"local":  rc.LocalAddr().String(),
+				"remote": rc.RemoteAddr().String(),
+			})
 			sc, err := session.GetConn()
 			if err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 				return
 			}
 			defer sc.Close()
@@ -113,18 +118,17 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 				addr.ParseFrom(c.RemoteAddr().String())
 				reply := gosocks5.NewReply(gosocks5.Succeeded, &addr)
 				if err := reply.Write(sc); err != nil {
-					h.logger.Error(err)
+					log.Error(err)
 					return
 				}
-				h.logger.Debug(reply)
+				log.Debug(reply)
 			}
 
 			t := time.Now()
-			h.logger.Infof("%s <-> %s", conn.RemoteAddr(), c.RemoteAddr().String())
+			log.Infof("%s <-> %s", c.LocalAddr(), c.RemoteAddr())
 			handler.Transport(sc, c)
-			h.logger.
-				WithFields(map[string]interface{}{"duration": time.Since(t)}).
-				Infof("%s >-< %s", conn.RemoteAddr(), c.RemoteAddr().String())
+			log.WithFields(map[string]interface{}{"duration": time.Since(t)}).
+				Infof("%s >-< %s", c.LocalAddr(), c.RemoteAddr())
 		}(rc)
 	}
 }

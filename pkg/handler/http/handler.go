@@ -32,7 +32,6 @@ func init() {
 type httpHandler struct {
 	router        *chain.Router
 	authenticator auth.Authenticator
-	logger        logger.Logger
 	md            metadata
 	options       handler.Options
 }
@@ -61,7 +60,6 @@ func (h *httpHandler) Init(md md.Metadata) error {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 
 	return nil
 }
@@ -70,28 +68,28 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	req, err := http.ReadRequest(bufio.NewReader(conn))
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 	defer req.Body.Close()
 
-	h.handleRequest(ctx, conn, req)
+	h.handleRequest(ctx, conn, req, log)
 }
 
-func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request) {
+func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request, log logger.Logger) {
 	if req == nil {
 		return
 	}
@@ -129,16 +127,16 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 	fields := map[string]interface{}{
 		"dst": addr,
 	}
-	if u, _, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization")); u != "" {
+	if u, _, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"), log); u != "" {
 		fields["user"] = u
 	}
-	h.logger = h.logger.WithFields(fields)
+	log = log.WithFields(fields)
 
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
+	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpRequest(req, false)
-		h.logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), addr)
+	log.Infof("%s >> %s", conn.RemoteAddr(), addr)
 
 	resp := &http.Response{
 		ProtoMajor: 1,
@@ -152,22 +150,22 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		resp.StatusCode = http.StatusForbidden
 
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
+		if log.IsLevelEnabled(logger.DebugLevel) {
 			dump, _ := httputil.DumpResponse(resp, false)
-			h.logger.Debug(string(dump))
+			log.Debug(string(dump))
 		}
-		h.logger.Info("bypass: ", addr)
+		log.Info("bypass: ", addr)
 
 		resp.Write(conn)
 		return
 	}
 
-	if !h.authenticate(conn, req, resp) {
+	if !h.authenticate(conn, req, resp, log) {
 		return
 	}
 
 	if network == "udp" {
-		h.handleUDP(ctx, conn, network, req.Host)
+		h.handleUDP(ctx, conn, network, req.Host, log)
 		return
 	}
 
@@ -176,9 +174,9 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		resp.StatusCode = http.StatusBadRequest
 		resp.Write(conn)
 
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
+		if log.IsLevelEnabled(logger.DebugLevel) {
 			dump, _ := httputil.DumpResponse(resp, false)
-			h.logger.Debug(string(dump))
+			log.Debug(string(dump))
 		}
 
 		return
@@ -191,9 +189,9 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		resp.StatusCode = http.StatusServiceUnavailable
 		resp.Write(conn)
 
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
+		if log.IsLevelEnabled(logger.DebugLevel) {
 			dump, _ := httputil.DumpResponse(resp, false)
-			h.logger.Debug(string(dump))
+			log.Debug(string(dump))
 		}
 		return
 	}
@@ -203,30 +201,28 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		resp.StatusCode = http.StatusOK
 		resp.Status = "200 Connection established"
 
-		if h.logger.IsLevelEnabled(logger.DebugLevel) {
+		if log.IsLevelEnabled(logger.DebugLevel) {
 			dump, _ := httputil.DumpResponse(resp, false)
-			h.logger.Debug(string(dump))
+			log.Debug(string(dump))
 		}
 		if err = resp.Write(conn); err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 			return
 		}
 	} else {
 		req.Header.Del("Proxy-Connection")
 		if err = req.Write(cc); err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 			return
 		}
 	}
 
 	start := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), addr)
+	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(start),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	log.WithFields(map[string]interface{}{
+		"duration": time.Since(start),
+	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }
 
 func (h *httpHandler) decodeServerName(s string) (string, error) {
@@ -247,7 +243,7 @@ func (h *httpHandler) decodeServerName(s string) (string, error) {
 	return string(v), nil
 }
 
-func (h *httpHandler) basicProxyAuth(proxyAuth string) (username, password string, ok bool) {
+func (h *httpHandler) basicProxyAuth(proxyAuth string, log logger.Logger) (username, password string, ok bool) {
 	if proxyAuth == "" {
 		return
 	}
@@ -268,8 +264,8 @@ func (h *httpHandler) basicProxyAuth(proxyAuth string) (username, password strin
 	return cs[:s], cs[s+1:], true
 }
 
-func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.Response) (ok bool) {
-	u, p, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"))
+func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.Response, log logger.Logger) (ok bool) {
+	u, p, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"), log)
 	if h.authenticator == nil || h.authenticator.Authenticate(u, p) {
 		return true
 	}
@@ -289,7 +285,7 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 			}
 			r, err := http.Get(url)
 			if err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 				break
 			}
 			resp = r
@@ -297,7 +293,7 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 		case "host":
 			cc, err := net.Dial("tcp", pr.Value)
 			if err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 				break
 			}
 			defer cc.Close()
@@ -333,7 +329,7 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 			resp.Header.Add("Proxy-Connection", "close")
 		}
 
-		h.logger.Info("proxy authentication required")
+		log.Info("proxy authentication required")
 	} else {
 		resp.Header.Set("Server", "nginx/1.20.1")
 		resp.Header.Set("Date", time.Now().Format(http.TimeFormat))
@@ -342,9 +338,9 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 		}
 	}
 
-	if h.logger.IsLevelEnabled(logger.DebugLevel) {
+	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpResponse(resp, false)
-		h.logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
 
 	resp.Write(conn)

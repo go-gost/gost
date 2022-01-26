@@ -9,16 +9,22 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+const (
+	defaultBacklog = 128
+)
+
 type metadata struct {
 	signer         ssh.Signer
 	authorizedKeys map[string]bool
+	backlog        int
 }
 
-func (h *forwardHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (l *sshdListener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		authorizedKeys = "authorizedKeys"
 		privateKeyFile = "privateKeyFile"
 		passphrase     = "passphrase"
+		backlog        = "backlog"
 	)
 
 	if key := mdata.GetString(md, privateKeyFile); key != "" {
@@ -29,20 +35,20 @@ func (h *forwardHandler) parseMetadata(md mdata.Metadata) (err error) {
 
 		pp := mdata.GetString(md, passphrase)
 		if pp == "" {
-			h.md.signer, err = ssh.ParsePrivateKey(data)
+			l.md.signer, err = ssh.ParsePrivateKey(data)
 		} else {
-			h.md.signer, err = ssh.ParsePrivateKeyWithPassphrase(data, []byte(pp))
+			l.md.signer, err = ssh.ParsePrivateKeyWithPassphrase(data, []byte(pp))
 		}
 		if err != nil {
 			return err
 		}
 	}
-	if h.md.signer == nil {
+	if l.md.signer == nil {
 		signer, err := ssh.NewSignerFromKey(tls_util.DefaultConfig.Clone().Certificates[0].PrivateKey)
 		if err != nil {
 			return err
 		}
-		h.md.signer = signer
+		l.md.signer = signer
 	}
 
 	if name := mdata.GetString(md, authorizedKeys); name != "" {
@@ -50,7 +56,12 @@ func (h *forwardHandler) parseMetadata(md mdata.Metadata) (err error) {
 		if err != nil {
 			return err
 		}
-		h.md.authorizedKeys = m
+		l.md.authorizedKeys = m
+	}
+
+	l.md.backlog = mdata.GetInt(md, backlog)
+	if l.md.backlog <= 0 {
+		l.md.backlog = defaultBacklog
 	}
 
 	return

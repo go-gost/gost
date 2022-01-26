@@ -15,6 +15,7 @@ import (
 
 func init() {
 	registry.RegisterListener("http3", NewListener)
+	registry.RegisterListener("h3", NewListener)
 }
 
 type phtListener struct {

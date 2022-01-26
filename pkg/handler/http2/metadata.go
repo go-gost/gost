@@ -1,28 +1,31 @@
 package http2
 
 import (
+	"net/http"
 	"strings"
 
 	mdata "github.com/go-gost/gost/pkg/metadata"
 )
 
 type metadata struct {
-	proxyAgent      string
 	probeResistance *probeResistance
-	sni             bool
-	enableUDP       bool
+	header          http.Header
 }
 
 func (h *http2Handler) parseMetadata(md mdata.Metadata) error {
 	const (
-		proxyAgent     = "proxyAgent"
+		header         = "header"
 		probeResistKey = "probeResistance"
 		knock          = "knock"
-		sni            = "sni"
-		enableUDP      = "udp"
 	)
 
-	h.md.proxyAgent = mdata.GetString(md, proxyAgent)
+	if m := mdata.GetStringMapString(md, header); len(m) > 0 {
+		hd := http.Header{}
+		for k, v := range m {
+			hd.Add(k, v)
+		}
+		h.md.header = hd
+	}
 
 	if v := mdata.GetString(md, probeResistKey); v != "" {
 		if ss := strings.SplitN(v, ":", 2); len(ss) == 2 {
@@ -33,8 +36,6 @@ func (h *http2Handler) parseMetadata(md mdata.Metadata) error {
 			}
 		}
 	}
-	h.md.sni = mdata.GetBool(md, sni)
-	h.md.enableUDP = mdata.GetBool(md, enableUDP)
 
 	return nil
 }

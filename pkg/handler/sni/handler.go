@@ -14,7 +14,6 @@ import (
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	dissector "github.com/go-gost/tls-dissector"
@@ -27,7 +26,6 @@ func init() {
 type sniHandler struct {
 	httpHandler handler.Handler
 	router      *chain.Router
-	logger      logger.Logger
 	md          metadata
 	options     handler.Options
 }
@@ -38,19 +36,13 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 		opt(&options)
 	}
 
-	log := options.Logger
-	if log == nil {
-		log = logger.Default()
-	}
-
 	h := &sniHandler{
 		options: options,
-		logger:  log,
 	}
 
 	if f := registry.GetHandler("http"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "http"})))
+			handler.LoggerOption(h.options.Logger.WithFields(map[string]interface{}{"type": "http"})))
 		h.httpHandler = f(v...)
 	}
 
@@ -85,21 +77,21 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	var hdr [dissector.RecordHeaderLen]byte
 	if _, err := io.ReadFull(conn, hdr[:]); err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 
@@ -121,25 +113,25 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	buf := bufpool.Get(int(length) + dissector.RecordHeaderLen)
 	defer bufpool.Put(buf)
 	if _, err := io.ReadFull(conn, (*buf)[dissector.RecordHeaderLen:]); err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 	copy(*buf, hdr[:])
 
 	opaque, host, err := h.decodeHost(bytes.NewReader(*buf))
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 	target := net.JoinHostPort(host, "443")
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"dst": target,
 	})
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), target)
+	log.Infof("%s >> %s", conn.RemoteAddr(), target)
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(target) {
-		h.logger.Info("bypass: ", target)
+		log.Info("bypass: ", target)
 		return
 	}
 
@@ -150,18 +142,16 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer cc.Close()
 
 	if _, err := cc.Write(opaque); err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		return
 	}
 
 	t := time.Now()
-	h.logger.Infof("%s <-> %s", conn.RemoteAddr(), target)
+	log.Infof("%s <-> %s", conn.RemoteAddr(), target)
 	handler.Transport(conn, cc)
-	h.logger.
-		WithFields(map[string]interface{}{
-			"duration": time.Since(t),
-		}).
-		Infof("%s >-< %s", conn.RemoteAddr(), target)
+	log.WithFields(map[string]interface{}{
+		"duration": time.Since(t),
+	}).Infof("%s >-< %s", conn.RemoteAddr(), target)
 }
 
 func (h *sniHandler) decodeHost(r io.Reader) (opaque []byte, host string, err error) {

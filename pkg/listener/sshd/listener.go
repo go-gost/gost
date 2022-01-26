@@ -1,12 +1,15 @@
 package ssh
 
 import (
+	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"time"
 
 	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
+	sshd_util "github.com/go-gost/gost/pkg/internal/util/sshd"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -14,11 +17,17 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// Applicable SSH Request types for Port Forwarding - RFC 4254 7.X
+const (
+	DirectForwardRequest = "direct-tcpip"  // RFC 4254 7.2
+	RemoteForwardRequest = "tcpip-forward" // RFC 4254 7.1
+)
+
 func init() {
-	registry.RegisterListener("ssh", NewListener)
+	registry.RegisterListener("sshd", NewListener)
 }
 
-type sshListener struct {
+type sshdListener struct {
 	addr string
 	net.Listener
 	config  *ssh.ServerConfig
@@ -34,14 +43,14 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	for _, opt := range opts {
 		opt(&options)
 	}
-	return &sshListener{
+	return &sshdListener{
 		addr:    options.Addr,
 		logger:  options.Logger,
 		options: options,
 	}
 }
 
-func (l *sshListener) Init(md md.Metadata) (err error) {
+func (l *sshdListener) Init(md md.Metadata) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}
@@ -72,7 +81,7 @@ func (l *sshListener) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (l *sshListener) Accept() (conn net.Conn, err error) {
+func (l *sshdListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.cqueue:
@@ -84,7 +93,7 @@ func (l *sshListener) Accept() (conn net.Conn, err error) {
 	return
 }
 
-func (l *sshListener) listenLoop() {
+func (l *sshdListener) listenLoop() {
 	for {
 		conn, err := l.Listener.Accept()
 		if err != nil {
@@ -97,7 +106,7 @@ func (l *sshListener) listenLoop() {
 	}
 }
 
-func (l *sshListener) serveConn(conn net.Conn) {
+func (l *sshdListener) serveConn(conn net.Conn) {
 	start := time.Now()
 	l.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
@@ -114,21 +123,29 @@ func (l *sshListener) serveConn(conn net.Conn) {
 	}
 	defer sc.Close()
 
-	go ssh.DiscardRequests(reqs)
 	go func() {
 		for newChannel := range chans {
 			// Check the type of channel
 			t := newChannel.ChannelType()
 			switch t {
-			case ssh_util.GostSSHTunnelRequest:
+			case DirectForwardRequest:
 				channel, requests, err := newChannel.Accept()
 				if err != nil {
 					l.logger.Warnf("could not accept channel: %s", err.Error())
 					continue
 				}
+				p := directForward{}
+				ssh.Unmarshal(newChannel.ExtraData(), &p)
+
+				l.logger.Debug(p.String())
+
+				if p.Host1 == "<nil>" {
+					p.Host1 = ""
+				}
 
 				go ssh.DiscardRequests(requests)
-				cc := ssh_util.NewConn(conn, channel)
+				cc := sshd_util.NewDirectForwardConn(sc, channel, net.JoinHostPort(p.Host1, strconv.Itoa(int(p.Port1))))
+
 				select {
 				case l.cqueue <- cc:
 				default:
@@ -144,5 +161,39 @@ func (l *sshListener) serveConn(conn net.Conn) {
 		}
 	}()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		for req := range reqs {
+			switch req.Type {
+			case RemoteForwardRequest:
+				cc := sshd_util.NewRemoteForwardConn(ctx, sc, req)
+
+				select {
+				case l.cqueue <- cc:
+				default:
+					l.logger.Warnf("connection queue is full, client %s discarded", conn.RemoteAddr())
+					req.Reply(false, []byte("connection queue is full"))
+					cc.Close()
+				}
+			default:
+				l.logger.Warnf("unsupported request type: %s, want reply: %v", req.Type, req.WantReply)
+				req.Reply(false, nil)
+			}
+		}
+	}()
 	sc.Wait()
+}
+
+// directForward is structure for RFC 4254 7.2 - can be used for "forwarded-tcpip" and "direct-tcpip"
+type directForward struct {
+	Host1 string
+	Port1 uint32
+	Host2 string
+	Port2 uint32
+}
+
+func (p directForward) String() string {
+	return fmt.Sprintf("%s:%d -> %s:%d", p.Host2, p.Port2, p.Host1, p.Port1)
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/go-gost/gosocks4"
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/go-gost/relay"
@@ -24,42 +23,37 @@ type autoHandler struct {
 	socks4Handler handler.Handler
 	socks5Handler handler.Handler
 	relayHandler  handler.Handler
-	log           logger.Logger
+	options       handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
-	options := &handler.Options{}
+	options := handler.Options{}
 	for _, opt := range opts {
-		opt(options)
-	}
-
-	log := options.Logger
-	if log == nil {
-		log = logger.Default()
+		opt(&options)
 	}
 
 	h := &autoHandler{
-		log: log,
+		options: options,
 	}
 
 	if f := registry.GetHandler("http"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "http"})))
+			handler.LoggerOption(options.Logger.WithFields(map[string]interface{}{"type": "http"})))
 		h.httpHandler = f(v...)
 	}
 	if f := registry.GetHandler("socks4"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "socks4"})))
+			handler.LoggerOption(options.Logger.WithFields(map[string]interface{}{"type": "socks4"})))
 		h.socks4Handler = f(v...)
 	}
 	if f := registry.GetHandler("socks5"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "socks5"})))
+			handler.LoggerOption(options.Logger.WithFields(map[string]interface{}{"type": "socks5"})))
 		h.socks5Handler = f(v...)
 	}
 	if f := registry.GetHandler("relay"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(log.WithFields(map[string]interface{}{"type": "relay"})))
+			handler.LoggerOption(options.Logger.WithFields(map[string]interface{}{"type": "relay"})))
 		h.relayHandler = f(v...)
 	}
 
@@ -92,15 +86,15 @@ func (h *autoHandler) Init(md md.Metadata) error {
 }
 
 func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
-	h.log = h.log.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	start := time.Now()
-	h.log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -108,7 +102,7 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
 	br := bufio.NewReader(conn)
 	b, err := br.Peek(1)
 	if err != nil {
-		h.log.Error(err)
+		log.Error(err)
 		conn.Close()
 		return
 	}
@@ -132,5 +126,4 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
 			h.httpHandler.Handle(ctx, conn)
 		}
 	}
-
 }

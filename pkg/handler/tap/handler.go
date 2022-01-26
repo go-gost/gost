@@ -33,7 +33,6 @@ type tapHandler struct {
 	exit    chan struct{}
 	cipher  core.Cipher
 	router  *chain.Router
-	logger  logger.Logger
 	md      metadata
 	options handler.Options
 }
@@ -71,7 +70,6 @@ func (h *tapHandler) Init(md md.Metadata) (err error) {
 		Hosts:    h.options.Hosts,
 		Logger:   h.options.Logger,
 	}
-	h.logger = h.options.Logger
 
 	return
 }
@@ -85,21 +83,22 @@ func (h *tapHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer os.Exit(0)
 	defer conn.Close()
 
+	log := h.options.Logger
 	cc, ok := conn.(*tap_util.Conn)
 	if !ok || cc.Config() == nil {
-		h.logger.Error("invalid connection")
+		log.Error("invalid connection")
 		return
 	}
 
 	start := time.Now()
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
-	h.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		h.logger.WithFields(map[string]interface{}{
+		log.WithFields(map[string]interface{}{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -112,19 +111,19 @@ func (h *tapHandler) Handle(ctx context.Context, conn net.Conn) {
 	if target != nil {
 		raddr, err = net.ResolveUDPAddr(network, target.Addr())
 		if err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 			return
 		}
-		h.logger = h.logger.WithFields(map[string]interface{}{
+		log = log.WithFields(map[string]interface{}{
 			"dst": fmt.Sprintf("%s/%s", raddr.String(), raddr.Network()),
 		})
-		h.logger.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
+		log.Infof("%s >> %s", conn.RemoteAddr(), target.Addr())
 	}
 
-	h.handleLoop(ctx, conn, raddr, cc.Config())
+	h.handleLoop(ctx, conn, raddr, cc.Config(), log)
 }
 
-func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Addr, config *tap_util.Config) {
+func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Addr, config *tap_util.Config, log logger.Logger) {
 	var tempDelay time.Duration
 	for {
 		err := func() error {
@@ -154,10 +153,10 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 				pc = h.cipher.PacketConn(pc)
 			}
 
-			return h.transport(conn, pc, addr)
+			return h.transport(conn, pc, addr, log)
 		}()
 		if err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 		}
 
 		select {
@@ -183,7 +182,7 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 
 }
 
-func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr) error {
+func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr, log logger.Logger) error {
 	errc := make(chan error, 1)
 
 	go func() {
@@ -205,7 +204,7 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 				dst := waterutil.MACDestination((*b)[:n])
 				eType := etherType(waterutil.MACEthertype((*b)[:n]))
 
-				h.logger.Debugf("%s >> %s %s %d", src, dst, eType, n)
+				log.Debugf("%s >> %s %s %d", src, dst, eType, n)
 
 				// client side, deliver frame directly.
 				if raddr != nil {
@@ -227,7 +226,7 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 					addr = v.(net.Addr)
 				}
 				if addr == nil {
-					h.logger.Warnf("no route for %s -> %s %s %d", src, dst, eType, n)
+					log.Warnf("no route for %s -> %s %s %d", src, dst, eType, n)
 					return nil
 				}
 
@@ -261,7 +260,7 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 				dst := waterutil.MACDestination((*b)[:n])
 				eType := etherType(waterutil.MACEthertype((*b)[:n]))
 
-				h.logger.Debugf("%s >> %s %s %d", src, dst, eType, n)
+				log.Debugf("%s >> %s %s %d", src, dst, eType, n)
 
 				// client side, deliver frame to tap device.
 				if raddr != nil {
@@ -273,12 +272,12 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 				rkey := hwAddrToTapRouteKey(src)
 				if actual, loaded := h.routes.LoadOrStore(rkey, addr); loaded {
 					if actual.(net.Addr).String() != addr.String() {
-						h.logger.Debugf("update route: %s -> %s (old %s)",
+						log.Debugf("update route: %s -> %s (old %s)",
 							src, addr, actual.(net.Addr))
 						h.routes.Store(rkey, addr)
 					}
 				} else {
-					h.logger.Debugf("new route: %s -> %s", src, addr)
+					log.Debugf("new route: %s -> %s", src, addr)
 				}
 
 				if waterutil.IsBroadcast(dst) {
@@ -291,7 +290,7 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 				}
 
 				if v, ok := h.routes.Load(hwAddrToTapRouteKey(dst)); ok {
-					h.logger.Debugf("find route: %s -> %s", dst, v)
+					log.Debugf("find route: %s -> %s", dst, v)
 					_, err := conn.WriteTo((*b)[:n], v.(net.Addr))
 					return err
 				}

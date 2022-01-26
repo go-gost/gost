@@ -37,7 +37,6 @@ import (
 	_ "github.com/go-gost/gost/pkg/handler/dns"
 	_ "github.com/go-gost/gost/pkg/handler/forward/local"
 	_ "github.com/go-gost/gost/pkg/handler/forward/remote"
-	_ "github.com/go-gost/gost/pkg/handler/forward/ssh"
 	_ "github.com/go-gost/gost/pkg/handler/http"
 	_ "github.com/go-gost/gost/pkg/handler/http2"
 	_ "github.com/go-gost/gost/pkg/handler/redirect"
@@ -47,6 +46,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/handler/socks/v5"
 	_ "github.com/go-gost/gost/pkg/handler/ss"
 	_ "github.com/go-gost/gost/pkg/handler/ss/udp"
+	_ "github.com/go-gost/gost/pkg/handler/sshd"
 	_ "github.com/go-gost/gost/pkg/handler/tap"
 	_ "github.com/go-gost/gost/pkg/handler/tun"
 
@@ -65,6 +65,7 @@ import (
 	_ "github.com/go-gost/gost/pkg/listener/rtcp"
 	_ "github.com/go-gost/gost/pkg/listener/rudp"
 	_ "github.com/go-gost/gost/pkg/listener/ssh"
+	_ "github.com/go-gost/gost/pkg/listener/sshd"
 	_ "github.com/go-gost/gost/pkg/listener/tap"
 	_ "github.com/go-gost/gost/pkg/listener/tcp"
 	_ "github.com/go-gost/gost/pkg/listener/tls"

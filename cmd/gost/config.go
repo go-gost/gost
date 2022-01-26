@@ -91,6 +91,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 
 		ln := registry.GetListener(svc.Listener.Type)(
 			listener.AddrOption(svc.Addr),
+			listener.ChainOption(chains[svc.Listener.Chain]),
 			listener.AuthsOption(authsFromConfig(svc.Listener.Auths...)...),
 			listener.TLSConfigOption(tlsConfig),
 			listener.LoggerOption(listenerLogger),

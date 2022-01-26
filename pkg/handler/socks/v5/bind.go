@@ -8,43 +8,44 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/logger"
 )
 
-func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, address string) {
-	h.logger = h.logger.WithFields(map[string]interface{}{
+func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+	log = log.WithFields(map[string]interface{}{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "bind",
 	})
 
-	h.logger.Infof("%s >> %s", conn.RemoteAddr(), address)
+	log.Infof("%s >> %s", conn.RemoteAddr(), address)
 
 	if !h.md.enableBind {
 		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
 		reply.Write(conn)
-		h.logger.Debug(reply)
-		h.logger.Error("BIND is diabled")
+		log.Debug(reply)
+		log.Error("BIND is diabled")
 		return
 	}
 
 	// BIND does not support chain.
-	h.bindLocal(ctx, conn, network, address)
+	h.bindLocal(ctx, conn, network, address, log)
 }
 
-func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, address string) {
+func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
 	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		reply := gosocks5.NewReply(gosocks5.Failure, nil)
 		if err := reply.Write(conn); err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 		}
-		h.logger.Debug(reply)
+		log.Debug(reply)
 		return
 	}
 
 	socksAddr := gosocks5.Addr{}
 	if err := socksAddr.ParseFrom(ln.Addr().String()); err != nil {
-		h.logger.Warn(err)
+		log.Warn(err)
 	}
 
 	// Issue: may not reachable when host has multi-interface
@@ -52,22 +53,22 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, a
 	socksAddr.Type = 0
 	reply := gosocks5.NewReply(gosocks5.Succeeded, &socksAddr)
 	if err := reply.Write(conn); err != nil {
-		h.logger.Error(err)
+		log.Error(err)
 		ln.Close()
 		return
 	}
-	h.logger.Debug(reply)
+	log.Debug(reply)
 
-	h.logger = h.logger.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]interface{}{
 		"bind": fmt.Sprintf("%s/%s", ln.Addr(), ln.Addr().Network()),
 	})
 
-	h.logger.Debugf("bind on %s OK", ln.Addr())
+	log.Debugf("bind on %s OK", ln.Addr())
 
-	h.serveBind(ctx, conn, ln)
+	h.serveBind(ctx, conn, ln, log)
 }
 
-func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Listener) {
+func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) {
 	var rc net.Conn
 	accept := func() <-chan error {
 		errc := make(chan error, 1)
@@ -105,38 +106,42 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 	select {
 	case err := <-accept():
 		if err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 
 			reply := gosocks5.NewReply(gosocks5.Failure, nil)
 			if err := reply.Write(pc2); err != nil {
-				h.logger.Error(err)
+				log.Error(err)
 			}
-			h.logger.Debug(reply)
+			log.Debug(reply)
 
 			return
 		}
 		defer rc.Close()
 
-		h.logger.Debugf("peer %s accepted", rc.RemoteAddr())
+		log.Debugf("peer %s accepted", rc.RemoteAddr())
+
+		log = log.WithFields(map[string]interface{}{
+			"local":  rc.LocalAddr().String(),
+			"remote": rc.RemoteAddr().String(),
+		})
 
 		raddr := gosocks5.Addr{}
 		raddr.ParseFrom(rc.RemoteAddr().String())
 		reply := gosocks5.NewReply(gosocks5.Succeeded, &raddr)
 		if err := reply.Write(pc2); err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 		}
-		h.logger.Debug(reply)
+		log.Debug(reply)
 
 		start := time.Now()
-		h.logger.Infof("%s <-> %s", conn.RemoteAddr(), raddr.String())
+		log.Infof("%s <-> %s", rc.LocalAddr(), rc.RemoteAddr())
 		handler.Transport(pc2, rc)
-		h.logger.
-			WithFields(map[string]interface{}{"duration": time.Since(start)}).
-			Infof("%s >-< %s", conn.RemoteAddr(), raddr.String())
+		log.WithFields(map[string]interface{}{"duration": time.Since(start)}).
+			Infof("%s >-< %s", rc.LocalAddr(), rc.RemoteAddr())
 
 	case err := <-pipe():
 		if err != nil {
-			h.logger.Error(err)
+			log.Error(err)
 		}
 		ln.Close()
 		return

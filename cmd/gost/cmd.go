@@ -274,6 +274,13 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		Metadata: md,
 	}
 
+	if svc.Handler.Type == "sshd" {
+		svc.Handler.Auths = nil
+	}
+	if svc.Listener.Type == "sshd" {
+		svc.Listener.Auths = auths
+	}
+
 	return svc, nil
 }
 
@@ -352,6 +359,13 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		Type:     dialer,
 		TLS:      tlsConfig,
 		Metadata: md,
+	}
+
+	if node.Connector.Type == "sshd" {
+		node.Connector.Auth = nil
+	}
+	if node.Dialer.Type == "sshd" {
+		node.Dialer.Auth = auth
 	}
 
 	return node, nil

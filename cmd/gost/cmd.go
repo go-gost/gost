@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"net"
 	"net/url"
 	"strings"
 	"time"
@@ -155,6 +154,10 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		cfg.Services = append(cfg.Services, service)
 
 		md := metadata.MapMetadata(service.Handler.Metadata)
+		if v := metadata.GetInt(md, "retries"); v > 0 {
+			service.Handler.Retries = v
+			md.Del("retries")
+		}
 		if v := metadata.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
 				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
@@ -479,25 +482,4 @@ func parseSelector(md metadata.MapMetadata) *config.SelectorConfig {
 		MaxFails:    maxFails,
 		FailTimeout: failTimeout,
 	}
-}
-
-func parseIP(s, port string) (ips []string) {
-	if s == "" {
-		return nil
-	}
-	if port == "" {
-		port = "8080"
-	}
-
-	for _, v := range strings.Split(s, ",") {
-		if v == "" {
-			continue
-		}
-		if _, _, err := net.SplitHostPort(v); err != nil {
-			v = net.JoinHostPort(v, port) // assume the port is missing
-		}
-		ips = append(ips, v)
-	}
-
-	return
 }

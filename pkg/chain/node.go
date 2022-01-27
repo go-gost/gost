@@ -68,7 +68,7 @@ func (m *FailMarker) FailTime() int64 {
 		return 0
 	}
 
-	return atomic.LoadInt64(&m.failCount)
+	return atomic.LoadInt64(&m.failTime)
 }
 
 func (m *FailMarker) FailCount() int64 {

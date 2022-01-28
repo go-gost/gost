@@ -247,6 +247,7 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		}
 	}
 
+	// forward mode
 	if remotes := strings.Trim(url.EscapedPath(), "/"); remotes != "" {
 		svc.Forwarder = &config.ForwarderConfig{
 			Targets: strings.Split(remotes, ","),
@@ -257,7 +258,7 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 				listener == "tun" || listener == "tap" {
 				handler = listener
 			} else {
-				handler = "tcp"
+				handler = "forward"
 			}
 		}
 	}

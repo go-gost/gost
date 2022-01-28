@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -30,6 +31,13 @@ func (l *stringList) Set(value string) error {
 
 func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 	cfg := &config.Config{}
+
+	if v := os.Getenv("GOST_PROFILING"); v != "" {
+		cfg.Profiling = &config.ProfilingConfig{
+			Addr:    v,
+			Enabled: true,
+		}
+	}
 
 	var chain *config.ChainConfig
 	if len(nodes) > 0 {

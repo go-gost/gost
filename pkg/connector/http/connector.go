@@ -108,7 +108,10 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	// NOTE: the server may return `Transfer-Encoding: chunked` header,
+	// then the Content-Length of response will be unknown (-1),
+	// in this case, close body will be blocked, so we leave it untouched.
+	// defer resp.Body.Close()
 
 	if log.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpResponse(resp, false)

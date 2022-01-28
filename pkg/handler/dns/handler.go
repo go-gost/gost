@@ -148,8 +148,6 @@ func (h *dnsHandler) exchange(ctx context.Context, msg []byte, log logger.Logger
 
 	if log.IsLevelEnabled(logger.DebugLevel) {
 		log.Debug(mq.String())
-	} else {
-		log.Info(h.dumpMsgHeader(&mq))
 	}
 
 	var mr *dns.Msg
@@ -198,7 +196,7 @@ func (h *dnsHandler) exchange(ctx context.Context, msg []byte, log logger.Logger
 
 	var reply []byte
 	for _, ex := range h.exchangers {
-		log.Infof("exchange message %d via %s: %s", mq.Id, ex.String(), mq.Question[0].String())
+		log.Debugf("exchange message %d via %s: %s", mq.Id, ex.String(), mq.Question[0].String())
 		reply, err = ex.Exchange(ctx, query)
 		if err == nil {
 			break
@@ -213,12 +211,6 @@ func (h *dnsHandler) exchange(ctx context.Context, msg []byte, log logger.Logger
 	if err = mr.Unpack(reply); err != nil {
 		log.Error(err)
 		return nil, err
-	}
-
-	if log.IsLevelEnabled(logger.DebugLevel) {
-		log.Debug(mr.String())
-	} else {
-		log.Info(h.dumpMsgHeader(mr))
 	}
 
 	return reply, nil

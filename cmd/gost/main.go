@@ -89,7 +89,7 @@ func main() {
 			if addr == "" {
 				addr = ":6060"
 			}
-			log.Info("profiling serve on: ", addr)
+			log.Info("profiling serve on ", addr)
 			log.Fatal(http.ListenAndServe(addr, nil))
 		}()
 	}

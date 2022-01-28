@@ -1,7 +1,6 @@
 package http2
 
 import (
-	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -70,23 +69,21 @@ type ServerConn struct {
 	w          http.ResponseWriter
 	localAddr  net.Addr
 	remoteAddr net.Addr
-	cancel     context.CancelFunc
+	closed     chan struct{}
 }
 
 func NewServerConn(w http.ResponseWriter, r *http.Request, localAddr, remoteAddr net.Addr) *ServerConn {
-	ctx, cancel := context.WithCancel(r.Context())
-
 	return &ServerConn{
-		r:          r.Clone(ctx),
+		r:          r,
 		w:          w,
 		localAddr:  localAddr,
 		remoteAddr: remoteAddr,
-		cancel:     cancel,
+		closed:     make(chan struct{}),
 	}
 }
 
 func (c *ServerConn) Done() <-chan struct{} {
-	return c.r.Context().Done()
+	return c.closed
 }
 
 func (c *ServerConn) Request() *http.Request {
@@ -106,11 +103,10 @@ func (c *ServerConn) Write(b []byte) (n int, err error) {
 }
 
 func (c *ServerConn) Close() error {
-	c.cancel()
-
 	select {
-	case <-c.r.Context().Done():
+	case <-c.closed:
 	default:
+		close(c.closed)
 	}
 	return nil
 }

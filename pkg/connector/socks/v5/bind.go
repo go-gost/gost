@@ -21,7 +21,7 @@ func (c *socks5Connector) Bind(ctx context.Context, conn net.Conn, network, addr
 		"network": network,
 		"address": address,
 	})
-	log.Infof("bind: %s/%s", address, network)
+	log.Infof("bind on %s/%s", address, network)
 
 	options := connector.BindOptions{}
 	for _, opt := range opts {

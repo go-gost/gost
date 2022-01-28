@@ -18,6 +18,7 @@ type listener struct {
 	connPool       *ConnPool
 	mux            sync.Mutex
 	closed         chan struct{}
+	errChan        chan error
 	logger         logger.Logger
 }
 
@@ -30,6 +31,7 @@ func NewListener(conn net.PacketConn, addr net.Addr, backlog, dataQueueSize, dat
 		readQueueSize:  dataQueueSize,
 		readBufferSize: dataBufferSize,
 		closed:         make(chan struct{}),
+		errChan:        make(chan error, 1),
 		logger:         logger,
 	}
 	go ln.listenLoop()
@@ -43,6 +45,11 @@ func (ln *listener) Accept() (conn net.Conn, err error) {
 		return
 	case <-ln.closed:
 		return nil, net.ErrClosed
+	case err = <-ln.errChan:
+		if err == nil {
+			err = net.ErrClosed
+		}
+		return
 	}
 }
 
@@ -58,6 +65,8 @@ func (ln *listener) listenLoop() {
 
 		n, raddr, err := ln.conn.ReadFrom(*b)
 		if err != nil {
+			ln.errChan <- err
+			close(ln.errChan)
 			return
 		}
 

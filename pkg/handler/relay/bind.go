@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/common/util/mux"
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/handler"
@@ -113,13 +112,14 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 	})
 	log.Debugf("bind on %s OK", pc.LocalAddr())
 
+	relay := handler.NewUDPRelay(socks.UDPTunServerConn(conn), pc).
+		WithBypass(h.options.Bypass).
+		WithLogger(log)
+	relay.SetBufferSize(h.md.udpBufferSize)
+
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), pc.LocalAddr())
-	h.tunnelServerUDP(
-		socks.UDPTunServerConn(conn),
-		pc,
-		log,
-	)
+	relay.Run()
 	log.WithFields(map[string]interface{}{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), pc.LocalAddr())
@@ -188,76 +188,4 @@ func (h *relayHandler) serveTCPBind(ctx context.Context, conn net.Conn, ln net.L
 				Infof("%s >-< %s", c.LocalAddr(), c.RemoteAddr())
 		}(rc)
 	}
-}
-
-func (h *relayHandler) tunnelServerUDP(tunnel, c net.PacketConn, log logger.Logger) (err error) {
-	bufSize := h.md.udpBufferSize
-	errc := make(chan error, 2)
-
-	go func() {
-		for {
-			err := func() error {
-				b := bufpool.Get(bufSize)
-				defer bufpool.Put(b)
-
-				n, raddr, err := tunnel.ReadFrom(*b)
-				if err != nil {
-					return err
-				}
-
-				if h.options.Bypass != nil && h.options.Bypass.Contains(raddr.String()) {
-					log.Warn("bypass: ", raddr)
-					return nil
-				}
-
-				if _, err := c.WriteTo((*b)[:n], raddr); err != nil {
-					return err
-				}
-
-				log.Debugf("%s >>> %s data: %d",
-					c.LocalAddr(), raddr, n)
-
-				return nil
-			}()
-
-			if err != nil {
-				errc <- err
-				return
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			err := func() error {
-				b := bufpool.Get(bufSize)
-				defer bufpool.Put(b)
-
-				n, raddr, err := c.ReadFrom(*b)
-				if err != nil {
-					return err
-				}
-
-				if h.options.Bypass != nil && h.options.Bypass.Contains(raddr.String()) {
-					log.Warn("bypass: ", raddr)
-					return nil
-				}
-
-				if _, err := tunnel.WriteTo((*b)[:n], raddr); err != nil {
-					return err
-				}
-				log.Debugf("%s <<< %s data: %d",
-					c.LocalAddr(), raddr, n)
-
-				return nil
-			}()
-
-			if err != nil {
-				errc <- err
-				return
-			}
-		}
-	}()
-
-	return <-errc
 }

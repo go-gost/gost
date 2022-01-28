@@ -50,11 +50,11 @@ func (s *Service) serve() error {
 		if e != nil {
 			if ne, ok := e.(net.Error); ok && ne.Temporary() {
 				if tempDelay == 0 {
-					tempDelay = 100 * time.Millisecond
+					tempDelay = 1 * time.Second
 				} else {
 					tempDelay *= 2
 				}
-				if max := 1 * time.Second; tempDelay > max {
+				if max := 5 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
 				s.logger.Warnf("accept: %v, retrying in %v", e, tempDelay)

@@ -16,35 +16,47 @@ func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network
 		"cmd": "udp-tun",
 	})
 
-	if !h.md.enableUDP {
-		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
-		reply.Write(conn)
-		log.Debug(reply)
-		log.Error("UDP relay is diabled")
-		return
+	bindAddr, _ := net.ResolveUDPAddr(network, address)
+	if bindAddr == nil {
+		bindAddr = &net.UDPAddr{}
 	}
 
-	// dummy bind
-	reply := gosocks5.NewReply(gosocks5.Succeeded, nil)
+	if bindAddr.Port == 0 {
+		// relay mode
+		if !h.md.enableUDP {
+			reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
+			reply.Write(conn)
+			log.Debug(reply)
+			log.Error("UDP relay is diabled")
+			return
+		}
+	} else {
+		// BIND mode
+		if !h.md.enableBind {
+			reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
+			reply.Write(conn)
+			log.Debug(reply)
+			log.Error("BIND is diabled")
+			return
+		}
+	}
+
+	pc, err := net.ListenUDP(network, bindAddr)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	defer pc.Close()
+
+	saddr := gosocks5.Addr{}
+	saddr.ParseFrom(pc.LocalAddr().String())
+	reply := gosocks5.NewReply(gosocks5.Succeeded, &saddr)
 	if err := reply.Write(conn); err != nil {
 		log.Error(err)
 		return
 	}
 	log.Debug(reply)
-
-	// obtain a udp connection
-	c, err := h.router.Dial(ctx, "udp", "") // UDP association
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	defer c.Close()
-
-	pc, ok := c.(net.PacketConn)
-	if !ok {
-		log.Errorf("wrong connection type")
-		return
-	}
+	log.Debugf("bind on %s OK", pc.LocalAddr())
 
 	relay := handler.NewUDPRelay(socks.UDPTunServerConn(conn), pc).
 		WithBypass(h.options.Bypass).

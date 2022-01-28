@@ -109,10 +109,10 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	t := time.Now()
-	log.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
+	log.Infof("%s <-> %s", conn.LocalAddr(), cc.LocalAddr())
 	h.relayPacket(pc, cc, log)
 	log.WithFields(map[string]interface{}{"duration": time.Since(t)}).
-		Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
+		Infof("%s >-< %s", conn.LocalAddr(), cc.LocalAddr())
 }
 
 func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.Logger) (err error) {

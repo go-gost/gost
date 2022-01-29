@@ -16,55 +16,12 @@ var (
 )
 
 type route struct {
-	nodes []*Node
+	nodes  []*Node
+	logger logger.Logger
 }
 
 func (r *route) AddNode(node *Node) {
 	r.nodes = append(r.nodes, node)
-}
-
-func (r *route) connect(ctx context.Context) (conn net.Conn, err error) {
-	if r.IsEmpty() {
-		return nil, ErrEmptyRoute
-	}
-
-	node := r.nodes[0]
-	cc, err := node.Transport.Dial(ctx, r.nodes[0].Addr)
-	if err != nil {
-		node.Marker.Mark()
-		return
-	}
-
-	cn, err := node.Transport.Handshake(ctx, cc)
-	if err != nil {
-		cc.Close()
-		node.Marker.Mark()
-		return
-	}
-	node.Marker.Reset()
-
-	preNode := node
-	for _, node := range r.nodes[1:] {
-		cc, err = preNode.Transport.Connect(ctx, cn, "tcp", node.Addr)
-		if err != nil {
-			cn.Close()
-			node.Marker.Mark()
-			return
-		}
-		cc, err = node.Transport.Handshake(ctx, cc)
-		if err != nil {
-			cn.Close()
-			node.Marker.Mark()
-			return
-		}
-		node.Marker.Reset()
-
-		cn = cc
-		preNode = node
-	}
-
-	conn = cn
-	return
 }
 
 func (r *route) Dial(ctx context.Context, network, address string) (net.Conn, error) {
@@ -115,6 +72,62 @@ func (r *route) Bind(ctx context.Context, network, address string, opts ...conne
 	}
 
 	return ln, nil
+}
+
+func (r *route) connect(ctx context.Context) (conn net.Conn, err error) {
+	if r.IsEmpty() {
+		return nil, ErrEmptyRoute
+	}
+
+	node := r.nodes[0]
+
+	addr, err := resolve(ctx, node.Addr, node.Resolver, node.Hosts, r.logger)
+	if err != nil {
+		node.Marker.Mark()
+		return
+	}
+	cc, err := node.Transport.Dial(ctx, addr)
+	if err != nil {
+		node.Marker.Mark()
+		return
+	}
+
+	cn, err := node.Transport.Handshake(ctx, cc)
+	if err != nil {
+		cc.Close()
+		node.Marker.Mark()
+		return
+	}
+	node.Marker.Reset()
+
+	preNode := node
+	for _, node := range r.nodes[1:] {
+		addr, err = resolve(ctx, node.Addr, node.Resolver, node.Hosts, r.logger)
+		if err != nil {
+			cn.Close()
+			node.Marker.Mark()
+			return
+		}
+		cc, err = preNode.Transport.Connect(ctx, cn, "tcp", addr)
+		if err != nil {
+			cn.Close()
+			node.Marker.Mark()
+			return
+		}
+		cc, err = node.Transport.Handshake(ctx, cc)
+		if err != nil {
+			cn.Close()
+			node.Marker.Mark()
+			return
+		}
+		node.Marker.Reset()
+
+		cn = cc
+		preNode = node
+	}
+
+	conn = cn
+	return
 }
 
 func (r *route) IsEmpty() bool {

@@ -52,10 +52,14 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 			r.Logger.Debugf("route(retry=%d) %s", i, buf.String())
 		}
 
-		address, err = r.resolve(ctx, address)
+		address, err = resolve(ctx, address, r.Resolver, r.Hosts, r.Logger)
 		if err != nil {
 			r.Logger.Error(err)
 			break
+		}
+
+		if route != nil {
+			route.logger = r.Logger
 		}
 
 		conn, err = route.Dial(ctx, network, address)
@@ -66,39 +70,6 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 	}
 
 	return
-}
-
-func (r *Router) resolve(ctx context.Context, addr string) (string, error) {
-	if addr == "" {
-		return addr, nil
-	}
-
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return "", err
-	}
-	if host == "" {
-		return addr, nil
-	}
-
-	if r.Hosts != nil {
-		if ips, _ := r.Hosts.Lookup("ip", host); len(ips) > 0 {
-			r.Logger.Debugf("hit host mapper: %s -> %s", host, ips)
-			return net.JoinHostPort(ips[0].String(), port), nil
-		}
-	}
-
-	if r.Resolver != nil {
-		ips, err := r.Resolver.Resolve(ctx, host)
-		if err != nil {
-			r.Logger.Error(err)
-		}
-		if len(ips) == 0 {
-			return "", fmt.Errorf("resolver: domain %s does not exists", host)
-		}
-		return net.JoinHostPort(ips[0].String(), port), nil
-	}
-	return addr, nil
 }
 
 func (r *Router) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (ln net.Listener, err error) {

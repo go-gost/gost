@@ -14,20 +14,20 @@ func init() {
 }
 
 type tcpListener struct {
-	addr string
-	md   metadata
 	net.Listener
-	logger logger.Logger
+	logger  logger.Logger
+	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &tcpListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -36,7 +36,7 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveTCPAddr("tcp", l.addr)
+	laddr, err := net.ResolveTCPAddr("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}

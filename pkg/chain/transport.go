@@ -36,7 +36,9 @@ func (tr *Transport) Dial(ctx context.Context, addr string) (net.Conn, error) {
 }
 
 func (tr *Transport) dialOptions() []dialer.DialOption {
-	var opts []dialer.DialOption
+	opts := []dialer.DialOption{
+		dialer.HostDialOption(tr.addr),
+	}
 	if !tr.route.IsEmpty() {
 		opts = append(opts,
 			dialer.DialFuncDialOption(

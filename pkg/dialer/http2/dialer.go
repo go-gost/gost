@@ -53,11 +53,6 @@ func (d *http2Dialer) Multiplex() bool {
 }
 
 func (d *http2Dialer) Dial(ctx context.Context, address string, opts ...dialer.DialOption) (net.Conn, error) {
-	options := &dialer.DialOptions{}
-	for _, opt := range opts {
-		opt(options)
-	}
-
 	raddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		d.logger.Error(err)
@@ -69,11 +64,16 @@ func (d *http2Dialer) Dial(ctx context.Context, address string, opts ...dialer.D
 
 	client, ok := d.clients[address]
 	if !ok {
+		options := dialer.DialOptions{}
+		for _, opt := range opts {
+			opt(&options)
+		}
+
 		client = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: d.options.TLSConfig,
 				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-					return d.dial(ctx, network, addr, options)
+					return d.dial(ctx, network, addr, &options)
 				},
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,

@@ -54,14 +54,20 @@ require (
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20211209124913-491a49abca63
-	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.6-0.20210726203631-07bc1bf47fb2 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	google.golang.org/grpc v1.44.0
 	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/marten-seemann/qpack v0.2.1 // indirect
+require (
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/marten-seemann/qpack v0.2.1 // indirect
+	google.golang.org/genproto v0.0.0-20220126215142-9970aeb2e350 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
+)

@@ -36,10 +36,17 @@ func LoggerOption(logger logger.Logger) Option {
 }
 
 type DialOptions struct {
+	Host     string
 	DialFunc func(ctx context.Context, addr string) (net.Conn, error)
 }
 
 type DialOption func(opts *DialOptions)
+
+func HostDialOption(host string) DialOption {
+	return func(opts *DialOptions) {
+		opts.Host = host
+	}
+}
 
 func DialFuncDialOption(dialf func(ctx context.Context, addr string) (net.Conn, error)) DialOption {
 	return func(opts *DialOptions) {

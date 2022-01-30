@@ -15,6 +15,7 @@ import (
 
 	// Register dialers
 	_ "github.com/go-gost/gost/pkg/dialer/ftcp"
+	_ "github.com/go-gost/gost/pkg/dialer/grpc"
 	_ "github.com/go-gost/gost/pkg/dialer/http2"
 	_ "github.com/go-gost/gost/pkg/dialer/http2/h2"
 	_ "github.com/go-gost/gost/pkg/dialer/http3"
@@ -53,6 +54,7 @@ import (
 	// Register listeners
 	_ "github.com/go-gost/gost/pkg/listener/dns"
 	_ "github.com/go-gost/gost/pkg/listener/ftcp"
+	_ "github.com/go-gost/gost/pkg/listener/grpc"
 	_ "github.com/go-gost/gost/pkg/listener/http2"
 	_ "github.com/go-gost/gost/pkg/listener/http2/h2"
 	_ "github.com/go-gost/gost/pkg/listener/http3"

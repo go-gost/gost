@@ -389,6 +389,8 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	md.Del("auth")
 
 	tlsConfig := &config.TLSConfig{
+		CertFile:   metadata.GetString(md, "certFile"),
+		KeyFile:    metadata.GetString(md, "keyFile"),
 		CAFile:     metadata.GetString(md, "caFile"),
 		Secure:     metadata.GetBool(md, "secure"),
 		ServerName: metadata.GetString(md, "serverName"),
@@ -396,11 +398,13 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	if tlsConfig.ServerName == "" {
 		tlsConfig.ServerName = url.Hostname()
 	}
+	md.Del("certFile")
+	md.Del("keyFile")
 	md.Del("caFile")
 	md.Del("secure")
 	md.Del("serverName")
 
-	if !tlsConfig.Secure && tlsConfig.CAFile == "" {
+	if !tlsConfig.Secure && tlsConfig.CertFile == "" && tlsConfig.CAFile == "" {
 		tlsConfig = nil
 	}
 

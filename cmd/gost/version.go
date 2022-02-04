@@ -1,5 +1,5 @@
 package main
 
 const (
-	version = "3.0.0-alpha.1"
+	version = "3.0.0-alpha.2"
 )

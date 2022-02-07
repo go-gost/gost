@@ -1,11 +1,18 @@
 package registry
 
 import (
+	"errors"
+
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/dialer"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
+)
+
+var (
+	ErrDup      = errors.New("registry: duplicate instance")
+	ErrNotFound = errors.New("registry: instance not found")
 )
 
 type NewListener func(opts ...listener.Option) listener.Listener

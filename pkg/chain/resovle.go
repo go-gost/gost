@@ -10,7 +10,7 @@ import (
 	"github.com/go-gost/gost/pkg/resolver"
 )
 
-func resolve(ctx context.Context, addr string, resolver resolver.Resolver, hosts hosts.HostMapper, log logger.Logger) (string, error) {
+func resolve(ctx context.Context, network, addr string, resolver resolver.Resolver, hosts hosts.HostMapper, log logger.Logger) (string, error) {
 	if addr == "" {
 		return addr, nil
 	}
@@ -24,14 +24,14 @@ func resolve(ctx context.Context, addr string, resolver resolver.Resolver, hosts
 	}
 
 	if hosts != nil {
-		if ips, _ := hosts.Lookup("ip", host); len(ips) > 0 {
+		if ips, _ := hosts.Lookup(network, host); len(ips) > 0 {
 			log.Debugf("hit host mapper: %s -> %s", host, ips)
 			return net.JoinHostPort(ips[0].String(), port), nil
 		}
 	}
 
 	if resolver != nil {
-		ips, err := resolver.Resolve(ctx, host)
+		ips, err := resolver.Resolve(ctx, network, host)
 		if err != nil {
 			log.Error(err)
 		}

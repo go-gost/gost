@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -16,11 +15,11 @@ import (
 var (
 	log = logger.Default()
 
-	cfgFile       string
-	outputCfgFile string
-	services      stringList
-	nodes         stringList
-	debug         bool
+	cfgFile      string
+	outputFormat string
+	services     stringList
+	nodes        stringList
+	debug        bool
 )
 
 func init() {
@@ -31,7 +30,7 @@ func init() {
 	flag.StringVar(&cfgFile, "C", "", "configure file")
 	flag.BoolVar(&printVersion, "V", false, "print version")
 	flag.BoolVar(&debug, "D", false, "debug mode")
-	flag.StringVar(&outputCfgFile, "O", "", "write config to FILE")
+	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
 	flag.Parse()
 
 	if printVersion {
@@ -65,19 +64,8 @@ func main() {
 
 	log = logFromConfig(cfg.Log)
 
-	if outputCfgFile != "" {
-		var w io.Writer
-		if outputCfgFile == "-" {
-			w = os.Stdout
-		} else {
-			f, err := os.Create(outputCfgFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer f.Close()
-			w = f
-		}
-		if err := cfg.Write(w); err != nil {
+	if outputFormat != "" {
+		if err := cfg.Write(os.Stdout, outputFormat); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)

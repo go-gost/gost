@@ -15,17 +15,17 @@ var (
 	ErrEmptyRoute = errors.New("empty route")
 )
 
-type route struct {
+type Route struct {
 	nodes  []*Node
 	logger logger.Logger
 }
 
-func (r *route) AddNode(node *Node) {
+func (r *Route) addNode(node *Node) {
 	r.nodes = append(r.nodes, node)
 }
 
-func (r *route) Dial(ctx context.Context, network, address string) (net.Conn, error) {
-	if r.IsEmpty() {
+func (r *Route) Dial(ctx context.Context, network, address string) (net.Conn, error) {
+	if r.Len() == 0 {
 		return r.dialDirect(ctx, network, address)
 	}
 
@@ -34,7 +34,7 @@ func (r *route) Dial(ctx context.Context, network, address string) (net.Conn, er
 		return nil, err
 	}
 
-	cc, err := r.Last().Transport.Connect(ctx, conn, network, address)
+	cc, err := r.GetNode(r.Len()-1).Transport.Connect(ctx, conn, network, address)
 	if err != nil {
 		conn.Close()
 		return nil, err
@@ -42,7 +42,7 @@ func (r *route) Dial(ctx context.Context, network, address string) (net.Conn, er
 	return cc, nil
 }
 
-func (r *route) dialDirect(ctx context.Context, network, address string) (net.Conn, error) {
+func (r *Route) dialDirect(ctx context.Context, network, address string) (net.Conn, error) {
 	switch network {
 	case "udp", "udp4", "udp6":
 		if address == "" {
@@ -55,8 +55,8 @@ func (r *route) dialDirect(ctx context.Context, network, address string) (net.Co
 	return d.DialContext(ctx, network, address)
 }
 
-func (r *route) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
-	if r.IsEmpty() {
+func (r *Route) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
+	if r.Len() == 0 {
 		return r.bindLocal(ctx, network, address, opts...)
 	}
 
@@ -65,7 +65,7 @@ func (r *route) Bind(ctx context.Context, network, address string, opts ...conne
 		return nil, err
 	}
 
-	ln, err := r.Last().Transport.Bind(ctx, conn, network, address, opts...)
+	ln, err := r.GetNode(r.Len()-1).Transport.Bind(ctx, conn, network, address, opts...)
 	if err != nil {
 		conn.Close()
 		return nil, err
@@ -74,14 +74,15 @@ func (r *route) Bind(ctx context.Context, network, address string, opts ...conne
 	return ln, nil
 }
 
-func (r *route) connect(ctx context.Context) (conn net.Conn, err error) {
-	if r.IsEmpty() {
+func (r *Route) connect(ctx context.Context) (conn net.Conn, err error) {
+	if r.Len() == 0 {
 		return nil, ErrEmptyRoute
 	}
 
+	network := "ip"
 	node := r.nodes[0]
 
-	addr, err := resolve(ctx, node.Addr, node.Resolver, node.Hosts, r.logger)
+	addr, err := resolve(ctx, network, node.Addr, node.Resolver, node.Hosts, r.logger)
 	if err != nil {
 		node.Marker.Mark()
 		return
@@ -102,7 +103,7 @@ func (r *route) connect(ctx context.Context) (conn net.Conn, err error) {
 
 	preNode := node
 	for _, node := range r.nodes[1:] {
-		addr, err = resolve(ctx, node.Addr, node.Resolver, node.Hosts, r.logger)
+		addr, err = resolve(ctx, network, node.Addr, node.Resolver, node.Hosts, r.logger)
 		if err != nil {
 			cn.Close()
 			node.Marker.Mark()
@@ -130,18 +131,21 @@ func (r *route) connect(ctx context.Context) (conn net.Conn, err error) {
 	return
 }
 
-func (r *route) IsEmpty() bool {
-	return r == nil || len(r.nodes) == 0
+func (r *Route) Len() int {
+	if r == nil {
+		return 0
+	}
+	return len(r.nodes)
 }
 
-func (r *route) Last() *Node {
-	if r.IsEmpty() {
+func (r *Route) GetNode(index int) *Node {
+	if r.Len() == 0 || index < 0 || index >= len(r.nodes) {
 		return nil
 	}
-	return r.nodes[len(r.nodes)-1]
+	return r.nodes[index]
 }
 
-func (r *route) Path() (path []*Node) {
+func (r *Route) Path() (path []*Node) {
 	if r == nil || len(r.nodes) == 0 {
 		return nil
 	}
@@ -155,7 +159,7 @@ func (r *route) Path() (path []*Node) {
 	return
 }
 
-func (r *route) bindLocal(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
+func (r *Route) bindLocal(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	options := connector.BindOptions{}
 	for _, opt := range opts {
 		opt(&options)

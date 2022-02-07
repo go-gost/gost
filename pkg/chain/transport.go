@@ -10,7 +10,7 @@ import (
 
 type Transport struct {
 	addr      string
-	route     *route
+	route     *Route
 	dialer    dialer.Dialer
 	connector connector.Connector
 }
@@ -39,7 +39,7 @@ func (tr *Transport) dialOptions() []dialer.DialOption {
 	opts := []dialer.DialOption{
 		dialer.HostDialOption(tr.addr),
 	}
-	if !tr.route.IsEmpty() {
+	if tr.route.Len() > 0 {
 		opts = append(opts,
 			dialer.DialFuncDialOption(
 				func(ctx context.Context, addr string) (net.Conn, error) {
@@ -84,7 +84,7 @@ func (tr *Transport) Multiplex() bool {
 	return false
 }
 
-func (tr *Transport) WithRoute(r *route) *Transport {
+func (tr *Transport) WithRoute(r *Route) *Transport {
 	tr.route = r
 	return tr
 }

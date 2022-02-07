@@ -14,7 +14,7 @@ import (
 
 type Router struct {
 	Retries  int
-	Chain    *Chain
+	Chain    Chainer
 	Hosts    hosts.HostMapper
 	Resolver resolver.Resolver
 	Logger   logger.Logger
@@ -41,7 +41,10 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 	r.Logger.Debugf("dial %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
-		route := r.Chain.GetRouteFor(network, address)
+		var route *Route
+		if r.Chain != nil {
+			route = r.Chain.Route(network, address)
+		}
 
 		if r.Logger.IsLevelEnabled(logger.DebugLevel) {
 			buf := bytes.Buffer{}
@@ -52,7 +55,7 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 			r.Logger.Debugf("route(retry=%d) %s", i, buf.String())
 		}
 
-		address, err = resolve(ctx, address, r.Resolver, r.Hosts, r.Logger)
+		address, err = resolve(ctx, "ip", address, r.Resolver, r.Hosts, r.Logger)
 		if err != nil {
 			r.Logger.Error(err)
 			break
@@ -80,7 +83,10 @@ func (r *Router) Bind(ctx context.Context, network, address string, opts ...conn
 	r.Logger.Debugf("bind on %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
-		route := r.Chain.GetRouteFor(network, address)
+		var route *Route
+		if r.Chain != nil {
+			route = r.Chain.Route(network, address)
+		}
 
 		if r.Logger.IsLevelEnabled(logger.DebugLevel) {
 			buf := bytes.Buffer{}

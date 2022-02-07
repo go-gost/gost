@@ -12,7 +12,7 @@ type Options struct {
 	Addr      string
 	Auths     []*url.Userinfo
 	TLSConfig *tls.Config
-	Chain     *chain.Chain
+	Chain     chain.Chainer
 	Logger    logger.Logger
 }
 
@@ -36,7 +36,7 @@ func TLSConfigOption(tlsConfig *tls.Config) Option {
 	}
 }
 
-func ChainOption(chain *chain.Chain) Option {
+func ChainOption(chain chain.Chainer) Option {
 	return func(opts *Options) {
 		opts.Chain = chain
 	}

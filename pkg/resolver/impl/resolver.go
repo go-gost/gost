@@ -16,7 +16,7 @@ import (
 
 type NameServer struct {
 	Addr      string
-	Chain     *chain.Chain
+	Chain     chain.Chainer
 	TTL       time.Duration
 	Timeout   time.Duration
 	ClientIP  net.IP
@@ -89,7 +89,7 @@ func NewResolver(nameservers []NameServer, opts ...ResolverOption) (resolverpkg.
 	}, nil
 }
 
-func (r *resolver) Resolve(ctx context.Context, host string) (ips []net.IP, err error) {
+func (r *resolver) Resolve(ctx context.Context, network, host string) (ips []net.IP, err error) {
 	if ip := net.ParseIP(host); ip != nil {
 		return []net.IP{ip}, nil
 	}

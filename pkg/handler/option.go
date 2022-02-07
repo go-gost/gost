@@ -13,7 +13,7 @@ import (
 
 type Options struct {
 	Retries   int
-	Chain     *chain.Chain
+	Chain     chain.Chainer
 	Resolver  resolver.Resolver
 	Hosts     hosts.HostMapper
 	Bypass    bypass.Bypass
@@ -30,7 +30,7 @@ func RetriesOption(retries int) Option {
 	}
 }
 
-func ChainOption(chain *chain.Chain) Option {
+func ChainOption(chain chain.Chainer) Option {
 	return func(opts *Options) {
 		opts.Chain = chain
 	}

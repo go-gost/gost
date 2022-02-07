@@ -66,6 +66,7 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 				log.Fatal(err)
 			}
 		}
+		services = append(services, svc)
 	}
 
 	return

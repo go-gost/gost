@@ -16,6 +16,10 @@ func Default() Logger {
 	return defaultLogger
 }
 
+func SetDefault(logger Logger) {
+	defaultLogger = logger
+}
+
 type logger struct {
 	logger *logrus.Entry
 }

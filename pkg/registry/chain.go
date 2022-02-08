@@ -30,11 +30,20 @@ func (r *chainRegistry) Unregister(name string) {
 	r.m.Delete(name)
 }
 
+func (r *chainRegistry) IsRegistered(name string) bool {
+	_, ok := r.m.Load(name)
+	return ok
+}
+
 func (r *chainRegistry) Get(name string) chain.Chainer {
-	if _, ok := r.m.Load(name); !ok {
-		return nil
-	}
 	return &chainWrapper{name: name}
+}
+
+func (r *chainRegistry) get(name string) chain.Chainer {
+	if v, ok := r.m.Load(name); ok {
+		return v.(chain.Chainer)
+	}
+	return nil
 }
 
 type chainWrapper struct {
@@ -42,7 +51,7 @@ type chainWrapper struct {
 }
 
 func (w *chainWrapper) Route(network, address string) *chain.Route {
-	v := Chain().Get(w.name)
+	v := Chain().get(w.name)
 	if v == nil {
 		return nil
 	}

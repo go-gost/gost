@@ -32,11 +32,20 @@ func (r *resolverRegistry) Unregister(name string) {
 	r.m.Delete(name)
 }
 
+func (r *resolverRegistry) IsRegistered(name string) bool {
+	_, ok := r.m.Load(name)
+	return ok
+}
+
 func (r *resolverRegistry) Get(name string) resolver.Resolver {
-	if _, ok := r.m.Load(name); !ok {
-		return nil
-	}
 	return &resolverWrapper{name: name}
+}
+
+func (r *resolverRegistry) get(name string) resolver.Resolver {
+	if v, ok := r.m.Load(name); ok {
+		return v.(resolver.Resolver)
+	}
+	return nil
 }
 
 type resolverWrapper struct {
@@ -44,9 +53,9 @@ type resolverWrapper struct {
 }
 
 func (w *resolverWrapper) Resolve(ctx context.Context, network, host string) ([]net.IP, error) {
-	r := Resolver().Get(w.name)
+	r := Resolver().get(w.name)
 	if r == nil {
-		return nil, ErrNotFound
+		return nil, resolver.ErrInvalid
 	}
 	return r.Resolve(ctx, network, host)
 }

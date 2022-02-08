@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
 
+	"github.com/go-gost/gost/pkg/api"
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/logger"
 )
@@ -20,6 +22,7 @@ var (
 	services     stringList
 	nodes        stringList
 	debug        bool
+	apiAddr      string
 )
 
 func init() {
@@ -29,8 +32,9 @@ func init() {
 	flag.Var(&nodes, "F", "chain node list")
 	flag.StringVar(&cfgFile, "C", "", "configure file")
 	flag.BoolVar(&printVersion, "V", false, "print version")
-	flag.BoolVar(&debug, "D", false, "debug mode")
 	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
+	flag.BoolVar(&debug, "D", false, "debug mode")
+	flag.StringVar(&apiAddr, "api", "", "api server addr")
 	flag.Parse()
 
 	if printVersion {
@@ -43,13 +47,18 @@ func init() {
 func main() {
 	cfg := &config.Config{}
 	var err error
-	if len(services) > 0 {
+	if len(services) > 0 || apiAddr != "" {
 		cfg, err = buildConfigFromCmd(services, nodes)
 		if debug && cfg != nil {
 			if cfg.Log == nil {
 				cfg.Log = &config.LogConfig{}
 			}
 			cfg.Log.Level = string(logger.DebugLevel)
+		}
+		if apiAddr != "" {
+			cfg.API = &config.APIConfig{
+				Addr: apiAddr,
+			}
 		}
 	} else {
 		if cfgFile != "" {
@@ -64,6 +73,8 @@ func main() {
 
 	log = logFromConfig(cfg.Log)
 
+	logger.SetDefault(log)
+
 	if outputFormat != "" {
 		if err := cfg.Write(os.Stdout, outputFormat); err != nil {
 			log.Fatal(err)
@@ -77,8 +88,21 @@ func main() {
 			if addr == "" {
 				addr = ":6060"
 			}
-			log.Info("profiling serve on ", addr)
+			log.Info("profiling server on ", addr)
 			log.Fatal(http.ListenAndServe(addr, nil))
+		}()
+	}
+
+	if cfg.API != nil && cfg.API.Addr != "" {
+		ln, err := net.Listen("tcp", cfg.API.Addr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer ln.Close()
+
+		go func() {
+			log.Info("api server on ", ln.Addr())
+			log.Fatal(api.Run(ln))
 		}()
 	}
 
@@ -88,6 +112,8 @@ func main() {
 	for _, svc := range services {
 		go svc.Run()
 	}
+
+	config.SetGlobal(cfg)
 
 	select {}
 }

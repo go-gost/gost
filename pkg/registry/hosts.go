@@ -31,11 +31,20 @@ func (r *hostsRegistry) Unregister(name string) {
 	r.m.Delete(name)
 }
 
+func (r *hostsRegistry) IsRegistered(name string) bool {
+	_, ok := r.m.Load(name)
+	return ok
+}
+
 func (r *hostsRegistry) Get(name string) hosts.HostMapper {
-	if _, ok := r.m.Load(name); !ok {
-		return nil
-	}
 	return &hostsWrapper{name: name}
+}
+
+func (r *hostsRegistry) get(name string) hosts.HostMapper {
+	if v, ok := r.m.Load(name); ok {
+		return v.(hosts.HostMapper)
+	}
+	return nil
 }
 
 type hostsWrapper struct {
@@ -43,7 +52,7 @@ type hostsWrapper struct {
 }
 
 func (w *hostsWrapper) Lookup(network, host string) ([]net.IP, bool) {
-	v := Hosts().Get(w.name)
+	v := Hosts().get(w.name)
 	if v == nil {
 		return nil, false
 	}

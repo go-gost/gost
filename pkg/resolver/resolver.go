@@ -2,7 +2,12 @@ package resolver
 
 import (
 	"context"
+	"errors"
 	"net"
+)
+
+var (
+	ErrInvalid = errors.New("resolver invalid")
 )
 
 type Resolver interface {

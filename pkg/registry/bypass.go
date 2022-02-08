@@ -30,11 +30,20 @@ func (r *bypassRegistry) Unregister(name string) {
 	r.m.Delete(name)
 }
 
+func (r *bypassRegistry) IsRegistered(name string) bool {
+	_, ok := r.m.Load(name)
+	return ok
+}
+
 func (r *bypassRegistry) Get(name string) bypass.Bypass {
-	if _, ok := r.m.Load(name); !ok {
-		return nil
-	}
 	return &bypassWrapper{name: name}
+}
+
+func (r *bypassRegistry) get(name string) bypass.Bypass {
+	if v, ok := r.m.Load(name); ok {
+		return v.(bypass.Bypass)
+	}
+	return nil
 }
 
 type bypassWrapper struct {
@@ -42,7 +51,7 @@ type bypassWrapper struct {
 }
 
 func (w *bypassWrapper) Contains(addr string) bool {
-	bp := bypassReg.Get(w.name)
+	bp := bypassReg.get(w.name)
 	if bp == nil {
 		return false
 	}

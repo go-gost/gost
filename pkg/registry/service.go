@@ -30,6 +30,11 @@ func (r *serviceRegistry) Unregister(name string) {
 	r.m.Delete(name)
 }
 
+func (r *serviceRegistry) IsRegistered(name string) bool {
+	_, ok := r.m.Load(name)
+	return ok
+}
+
 func (r *serviceRegistry) Get(name string) *service.Service {
 	v, ok := r.m.Load(name)
 	if !ok {

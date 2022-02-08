@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	ErrDup      = errors.New("registry: duplicate instance")
-	ErrNotFound = errors.New("registry: instance not found")
+	ErrDup = errors.New("registry: duplicate instance")
 )
 
 type NewListener func(opts ...listener.Option) listener.Listener

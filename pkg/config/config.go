@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/spf13/viper"
@@ -20,6 +21,27 @@ func init() {
 	v.AddConfigPath(".")
 }
 
+var (
+	global    = &Config{}
+	globalMux sync.RWMutex
+)
+
+func Global() *Config {
+	globalMux.RLock()
+	defer globalMux.RUnlock()
+
+	cfg := &Config{}
+	*cfg = *global
+	return cfg
+}
+
+func SetGlobal(c *Config) {
+	globalMux.Lock()
+	defer globalMux.Unlock()
+
+	global = c
+}
+
 type LogConfig struct {
 	Output string `yaml:",omitempty" json:"output,omitempty"`
 	Level  string `yaml:",omitempty" json:"level,omitempty"`
@@ -29,6 +51,10 @@ type LogConfig struct {
 type ProfilingConfig struct {
 	Addr    string `json:"addr"`
 	Enabled bool   `json:"enabled"`
+}
+
+type APIConfig struct {
+	Addr string `json:"addr"`
 }
 
 type TLSConfig struct {
@@ -163,6 +189,7 @@ type Config struct {
 	TLS       *TLSConfig        `yaml:",omitempty" json:"tls,omitempty"`
 	Log       *LogConfig        `yaml:",omitempty" json:"log,omitempty"`
 	Profiling *ProfilingConfig  `yaml:",omitempty" json:"profiling,omitempty"`
+	API       *APIConfig        `yaml:",omitempty" json:"api,omitempty"`
 }
 
 func (c *Config) Load() error {

@@ -94,6 +94,7 @@ func main() {
 	}
 
 	if cfg.API != nil && cfg.API.Addr != "" {
+		api.Init(cfg.API)
 		ln, err := net.Listen("tcp", cfg.API.Addr)
 		if err != nil {
 			log.Fatal(err)

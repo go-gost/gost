@@ -1,36 +1,52 @@
 package api
 
 import (
+	"embed"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
 var (
 	apiServer = &http.Server{}
+
+	//go:embed swagger.yaml
+	swaggerDoc embed.FS
 )
 
-func init() {
+func Init(cfg *config.APIConfig) {
 	gin.SetMode(gin.ReleaseMode)
+
+	if cfg == nil {
+		cfg = &config.APIConfig{}
+	}
 
 	r := gin.New()
 	r.Use(
 		cors.New((cors.Config{
 			AllowAllOrigins: true,
-			AllowMethods:    []string{"GET", "POST", "PUT", "DELETE"},
+			AllowMethods:    []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowHeaders:    []string{"*"},
 		})),
-		loggerHandler,
 		gin.Recovery(),
 	)
+	if cfg.AccessLog {
+		r.Use(loggerHandler)
+	}
 
-	r.StaticFile("/swagger.yaml", "swagger.yaml")
+	router := r.Group("")
+	if cfg.PathPrefix != "" {
+		router = router.Group(cfg.PathPrefix)
+	}
 
-	config := r.Group("/config")
+	router.StaticFS("/docs", http.FS(swaggerDoc))
+
+	config := router.Group("/config")
 	{
 		config.GET("", getConfig)
 
@@ -58,11 +74,6 @@ func init() {
 	apiServer.Handler = r
 }
 
-type Response struct {
-	Code int    `json:"code,omitempty"`
-	Msg  string `json:"msg,omitempty"`
-}
-
 func Run(ln net.Listener) error {
 	return apiServer.Serve(ln)
 }
@@ -83,4 +94,9 @@ func loggerHandler(ctx *gin.Context) {
 		"duration": duration,
 	}).Infof("| %3d | %13v | %15s | %-7s %s",
 		ctx.Writer.Status(), duration, ctx.ClientIP(), ctx.Request.Method, ctx.Request.RequestURI)
+}
+
+type Response struct {
+	Code int    `json:"code,omitempty"`
+	Msg  string `json:"msg,omitempty"`
 }

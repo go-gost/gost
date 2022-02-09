@@ -1,4 +1,4 @@
-// Documentation of GOST Web API.
+// Documentation of Web API.
 //
 //     Schemes: http
 //     BasePath: /

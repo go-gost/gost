@@ -40,9 +40,9 @@ func (c *ssuConnector) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	if c.options.User != nil {
-		method := c.options.User.Username()
-		password, _ := c.options.User.Password()
+	if c.options.Auth != nil {
+		method := c.options.Auth.Username()
+		password, _ := c.options.Auth.Password()
 		c.cipher, err = ss.ShadowCipher(method, password, c.md.key)
 	}
 

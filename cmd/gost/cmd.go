@@ -107,7 +107,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				}
 				resolverCfg.Nameservers = append(
 					resolverCfg.Nameservers,
-					config.NameserverConfig{
+					&config.NameserverConfig{
 						Addr: rs,
 					},
 				)
@@ -127,7 +127,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				}
 				hostsCfg.Mappings = append(
 					hostsCfg.Mappings,
-					config.HostMappingConfig{
+					&config.HostMappingConfig{
 						Hostname: ss[0],
 						IP:       ss[1],
 					},
@@ -194,7 +194,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				}
 				resolverCfg.Nameservers = append(
 					resolverCfg.Nameservers,
-					config.NameserverConfig{
+					&config.NameserverConfig{
 						Addr: rs,
 					},
 				)
@@ -214,7 +214,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				}
 				hostsCfg.Mappings = append(
 					hostsCfg.Mappings,
-					config.HostMappingConfig{
+					&config.HostMappingConfig{
 						Hostname: ss[0],
 						IP:       ss[1],
 					},
@@ -271,13 +271,12 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		}
 	}
 
-	var auths []*config.AuthConfig
+	var auth *config.AuthConfig
 	if url.User != nil {
-		auth := &config.AuthConfig{
+		auth = &config.AuthConfig{
 			Username: url.User.Username(),
 		}
 		auth.Password, _ = url.User.Password()
-		auths = append(auths, auth)
 	}
 
 	md := metadata.MapMetadata{}
@@ -292,7 +291,7 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		if err != nil {
 			return nil, err
 		}
-		auths = append(auths, au)
+		auth = au
 	}
 	md.Del("auth")
 
@@ -319,7 +318,7 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 
 	svc.Handler = &config.HandlerConfig{
 		Type:     handler,
-		Auths:    auths,
+		Auth:     auth,
 		Metadata: md,
 	}
 	svc.Listener = &config.ListenerConfig{
@@ -329,10 +328,10 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	}
 
 	if svc.Handler.Type == "sshd" {
-		svc.Handler.Auths = nil
+		svc.Handler.Auth = nil
 	}
 	if svc.Listener.Type == "sshd" {
-		svc.Listener.Auths = auths
+		svc.Listener.Auth = auth
 	}
 
 	return svc, nil

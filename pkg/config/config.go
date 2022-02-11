@@ -67,6 +67,14 @@ type TLSConfig struct {
 	ServerName string `yaml:"serverName,omitempty" json:"serverName,omitempty"`
 }
 
+type AutherConfig struct {
+	Name string `json:"name"`
+	// inline, file, redis, etc.
+	Type  string        `yaml:",omitempty" json:"type,omitempty"`
+	Auths []*AuthConfig `yaml:",omitempty" json:"auths"`
+	// File string        `yaml:",omitempty" json:"file"`
+}
+
 type AuthConfig struct {
 	Username string `json:"username"`
 	Password string `yaml:",omitempty" json:"password,omitempty"`
@@ -79,7 +87,9 @@ type SelectorConfig struct {
 }
 
 type BypassConfig struct {
-	Name     string   `json:"name"`
+	Name string `json:"name"`
+	// inline, file, etc.
+	Type     string   `yaml:",omitempty" json:"type,omitempty"`
 	Reverse  bool     `yaml:",omitempty" json:"reverse,omitempty"`
 	Matchers []string `json:"matchers"`
 }
@@ -95,8 +105,10 @@ type NameserverConfig struct {
 }
 
 type ResolverConfig struct {
-	Name        string             `json:"name"`
-	Nameservers []NameserverConfig `json:"nameservers"`
+	Name string `json:"name"`
+	// inline, file, etc.
+	Type        string              `yaml:",omitempty" json:"type,omitempty"`
+	Nameservers []*NameserverConfig `json:"nameservers"`
 }
 
 type HostMappingConfig struct {
@@ -106,14 +118,17 @@ type HostMappingConfig struct {
 }
 
 type HostsConfig struct {
-	Name     string              `json:"name"`
-	Mappings []HostMappingConfig `json:"mappings"`
+	Name string `json:"name"`
+	// inline, file, etc.
+	Type     string               `yaml:",omitempty" json:"type,omitempty"`
+	Mappings []*HostMappingConfig `json:"mappings"`
 }
 
 type ListenerConfig struct {
 	Type     string                 `json:"type"`
 	Chain    string                 `yaml:",omitempty" json:"chain,omitempty"`
-	Auths    []*AuthConfig          `yaml:",omitempty" json:"auths,omitempty"`
+	Auther   string                 `yaml:",omitempty" json:"auther,omitempty"`
+	Auth     *AuthConfig            `yaml:",omitempty" json:"auth,omitempty"`
 	TLS      *TLSConfig             `yaml:",omitempty" json:"tls,omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty" json:"metadata,omitempty"`
 }
@@ -122,7 +137,8 @@ type HandlerConfig struct {
 	Type     string                 `json:"type"`
 	Retries  int                    `yaml:",omitempty" json:"retries,omitempty"`
 	Chain    string                 `yaml:",omitempty" json:"chain,omitempty"`
-	Auths    []*AuthConfig          `yaml:",omitempty" json:"auths,omitempty"`
+	Auther   string                 `yaml:",omitempty" json:"auther,omitempty"`
+	Auth     *AuthConfig            `yaml:",omitempty" json:"auth,omitempty"`
 	TLS      *TLSConfig             `yaml:",omitempty" json:"tls,omitempty"`
 	Metadata map[string]interface{} `yaml:",omitempty" json:"metadata,omitempty"`
 }
@@ -185,6 +201,7 @@ type NodeConfig struct {
 type Config struct {
 	Services  []*ServiceConfig  `json:"services"`
 	Chains    []*ChainConfig    `yaml:",omitempty" json:"chains,omitempty"`
+	Authers   []*AutherConfig   `yaml:",omitempty" json:"authers,omitempty"`
 	Bypasses  []*BypassConfig   `yaml:",omitempty" json:"bypasses,omitempty"`
 	Resolvers []*ResolverConfig `yaml:",omitempty" json:"resolvers,omitempty"`
 	Hosts     []*HostsConfig    `yaml:",omitempty" json:"hosts,omitempty"`

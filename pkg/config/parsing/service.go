@@ -1,7 +1,6 @@
 package parsing
 
 import (
-	"net/url"
 	"strings"
 
 	"github.com/go-gost/gost/pkg/chain"
@@ -48,10 +47,16 @@ func ParseService(cfg *config.ServiceConfig) (*service.Service, error) {
 		return nil, err
 	}
 
+	auther := autherFromAuth(cfg.Listener.Auth)
+	if cfg.Listener.Auther != "" {
+		auther = registry.Auther().Get(cfg.Listener.Auther)
+	}
+
 	ln := registry.GetListener(cfg.Listener.Type)(
 		listener.AddrOption(cfg.Addr),
 		listener.ChainOption(registry.Chain().Get(cfg.Listener.Chain)),
-		listener.AuthsOption(parseAuths(cfg.Listener.Auths...)...),
+		listener.AutherOption(auther),
+		listener.AuthOption(parseAuth(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
 		listener.LoggerOption(listenerLogger),
 	)
@@ -79,8 +84,13 @@ func ParseService(cfg *config.ServiceConfig) (*service.Service, error) {
 		return nil, err
 	}
 
+	auther = autherFromAuth(cfg.Handler.Auth)
+	if cfg.Handler.Auther != "" {
+		auther = registry.Auther().Get(cfg.Handler.Auther)
+	}
 	h := registry.GetHandler(cfg.Handler.Type)(
-		handler.AuthsOption(parseAuths(cfg.Handler.Auths...)...),
+		handler.AutherOption(auther),
+		handler.AuthOption(parseAuth(cfg.Handler.Auth)),
 		handler.RetriesOption(cfg.Handler.Retries),
 		handler.ChainOption(registry.Chain().Get(cfg.Handler.Chain)),
 		handler.BypassOption(registry.Bypass().Get(cfg.Bypass)),
@@ -109,19 +119,6 @@ func ParseService(cfg *config.ServiceConfig) (*service.Service, error) {
 
 	serviceLogger.Infof("listening on %s/%s", s.Addr().String(), s.Addr().Network())
 	return s, nil
-}
-
-func parseAuths(cfgs ...*config.AuthConfig) []*url.Userinfo {
-	var auths []*url.Userinfo
-
-	for _, cfg := range cfgs {
-		if cfg == nil || cfg.Username == "" {
-			continue
-		}
-		auths = append(auths, url.UserPassword(cfg.Username, cfg.Password))
-	}
-
-	return auths
 }
 
 func parseForwarder(cfg *config.ForwarderConfig) *chain.NodeGroup {

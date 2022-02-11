@@ -36,6 +36,9 @@ func (r *bypassRegistry) IsRegistered(name string) bool {
 }
 
 func (r *bypassRegistry) Get(name string) bypass.Bypass {
+	if name == "" {
+		return nil
+	}
 	return &bypassWrapper{name: name}
 }
 

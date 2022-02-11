@@ -4,13 +4,15 @@ import (
 	"crypto/tls"
 	"net/url"
 
+	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
 type Options struct {
 	Addr      string
-	Auths     []*url.Userinfo
+	Auther    auth.Authenticator
+	Auth      *url.Userinfo
 	TLSConfig *tls.Config
 	Chain     chain.Chainer
 	Logger    logger.Logger
@@ -24,9 +26,15 @@ func AddrOption(addr string) Option {
 	}
 }
 
-func AuthsOption(auths ...*url.Userinfo) Option {
+func AutherOption(auther auth.Authenticator) Option {
 	return func(opts *Options) {
-		opts.Auths = auths
+		opts.Auther = auther
+	}
+}
+
+func AuthOption(auth *url.Userinfo) Option {
+	return func(opts *Options) {
+		opts.Auth = auth
 	}
 }
 

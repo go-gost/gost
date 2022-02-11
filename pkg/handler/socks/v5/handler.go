@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/chain"
-	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/common/util/socks"
 	"github.com/go-gost/gost/pkg/handler"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -51,7 +50,7 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 	}
 
 	h.selector = &serverSelector{
-		Authenticator: auth_util.AuthFromUsers(h.options.Auths...),
+		Authenticator: h.options.Auther,
 		TLSConfig:     h.options.TLSConfig,
 		logger:        h.options.Logger,
 		noTLS:         h.md.noTLS,

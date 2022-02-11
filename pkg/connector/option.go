@@ -9,16 +9,16 @@ import (
 )
 
 type Options struct {
-	User      *url.Userinfo
+	Auth      *url.Userinfo
 	TLSConfig *tls.Config
 	Logger    logger.Logger
 }
 
 type Option func(opts *Options)
 
-func UserOption(user *url.Userinfo) Option {
+func AuthOption(auth *url.Userinfo) Option {
 	return func(opts *Options) {
-		opts.User = user
+		opts.Auth = auth
 	}
 }
 

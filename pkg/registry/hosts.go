@@ -37,6 +37,9 @@ func (r *hostsRegistry) IsRegistered(name string) bool {
 }
 
 func (r *hostsRegistry) Get(name string) hosts.HostMapper {
+	if name == "" {
+		return nil
+	}
 	return &hostsWrapper{name: name}
 }
 

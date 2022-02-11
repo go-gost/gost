@@ -36,6 +36,9 @@ func (r *chainRegistry) IsRegistered(name string) bool {
 }
 
 func (r *chainRegistry) Get(name string) chain.Chainer {
+	if name == "" {
+		return nil
+	}
 	return &chainWrapper{name: name}
 }
 

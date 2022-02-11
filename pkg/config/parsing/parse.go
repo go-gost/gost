@@ -2,15 +2,58 @@ package parsing
 
 import (
 	"net"
+	"net/url"
 
+	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/config"
 	hostspkg "github.com/go-gost/gost/pkg/hosts"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/registry"
 	"github.com/go-gost/gost/pkg/resolver"
 	resolver_impl "github.com/go-gost/gost/pkg/resolver/impl"
 )
+
+func ParseAuther(cfg *config.AutherConfig) auth.Authenticator {
+	if cfg == nil {
+		return nil
+	}
+
+	m := make(map[string]string)
+
+	for _, user := range cfg.Auths {
+		if user.Username == "" {
+			continue
+		}
+		m[user.Username] = user.Password
+	}
+
+	if len(m) == 0 {
+		return nil
+	}
+	return auth.NewMapAuthenticator(m)
+}
+
+func autherFromAuth(au *config.AuthConfig) auth.Authenticator {
+	if au == nil || au.Username == "" {
+		return nil
+	}
+	return auth.NewMapAuthenticator(map[string]string{
+		au.Username: au.Password,
+	})
+}
+
+func parseAuth(cfg *config.AuthConfig) *url.Userinfo {
+	if cfg == nil || cfg.Username == "" {
+		return nil
+	}
+
+	if cfg.Password == "" {
+		return url.User(cfg.Username)
+	}
+	return url.UserPassword(cfg.Username, cfg.Password)
+}
 
 func parseSelector(cfg *config.SelectorConfig) chain.Selector {
 	if cfg == nil {
@@ -57,8 +100,8 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.Resolver, error) {
 	var nameservers []resolver_impl.NameServer
 	for _, server := range cfg.Nameservers {
 		nameservers = append(nameservers, resolver_impl.NameServer{
-			Addr: server.Addr,
-			// Chain:    chains[server.Chain],
+			Addr:     server.Addr,
+			Chain:    registry.Chain().Get(server.Chain),
 			TTL:      server.TTL,
 			Timeout:  server.Timeout,
 			ClientIP: net.ParseIP(server.ClientIP),

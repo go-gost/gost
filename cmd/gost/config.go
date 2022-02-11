@@ -16,6 +16,14 @@ func buildService(cfg *config.Config) (services []*service.Service) {
 		return
 	}
 
+	for _, autherCfg := range cfg.Authers {
+		if auther := parsing.ParseAuther(autherCfg); auther != nil {
+			if err := registry.Auther().Register(autherCfg.Name, auther); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
 	for _, bypassCfg := range cfg.Bypasses {
 		if bp := parsing.ParseBypass(bypassCfg); bp != nil {
 			if err := registry.Bypass().Register(bypassCfg.Name, bp); err != nil {

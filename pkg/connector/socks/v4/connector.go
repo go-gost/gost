@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -21,7 +20,6 @@ func init() {
 }
 
 type socks4Connector struct {
-	user    *url.Userinfo
 	md      metadata
 	options connector.Options
 }
@@ -33,7 +31,6 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 
 	return &socks4Connector{
-		user:    options.User,
 		options: options,
 	}
 }
@@ -99,8 +96,8 @@ func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, a
 	}
 
 	var userid []byte
-	if c.user != nil && c.user.Username() != "" {
-		userid = []byte(c.user.Username())
+	if c.options.Auth != nil {
+		userid = []byte(c.options.Auth.Username())
 	}
 	req := gosocks4.NewRequest(gosocks4.CmdConnect, addr, userid)
 	if err := req.Write(conn); err != nil {

@@ -36,6 +36,9 @@ func (r *serviceRegistry) IsRegistered(name string) bool {
 }
 
 func (r *serviceRegistry) Get(name string) *service.Service {
+	if name == "" {
+		return nil
+	}
 	v, ok := r.m.Load(name)
 	if !ok {
 		return nil

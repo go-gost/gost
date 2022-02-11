@@ -82,10 +82,10 @@ func (c *relayConnector) bind(conn net.Conn, cmd uint8, network, address string)
 		Flags:   cmd,
 	}
 
-	if c.user != nil {
-		pwd, _ := c.user.Password()
+	if c.options.Auth != nil {
+		pwd, _ := c.options.Auth.Password()
 		req.Features = append(req.Features, &relay.UserAuthFeature{
-			Username: c.user.Username(),
+			Username: c.options.Auth.Username(),
 			Password: pwd,
 		})
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net"
-	"net/url"
 	"sync"
 	"time"
 
@@ -20,7 +19,6 @@ func init() {
 }
 
 type sshdDialer struct {
-	user         *url.Userinfo
 	sessions     map[string]*sshSession
 	sessionMutex sync.Mutex
 	md           metadata
@@ -34,7 +32,6 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 
 	return &sshdDialer{
-		user:     options.User,
 		sessions: make(map[string]*sshSession),
 		options:  options,
 	}
@@ -167,9 +164,9 @@ func (d *sshdDialer) initSession(ctx context.Context, addr string, conn net.Conn
 		// Timeout:         timeout,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	if d.user != nil {
-		config.User = d.user.Username()
-		if password, _ := d.user.Password(); password != "" {
+	if d.options.Auth != nil {
+		config.User = d.options.Auth.Username()
+		if password, _ := d.options.Auth.Password(); password != "" {
 			config.Auth = []ssh.AuthMethod{
 				ssh.Password(password),
 			}

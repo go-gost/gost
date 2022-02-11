@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/url"
 
+	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/hosts"
@@ -17,7 +18,8 @@ type Options struct {
 	Resolver  resolver.Resolver
 	Hosts     hosts.HostMapper
 	Bypass    bypass.Bypass
-	Auths     []*url.Userinfo
+	Auth      *url.Userinfo
+	Auther    auth.Authenticator
 	TLSConfig *tls.Config
 	Logger    logger.Logger
 }
@@ -54,9 +56,14 @@ func BypassOption(bypass bypass.Bypass) Option {
 	}
 }
 
-func AuthsOption(auths ...*url.Userinfo) Option {
+func AuthOption(auth *url.Userinfo) Option {
 	return func(opts *Options) {
-		opts.Auths = auths
+		opts.Auth = auth
+	}
+}
+func AutherOption(auther auth.Authenticator) Option {
+	return func(opts *Options) {
+		opts.Auther = auther
 	}
 }
 

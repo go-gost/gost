@@ -43,9 +43,9 @@ func (h *ssuHandler) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	if len(h.options.Auths) > 0 {
-		method := h.options.Auths[0].Username()
-		password, _ := h.options.Auths[0].Password()
+	if h.options.Auth != nil {
+		method := h.options.Auth.Username()
+		password, _ := h.options.Auth.Password()
 		h.cipher, err = ss.ShadowCipher(method, password, h.md.key)
 		if err != nil {
 			return

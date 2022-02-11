@@ -16,9 +16,7 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/chain"
-	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -30,10 +28,9 @@ func init() {
 }
 
 type httpHandler struct {
-	router        *chain.Router
-	authenticator auth.Authenticator
-	md            metadata
-	options       handler.Options
+	router  *chain.Router
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
@@ -52,7 +49,6 @@ func (h *httpHandler) Init(md md.Metadata) error {
 		return err
 	}
 
-	h.authenticator = auth_util.AuthFromUsers(h.options.Auths...)
 	h.router = &chain.Router{
 		Retries:  h.options.Retries,
 		Chain:    h.options.Chain,
@@ -266,7 +262,7 @@ func (h *httpHandler) basicProxyAuth(proxyAuth string, log logger.Logger) (usern
 
 func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.Response, log logger.Logger) (ok bool) {
 	u, p, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"), log)
-	if h.authenticator == nil || h.authenticator.Authenticate(u, p) {
+	if h.options.Auther == nil || h.options.Auther.Authenticate(u, p) {
 		return true
 	}
 

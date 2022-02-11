@@ -1,8 +1,6 @@
 package parsing
 
 import (
-	"net/url"
-
 	"github.com/go-gost/gost/pkg/chain"
 	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
 	"github.com/go-gost/gost/pkg/config"
@@ -39,15 +37,6 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 				"kind": "connector",
 			})
 
-			var user *url.Userinfo
-			if auth := v.Connector.Auth; auth != nil && auth.Username != "" {
-				if auth.Password == "" {
-					user = url.User(auth.Username)
-				} else {
-					user = url.UserPassword(auth.Username, auth.Password)
-				}
-			}
-
 			tlsCfg := v.Connector.TLS
 			if tlsCfg == nil {
 				tlsCfg = &config.TLSConfig{}
@@ -61,7 +50,7 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 			}
 
 			cr := registry.GetConnector(v.Connector.Type)(
-				connector.UserOption(user),
+				connector.AuthOption(parseAuth(v.Connector.Auth)),
 				connector.TLSConfigOption(tlsConfig),
 				connector.LoggerOption(connectorLogger),
 			)
@@ -78,15 +67,6 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 				"kind": "dialer",
 			})
 
-			user = nil
-			if auth := v.Dialer.Auth; auth != nil && auth.Username != "" {
-				if auth.Password == "" {
-					user = url.User(auth.Username)
-				} else {
-					user = url.UserPassword(auth.Username, auth.Password)
-				}
-			}
-
 			tlsCfg = v.Dialer.TLS
 			if tlsCfg == nil {
 				tlsCfg = &config.TLSConfig{}
@@ -100,7 +80,7 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 			}
 
 			d := registry.GetDialer(v.Dialer.Type)(
-				dialer.UserOption(user),
+				dialer.AuthOption(parseAuth(v.Dialer.Auth)),
 				dialer.TLSConfigOption(tlsConfig),
 				dialer.LoggerOption(dialerLogger),
 			)

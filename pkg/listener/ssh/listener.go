@@ -5,7 +5,6 @@ import (
 	"net"
 	"time"
 
-	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -53,13 +52,12 @@ func (l *sshListener) Init(md md.Metadata) (err error) {
 
 	l.Listener = ln
 
-	authenticator := auth_util.AuthFromUsers(l.options.Auths...)
 	config := &ssh.ServerConfig{
-		PasswordCallback:  ssh_util.PasswordCallback(authenticator),
+		PasswordCallback:  ssh_util.PasswordCallback(l.options.Auther),
 		PublicKeyCallback: ssh_util.PublicKeyCallback(l.md.authorizedKeys),
 	}
 	config.AddHostKey(l.md.signer)
-	if authenticator == nil && len(l.md.authorizedKeys) == 0 {
+	if l.options.Auther == nil && len(l.md.authorizedKeys) == 0 {
 		config.NoClientAuth = true
 	}
 

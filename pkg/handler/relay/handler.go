@@ -6,9 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/chain"
-	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
@@ -20,11 +18,10 @@ func init() {
 }
 
 type relayHandler struct {
-	group         *chain.NodeGroup
-	router        *chain.Router
-	authenticator auth.Authenticator
-	md            metadata
-	options       handler.Options
+	group   *chain.NodeGroup
+	router  *chain.Router
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
@@ -43,7 +40,6 @@ func (h *relayHandler) Init(md md.Metadata) (err error) {
 		return err
 	}
 
-	h.authenticator = auth_util.AuthFromUsers(h.options.Auths...)
 	h.router = &chain.Router{
 		Retries:  h.options.Retries,
 		Chain:    h.options.Chain,
@@ -113,7 +109,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 		Version: relay.Version1,
 		Status:  relay.StatusOK,
 	}
-	if h.authenticator != nil && !h.authenticator.Authenticate(user, pass) {
+	if h.options.Auther != nil && !h.options.Auther.Authenticate(user, pass) {
 		resp.Status = relay.StatusUnauthorized
 		resp.WriteTo(conn)
 		log.Error("unauthorized")

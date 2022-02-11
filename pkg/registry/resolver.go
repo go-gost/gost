@@ -38,6 +38,9 @@ func (r *resolverRegistry) IsRegistered(name string) bool {
 }
 
 func (r *resolverRegistry) Get(name string) resolver.Resolver {
+	if name == "" {
+		return nil
+	}
 	return &resolverWrapper{name: name}
 }
 

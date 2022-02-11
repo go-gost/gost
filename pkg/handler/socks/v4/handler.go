@@ -6,9 +6,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks4"
-	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/chain"
-	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -21,10 +19,9 @@ func init() {
 }
 
 type socks4Handler struct {
-	router        *chain.Router
-	authenticator auth.Authenticator
-	md            metadata
-	options       handler.Options
+	router  *chain.Router
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
@@ -43,7 +40,6 @@ func (h *socks4Handler) Init(md md.Metadata) (err error) {
 		return err
 	}
 
-	h.authenticator = auth_util.AuthFromUsers(h.options.Auths...)
 	h.router = &chain.Router{
 		Retries:  h.options.Retries,
 		Chain:    h.options.Chain,
@@ -85,8 +81,8 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	conn.SetReadDeadline(time.Time{})
 
-	if h.authenticator != nil &&
-		!h.authenticator.Authenticate(string(req.Userid), "") {
+	if h.options.Auther != nil &&
+		!h.options.Auther.Authenticate(string(req.Userid), "") {
 		resp := gosocks4.NewReply(gosocks4.RejectedUserid, nil)
 		resp.Write(conn)
 		log.Debug(resp)

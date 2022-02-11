@@ -18,9 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/chain"
-	auth_util "github.com/go-gost/gost/pkg/common/util/auth"
 	"github.com/go-gost/gost/pkg/handler"
 	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
 	"github.com/go-gost/gost/pkg/logger"
@@ -33,10 +31,9 @@ func init() {
 }
 
 type http2Handler struct {
-	router        *chain.Router
-	authenticator auth.Authenticator
-	md            metadata
-	options       handler.Options
+	router  *chain.Router
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.Handler {
@@ -55,7 +52,6 @@ func (h *http2Handler) Init(md md.Metadata) error {
 		return err
 	}
 
-	h.authenticator = auth_util.AuthFromUsers(h.options.Auths...)
 	h.router = &chain.Router{
 		Retries:  h.options.Retries,
 		Chain:    h.options.Chain,
@@ -239,7 +235,7 @@ func (h *http2Handler) basicProxyAuth(proxyAuth string) (username, password stri
 
 func (h *http2Handler) authenticate(w http.ResponseWriter, r *http.Request, resp *http.Response, log logger.Logger) (ok bool) {
 	u, p, _ := h.basicProxyAuth(r.Header.Get("Proxy-Authorization"))
-	if h.authenticator == nil || h.authenticator.Authenticate(u, p) {
+	if h.options.Auther == nil || h.options.Auther.Authenticate(u, p) {
 		return true
 	}
 

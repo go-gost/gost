@@ -18,8 +18,11 @@ type autherRegistry struct {
 	m sync.Map
 }
 
-func (r *autherRegistry) Register(name string, auth auth.Authenticator) error {
-	if _, loaded := r.m.LoadOrStore(name, auth); loaded {
+func (r *autherRegistry) Register(name string, auther auth.Authenticator) error {
+	if name == "" || auther == nil {
+		return nil
+	}
+	if _, loaded := r.m.LoadOrStore(name, auther); loaded {
 		return ErrDup
 	}
 

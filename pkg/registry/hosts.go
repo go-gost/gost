@@ -20,6 +20,9 @@ type hostsRegistry struct {
 }
 
 func (r *hostsRegistry) Register(name string, hosts hosts.HostMapper) error {
+	if name == "" || hosts == nil {
+		return nil
+	}
 	if _, loaded := r.m.LoadOrStore(name, hosts); loaded {
 		return ErrDup
 	}

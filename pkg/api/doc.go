@@ -1,6 +1,6 @@
 // Documentation of Web API.
 //
-//     Schemes: http
+//     Schemes: https, http
 //     BasePath: /
 //     Version: 1.0.0
 //

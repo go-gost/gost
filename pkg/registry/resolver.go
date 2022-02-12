@@ -21,6 +21,9 @@ type resolverRegistry struct {
 }
 
 func (r *resolverRegistry) Register(name string, resolver resolver.Resolver) error {
+	if name == "" || resolver == nil {
+		return nil
+	}
 	if _, loaded := r.m.LoadOrStore(name, resolver); loaded {
 		return ErrDup
 	}

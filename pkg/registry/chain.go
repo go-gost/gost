@@ -19,6 +19,9 @@ type chainRegistry struct {
 }
 
 func (r *chainRegistry) Register(name string, chain chain.Chainer) error {
+	if name == "" || chain == nil {
+		return nil
+	}
 	if _, loaded := r.m.LoadOrStore(name, chain); loaded {
 		return ErrDup
 	}

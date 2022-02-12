@@ -58,6 +58,10 @@ func Init(cfg *config.APIConfig) {
 		config.PUT("/chains/:chain", updateChain)
 		config.DELETE("/chains/:chain", deleteChain)
 
+		config.POST("/authers", createAuther)
+		config.PUT("/authers/:auther", updateAuther)
+		config.DELETE("/authers/:auther", deleteAuther)
+
 		config.POST("/bypasses", createBypass)
 		config.PUT("/bypasses/:bypass", updateBypass)
 		config.DELETE("/bypasses/:bypass", deleteBypass)

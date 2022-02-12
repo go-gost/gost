@@ -19,6 +19,9 @@ type serviceRegistry struct {
 }
 
 func (r *serviceRegistry) Register(name string, svc *service.Service) error {
+	if name == "" || svc == nil {
+		return nil
+	}
 	if _, loaded := r.m.LoadOrStore(name, svc); loaded {
 		return ErrDup
 	}

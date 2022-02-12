@@ -19,6 +19,9 @@ type bypassRegistry struct {
 }
 
 func (r *bypassRegistry) Register(name string, bypass bypass.Bypass) error {
+	if name == "" || bypass == nil {
+		return nil
+	}
 	if _, loaded := r.m.LoadOrStore(name, bypass); loaded {
 		return ErrDup
 	}

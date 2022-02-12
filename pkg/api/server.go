@@ -65,15 +65,17 @@ func NewServer(addr string, opts ...Option) (*Server, error) {
 	if options.accessLog {
 		r.Use(mwLogger())
 	}
-	if options.auther != nil {
-		r.Use(mwBasicAuth(options.auther))
-	}
 
 	router := r.Group("")
 	if options.pathPrefix != "" {
 		router = router.Group(options.pathPrefix)
 	}
-	register(router)
+
+	router.StaticFS("/docs", http.FS(swaggerDoc))
+
+	config := router.Group("/config")
+	config.Use(mwBasicAuth(options.auther))
+	registerConfig(config)
 
 	return &Server{
 		s: &http.Server{
@@ -93,4 +95,32 @@ func (s *Server) Addr() net.Addr {
 
 func (s *Server) Close() error {
 	return s.s.Close()
+}
+
+func registerConfig(config *gin.RouterGroup) {
+	config.GET("", getConfig)
+
+	config.POST("/services", createService)
+	config.PUT("/services/:service", updateService)
+	config.DELETE("/services/:service", deleteService)
+
+	config.POST("/chains", createChain)
+	config.PUT("/chains/:chain", updateChain)
+	config.DELETE("/chains/:chain", deleteChain)
+
+	config.POST("/authers", createAuther)
+	config.PUT("/authers/:auther", updateAuther)
+	config.DELETE("/authers/:auther", deleteAuther)
+
+	config.POST("/bypasses", createBypass)
+	config.PUT("/bypasses/:bypass", updateBypass)
+	config.DELETE("/bypasses/:bypass", deleteBypass)
+
+	config.POST("/resolvers", createResolver)
+	config.PUT("/resolvers/:resolver", updateResolver)
+	config.DELETE("/resolvers/:resolver", deleteResolver)
+
+	config.POST("/hosts", createHosts)
+	config.PUT("/hosts/:hosts", updateHosts)
+	config.DELETE("/hosts/:hosts", deleteHosts)
 }

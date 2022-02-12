@@ -14,7 +14,7 @@ import (
 	"github.com/go-gost/gost/pkg/service"
 )
 
-func ParseService(cfg *config.ServiceConfig) (*service.Service, error) {
+func ParseService(cfg *config.ServiceConfig) (service.Servicer, error) {
 	if cfg.Listener == nil {
 		cfg.Listener = &config.ListenerConfig{
 			Type: "tcp",
@@ -47,7 +47,7 @@ func ParseService(cfg *config.ServiceConfig) (*service.Service, error) {
 		return nil, err
 	}
 
-	auther := autherFromAuth(cfg.Listener.Auth)
+	auther := ParseAutherFromAuth(cfg.Listener.Auth)
 	if cfg.Listener.Auther != "" {
 		auther = registry.Auther().Get(cfg.Listener.Auther)
 	}
@@ -84,7 +84,7 @@ func ParseService(cfg *config.ServiceConfig) (*service.Service, error) {
 		return nil, err
 	}
 
-	auther = autherFromAuth(cfg.Handler.Auth)
+	auther = ParseAutherFromAuth(cfg.Handler.Auth)
 	if cfg.Handler.Auther != "" {
 		auther = registry.Auther().Get(cfg.Handler.Auther)
 	}

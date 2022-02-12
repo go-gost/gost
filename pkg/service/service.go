@@ -10,6 +10,12 @@ import (
 	"github.com/go-gost/gost/pkg/logger"
 )
 
+type Servicer interface {
+	Serve() error
+	Addr() net.Addr
+	Close() error
+}
+
 type Service struct {
 	listener listener.Listener
 	handler  handler.Handler
@@ -35,15 +41,11 @@ func (s *Service) Addr() net.Addr {
 	return s.listener.Addr()
 }
 
-func (s *Service) Run() error {
-	return s.serve()
-}
-
 func (s *Service) Close() error {
 	return s.listener.Close()
 }
 
-func (s *Service) serve() error {
+func (s *Service) Serve() error {
 	var tempDelay time.Duration
 	for {
 		conn, e := s.listener.Accept()

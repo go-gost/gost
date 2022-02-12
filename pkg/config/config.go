@@ -54,9 +54,11 @@ type ProfilingConfig struct {
 }
 
 type APIConfig struct {
-	Addr       string `json:"addr"`
-	PathPrefix string `yaml:"pathPrefix,omitempty" json:"pathPrefix,omitempty"`
-	AccessLog  bool   `yaml:"accesslog,omitempty" json:"accesslog,omitemtpy"`
+	Addr       string      `json:"addr"`
+	PathPrefix string      `yaml:"pathPrefix,omitempty" json:"pathPrefix,omitempty"`
+	AccessLog  bool        `yaml:"accesslog,omitempty" json:"accesslog,omitempty"`
+	Auth       *AuthConfig `yaml:",omitempty" json:"auth,omitempty"`
+	Auther     string      `yaml:",omitempty" json:"auther,omitempty"`
 }
 
 type TLSConfig struct {

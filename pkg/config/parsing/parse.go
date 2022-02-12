@@ -35,7 +35,7 @@ func ParseAuther(cfg *config.AutherConfig) auth.Authenticator {
 	return auth.NewMapAuthenticator(m)
 }
 
-func autherFromAuth(au *config.AuthConfig) auth.Authenticator {
+func ParseAutherFromAuth(au *config.AuthConfig) auth.Authenticator {
 	if au == nil || au.Username == "" {
 		return nil
 	}

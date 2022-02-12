@@ -3,13 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
 
-	"github.com/go-gost/gost/pkg/api"
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/logger"
 )
@@ -93,17 +91,16 @@ func main() {
 		}()
 	}
 
-	if cfg.API != nil && cfg.API.Addr != "" {
-		api.Init(cfg.API)
-		ln, err := net.Listen("tcp", cfg.API.Addr)
+	if cfg.API != nil {
+		s, err := buildAPIServer(cfg.API)
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer ln.Close()
+		defer s.Close()
 
 		go func() {
-			log.Info("api server on ", ln.Addr())
-			log.Fatal(api.Run(ln))
+			log.Info("api server on ", s.Addr())
+			log.Fatal(s.Serve())
 		}()
 	}
 
@@ -111,7 +108,7 @@ func main() {
 
 	services := buildService(cfg)
 	for _, svc := range services {
-		go svc.Run()
+		go svc.Serve()
 	}
 
 	config.SetGlobal(cfg)

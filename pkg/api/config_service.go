@@ -54,7 +54,7 @@ func createService(ctx *gin.Context) {
 		return
 	}
 
-	go svc.Run()
+	go svc.Serve()
 
 	cfg := config.Global()
 	cfg.Services = append(cfg.Services, &req.Data)
@@ -115,7 +115,7 @@ func updateService(ctx *gin.Context) {
 		return
 	}
 
-	go svc.Run()
+	go svc.Serve()
 
 	cfg := config.Global()
 	for i := range cfg.Services {

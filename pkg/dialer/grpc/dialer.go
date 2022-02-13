@@ -8,7 +8,6 @@ import (
 
 	pb "github.com/go-gost/gost/pkg/common/util/grpc/proto"
 	"github.com/go-gost/gost/pkg/dialer"
-	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"google.golang.org/grpc"
@@ -24,7 +23,6 @@ func init() {
 type grpcDialer struct {
 	clients     map[string]pb.GostTunelClient
 	clientMutex sync.Mutex
-	logger      logger.Logger
 	md          metadata
 	options     dialer.Options
 }
@@ -37,7 +35,6 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 
 	return &grpcDialer{
 		clients: make(map[string]pb.GostTunelClient),
-		logger:  options.Logger,
 		options: options,
 	}
 }
@@ -71,9 +68,12 @@ func (d *grpcDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 		if host == "" {
 			host = options.Host
 		}
+		if h, _, _ := net.SplitHostPort(host); h != "" {
+			host = h
+		}
 
 		grpcOpts := []grpc.DialOption{
-			grpc.WithBlock(),
+			// grpc.WithBlock(),
 			grpc.WithContextDialer(func(c context.Context, s string) (net.Conn, error) {
 				return d.dial(ctx, "tcp", s, &options)
 			}),
@@ -82,6 +82,7 @@ func (d *grpcDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 				Backoff:           backoff.DefaultConfig,
 				MinConnectTimeout: 10 * time.Second,
 			}),
+			grpc.FailOnNonTempDialError(true),
 		}
 		if !d.md.insecure {
 			grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(d.options.TLSConfig)))
@@ -91,7 +92,7 @@ func (d *grpcDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 
 		cc, err := grpc.DialContext(ctx, addr, grpcOpts...)
 		if err != nil {
-			d.logger.Error(err)
+			d.options.Logger.Error(err)
 			return nil, err
 		}
 		client = pb.NewGostTunelClient(cc)
@@ -116,9 +117,9 @@ func (d *grpcDialer) dial(ctx context.Context, network, addr string, opts *diale
 	if dial != nil {
 		conn, err := dial(ctx, addr)
 		if err != nil {
-			d.logger.Error(err)
+			d.options.Logger.Error(err)
 		} else {
-			d.logger.WithFields(map[string]interface{}{
+			d.options.Logger.WithFields(map[string]interface{}{
 				"src": conn.LocalAddr().String(),
 				"dst": addr,
 			}).Debug("dial with dial func")
@@ -129,9 +130,9 @@ func (d *grpcDialer) dial(ctx context.Context, network, addr string, opts *diale
 	var netd net.Dialer
 	conn, err := netd.DialContext(ctx, network, addr)
 	if err != nil {
-		d.logger.Error(err)
+		d.options.Logger.Error(err)
 	} else {
-		d.logger.WithFields(map[string]interface{}{
+		d.options.Logger.WithFields(map[string]interface{}{
 			"src": conn.LocalAddr().String(),
 			"dst": addr,
 		}).Debugf("dial direct %s/%s", addr, network)

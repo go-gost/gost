@@ -72,12 +72,15 @@ func generateKeyPair() (rawCert, rawKey []byte, err error) {
 	notBefore := time.Now()
 	notAfter := notBefore.Add(validFor)
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, _ := rand.Int(rand.Reader, serialNumberLimit)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return
+	}
+
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{"gost"},
-			CommonName:   "gost.run",
 		},
 		NotBefore: notBefore,
 		NotAfter:  notAfter,
@@ -86,13 +89,19 @@ func generateKeyPair() (rawCert, rawKey []byte, err error) {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 	}
+
+	template.DNSNames = append(template.DNSNames, "gost.run")
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
 		return
 	}
 
 	rawCert = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	rawKey = pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		return
+	}
+	rawKey = pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privBytes})
 
 	return
 }

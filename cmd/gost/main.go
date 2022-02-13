@@ -80,7 +80,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if cfg.Profiling != nil && cfg.Profiling.Enabled {
+	if cfg.Profiling != nil && cfg.Profiling.Enable {
 		go func() {
 			addr := cfg.Profiling.Addr
 			if addr == "" {

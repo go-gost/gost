@@ -34,8 +34,15 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 
 	if v := os.Getenv("GOST_PROFILING"); v != "" {
 		cfg.Profiling = &config.ProfilingConfig{
-			Addr:    v,
-			Enabled: true,
+			Addr:   v,
+			Enable: true,
+		}
+	}
+	if v := os.Getenv("GOST_METRICS"); v != "" {
+		cfg.Metrics = &config.MetricsConfig{
+			Addr:   v,
+			Path:   "/metrics",
+			Enable: true,
 		}
 	}
 

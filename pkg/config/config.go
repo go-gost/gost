@@ -49,8 +49,8 @@ type LogConfig struct {
 }
 
 type ProfilingConfig struct {
-	Addr    string `json:"addr"`
-	Enabled bool   `json:"enabled"`
+	Addr   string `json:"addr"`
+	Enable bool   `json:"enable"`
 }
 
 type APIConfig struct {
@@ -59,6 +59,12 @@ type APIConfig struct {
 	AccessLog  bool        `yaml:"accesslog,omitempty" json:"accesslog,omitempty"`
 	Auth       *AuthConfig `yaml:",omitempty" json:"auth,omitempty"`
 	Auther     string      `yaml:",omitempty" json:"auther,omitempty"`
+}
+
+type MetricsConfig struct {
+	Enable bool   `json:"enable"`
+	Addr   string `json:"addr"`
+	Path   string `json:"path"`
 }
 
 type TLSConfig struct {
@@ -211,6 +217,7 @@ type Config struct {
 	Log       *LogConfig        `yaml:",omitempty" json:"log,omitempty"`
 	Profiling *ProfilingConfig  `yaml:",omitempty" json:"profiling,omitempty"`
 	API       *APIConfig        `yaml:",omitempty" json:"api,omitempty"`
+	Metrics   *MetricsConfig    `yaml:",omitempty" json:"metrics,omitempty"`
 }
 
 func (c *Config) Load() error {

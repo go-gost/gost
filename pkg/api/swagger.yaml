@@ -10,6 +10,11 @@ definitions:
       addr:
         type: string
         x-go-name: Addr
+      auth:
+        $ref: '#/definitions/AuthConfig'
+      auther:
+        type: string
+        x-go-name: Auther
       pathPrefix:
         type: string
         x-go-name: PathPrefix
@@ -100,6 +105,8 @@ definitions:
         x-go-name: Hosts
       log:
         $ref: '#/definitions/LogConfig'
+      metrics:
+        $ref: '#/definitions/MetricsConfig'
       profiling:
         $ref: '#/definitions/ProfilingConfig'
       resolvers:
@@ -282,6 +289,19 @@ definitions:
         x-go-name: Output
     type: object
     x-go-package: github.com/go-gost/gost/pkg/config
+  MetricsConfig:
+    properties:
+      addr:
+        type: string
+        x-go-name: Addr
+      enable:
+        type: boolean
+        x-go-name: Enable
+      path:
+        type: string
+        x-go-name: Path
+    type: object
+    x-go-package: github.com/go-gost/gost/pkg/config
   NameserverConfig:
     properties:
       addr:
@@ -333,9 +353,9 @@ definitions:
       addr:
         type: string
         x-go-name: Addr
-      enabled:
+      enable:
         type: boolean
-        x-go-name: Enabled
+        x-go-name: Enable
     type: object
     x-go-package: github.com/go-gost/gost/pkg/config
   ResolverConfig:
@@ -438,7 +458,27 @@ paths:
       responses:
         "200":
           $ref: '#/responses/getConfigResponse'
+      security:
+      - basicAuth:
+        - '[]'
       summary: Get current config.
+      tags:
+      - ConfigManagement
+    post:
+      operationId: saveConfigRequest
+      parameters:
+      - description: output format, one of yaml|json, default is yaml.
+        in: query
+        name: format
+        type: string
+        x-go-name: Format
+      responses:
+        "200":
+          $ref: '#/responses/saveConfigResponse'
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Save current config to file (gost.yaml or gost.json).
       tags:
       - ConfigManagement
   /config/authers:
@@ -453,7 +493,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/createAutherResponse'
-      summary: create a new auther, the name of the auther must be unique in auther
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Create a new auther, the name of the auther must be unique in auther
         list.
       tags:
       - ConfigManagement
@@ -469,7 +512,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/deleteAutherResponse'
-      summary: delete auther by name.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Delete auther by name.
       tags:
       - ConfigManagement
     put:
@@ -488,7 +534,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/updateAutherResponse'
-      summary: update auther by name, the auther must already exist.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Update auther by name, the auther must already exist.
       tags:
       - ConfigManagement
   /config/bypasses:
@@ -503,7 +552,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/createBypassResponse'
-      summary: create a new bypass, the name of bypass must be unique in bypass list.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Create a new bypass, the name of bypass must be unique in bypass list.
       tags:
       - ConfigManagement
   /config/bypasses/{bypass}:
@@ -518,7 +570,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/deleteBypassResponse'
-      summary: delete bypass by name.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Delete bypass by name.
       tags:
       - ConfigManagement
     put:
@@ -537,7 +592,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/updateBypassResponse'
-      summary: update bypass by name, the bypass must already exist.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Update bypass by name, the bypass must already exist.
       tags:
       - ConfigManagement
   /config/chains:
@@ -552,7 +610,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/createChainResponse'
-      summary: create a new chain, the name of chain must be unique in chain list.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Create a new chain, the name of chain must be unique in chain list.
       tags:
       - ConfigManagement
   /config/chains/{chain}:
@@ -567,7 +628,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/deleteChainResponse'
-      summary: delete chain by name.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Delete chain by name.
       tags:
       - ConfigManagement
     put:
@@ -586,7 +650,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/updateChainResponse'
-      summary: update chain by name, the chain must already exist.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Update chain by name, the chain must already exist.
       tags:
       - ConfigManagement
   /config/hosts:
@@ -601,7 +668,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/createHostsResponse'
-      summary: create a new hosts, the name of the hosts must be unique in hosts list.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Create a new hosts, the name of the hosts must be unique in hosts list.
       tags:
       - ConfigManagement
   /config/hosts/{hosts}:
@@ -616,7 +686,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/deleteHostsResponse'
-      summary: delete hosts by name.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Delete hosts by name.
       tags:
       - ConfigManagement
     put:
@@ -635,7 +708,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/updateHostsResponse'
-      summary: update hosts by name, the hosts must already exist.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Update hosts by name, the hosts must already exist.
       tags:
       - ConfigManagement
   /config/resolvers:
@@ -650,7 +726,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/createResolverResponse'
-      summary: create a new resolver, the name of the resolver must be unique in resolver
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Create a new resolver, the name of the resolver must be unique in resolver
         list.
       tags:
       - ConfigManagement
@@ -666,7 +745,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/deleteResolverResponse'
-      summary: delete resolver by name.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Delete resolver by name.
       tags:
       - ConfigManagement
     put:
@@ -685,7 +767,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/updateResolverResponse'
-      summary: update resolver by name, the resolver must already exist.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Update resolver by name, the resolver must already exist.
       tags:
       - ConfigManagement
   /config/services:
@@ -700,7 +785,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/createServiceResponse'
-      summary: create a new service, the name of the service must be unique in service
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Create a new service, the name of the service must be unique in service
         list.
       tags:
       - ConfigManagement
@@ -716,7 +804,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/deleteServiceResponse'
-      summary: delete service by name.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Delete service by name.
       tags:
       - ConfigManagement
     put:
@@ -735,7 +826,10 @@ paths:
       responses:
         "200":
           $ref: '#/responses/updateServiceResponse'
-      summary: update service by name, the service must already exist.
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Update service by name, the service must already exist.
       tags:
       - ConfigManagement
 produces:
@@ -819,6 +913,12 @@ responses:
       Config: {}
     schema:
       $ref: '#/definitions/Config'
+  saveConfigResponse:
+    description: successful operation.
+    headers:
+      Data: {}
+    schema:
+      $ref: '#/definitions/Response'
   updateAutherResponse:
     description: successful operation.
     headers:
@@ -859,5 +959,6 @@ schemes:
 - https
 - http
 securityDefinitions:
-  api_key: null
+  basicAuth:
+    type: basic
 swagger: "2.0"

@@ -12,6 +12,7 @@ var (
 	ErrDup      = &Error{statusCode: http.StatusBadRequest, Code: 40002, Msg: "instance duplicated"}
 	ErrCreate   = &Error{statusCode: http.StatusConflict, Code: 40003, Msg: "instance creation failed"}
 	ErrNotFound = &Error{statusCode: http.StatusBadRequest, Code: 40004, Msg: "instance not found"}
+	ErrSave     = &Error{statusCode: http.StatusInternalServerError, Code: 40005, Msg: "save config failed"}
 )
 
 // Error is an api error.

@@ -11,7 +11,8 @@
 //     - application/json
 //
 //     SecurityDefinitions:
-//     api_key:
+//     basicAuth:
+//       type: basic
 //
 // swagger:meta
 package api

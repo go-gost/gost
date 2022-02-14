@@ -99,6 +99,7 @@ func (s *Server) Close() error {
 
 func registerConfig(config *gin.RouterGroup) {
 	config.GET("", getConfig)
+	config.POST("", saveConfig)
 
 	config.POST("/services", createService)
 	config.PUT("/services/:service", updateService)

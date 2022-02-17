@@ -14,7 +14,7 @@ import (
 	"github.com/go-gost/gost/pkg/service"
 )
 
-func ParseService(cfg *config.ServiceConfig) (service.Servicer, error) {
+func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 	if cfg.Listener == nil {
 		cfg.Listener = &config.ListenerConfig{
 			Type: "tcp",
@@ -112,10 +112,10 @@ func ParseService(cfg *config.ServiceConfig) (service.Servicer, error) {
 		return nil, err
 	}
 
-	s := (&service.Service{}).
-		WithListener(ln).
-		WithHandler(h).
-		WithLogger(serviceLogger)
+	s := service.NewService(ln, h,
+		service.AdmissionOption(registry.Admission().Get(cfg.Admission)),
+		service.LoggerOption(serviceLogger),
+	)
 
 	serviceLogger.Infof("listening on %s/%s", s.Addr().String(), s.Addr().Network())
 	return s, nil

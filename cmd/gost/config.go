@@ -12,7 +12,7 @@ import (
 	"github.com/go-gost/gost/pkg/service"
 )
 
-func buildService(cfg *config.Config) (services []service.Servicer) {
+func buildService(cfg *config.Config) (services []service.Service) {
 	if cfg == nil {
 		return
 	}
@@ -20,6 +20,14 @@ func buildService(cfg *config.Config) (services []service.Servicer) {
 	for _, autherCfg := range cfg.Authers {
 		if auther := parsing.ParseAuther(autherCfg); auther != nil {
 			if err := registry.Auther().Register(autherCfg.Name, auther); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, admissionCfg := range cfg.Admissions {
+		if adm := parsing.ParseAdmission(admissionCfg); adm != nil {
+			if err := registry.Admission().Register(admissionCfg.Name, adm); err != nil {
 				log.Fatal(err)
 			}
 		}

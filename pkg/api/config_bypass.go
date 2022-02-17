@@ -143,8 +143,7 @@ func deleteBypass(ctx *gin.Context) {
 	var req deleteBypassRequest
 	ctx.ShouldBindUri(&req)
 
-	svc := registry.Bypass().Get(req.Bypass)
-	if svc == nil {
+	if !registry.Bypass().IsRegistered(req.Bypass) {
 		writeError(ctx, ErrNotFound)
 		return
 	}

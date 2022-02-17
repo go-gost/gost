@@ -180,6 +180,9 @@ func (l *dnsListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/dns-message")
 
 	raddr, _ := net.ResolveTCPAddr("tcp", r.RemoteAddr)
+	if raddr == nil {
+		raddr = &net.TCPAddr{}
+	}
 	if err := l.serve(&dohResponseWriter{raddr: raddr, ResponseWriter: w}, buf); err != nil {
 		l.logger.Error(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/url"
 
+	"github.com/go-gost/gost/pkg/admission"
 	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/bypass"
 	"github.com/go-gost/gost/pkg/chain"
@@ -79,6 +80,20 @@ func parseSelector(cfg *config.SelectorConfig) chain.Selector {
 	)
 }
 
+func ParseAdmission(cfg *config.AdmissionConfig) admission.Admission {
+	if cfg == nil {
+		return nil
+	}
+	return admission.NewAdmissionPatterns(
+		cfg.Reverse,
+		cfg.Matchers,
+		admission.LoggerOption(logger.Default().WithFields(map[string]interface{}{
+			"kind":      "admission",
+			"admission": cfg.Name,
+		})),
+	)
+}
+
 func ParseBypass(cfg *config.BypassConfig) bypass.Bypass {
 	if cfg == nil {
 		return nil
@@ -86,7 +101,7 @@ func ParseBypass(cfg *config.BypassConfig) bypass.Bypass {
 	return bypass.NewBypassPatterns(
 		cfg.Reverse,
 		cfg.Matchers,
-		bypass.LoggerBypassOption(logger.Default().WithFields(map[string]interface{}{
+		bypass.LoggerOption(logger.Default().WithFields(map[string]interface{}{
 			"kind":   "bypass",
 			"bypass": cfg.Name,
 		})),

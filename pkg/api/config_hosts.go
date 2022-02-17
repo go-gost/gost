@@ -143,8 +143,7 @@ func deleteHosts(ctx *gin.Context) {
 	var req deleteHostsRequest
 	ctx.ShouldBindUri(&req)
 
-	svc := registry.Hosts().Get(req.Hosts)
-	if svc == nil {
+	if !registry.Hosts().IsRegistered(req.Hosts) {
 		writeError(ctx, ErrNotFound)
 		return
 	}

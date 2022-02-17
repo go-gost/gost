@@ -1,4 +1,4 @@
-package bypass
+package admission
 
 import (
 	"net"
@@ -8,10 +8,8 @@ import (
 	"github.com/go-gost/gost/pkg/logger"
 )
 
-// Bypass is a filter of address (IP or domain).
-type Bypass interface {
-	// Contains reports whether the bypass includes addr.
-	Contains(addr string) bool
+type Admission interface {
+	Admit(addr string) bool
 }
 
 type options struct {
@@ -26,40 +24,40 @@ func LoggerOption(logger logger.Logger) Option {
 	}
 }
 
-type bypass struct {
+type admission struct {
 	matchers []matcher.Matcher
 	reversed bool
 	options  options
 }
 
-// NewBypass creates and initializes a new Bypass using matchers as its match rules.
+// NewAdmission creates and initializes a new Admission using matchers as its match rules.
 // The rules will be reversed if the reversed is true.
-func NewBypass(reversed bool, matchers []matcher.Matcher, opts ...Option) Bypass {
+func NewAdmission(reversed bool, matchers []matcher.Matcher, opts ...Option) Admission {
 	options := options{}
 	for _, opt := range opts {
 		opt(&options)
 	}
-	return &bypass{
+	return &admission{
 		matchers: matchers,
 		reversed: reversed,
 		options:  options,
 	}
 }
 
-// NewBypassPatterns creates and initializes a new Bypass using matcher patterns as its match rules.
+// NewAdmissionPatterns creates and initializes a new Admission using matcher patterns as its match rules.
 // The rules will be reversed if the reverse is true.
-func NewBypassPatterns(reversed bool, patterns []string, opts ...Option) Bypass {
+func NewAdmissionPatterns(reversed bool, patterns []string, opts ...Option) Admission {
 	var matchers []matcher.Matcher
 	for _, pattern := range patterns {
 		if m := matcher.NewMatcher(pattern); m != nil {
 			matchers = append(matchers, m)
 		}
 	}
-	return NewBypass(reversed, matchers, opts...)
+	return NewAdmission(reversed, matchers, opts...)
 }
 
-func (bp *bypass) Contains(addr string) bool {
-	if addr == "" || bp == nil || len(bp.matchers) == 0 {
+func (p *admission) Admit(addr string) bool {
+	if addr == "" || p == nil || len(p.matchers) == 0 {
 		return false
 	}
 
@@ -71,7 +69,7 @@ func (bp *bypass) Contains(addr string) bool {
 	}
 
 	var matched bool
-	for _, matcher := range bp.matchers {
+	for _, matcher := range p.matchers {
 		if matcher == nil {
 			continue
 		}
@@ -81,10 +79,7 @@ func (bp *bypass) Contains(addr string) bool {
 		}
 	}
 
-	b := !bp.reversed && matched ||
-		bp.reversed && !matched
-	if b {
-		bp.options.logger.Debugf("bypass: %s", addr)
-	}
+	b := !p.reversed && matched ||
+		p.reversed && !matched
 	return b
 }

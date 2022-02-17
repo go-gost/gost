@@ -94,6 +94,14 @@ type SelectorConfig struct {
 	FailTimeout time.Duration `yaml:"failTimeout" json:"failTimeout"`
 }
 
+type AdmissionConfig struct {
+	Name string `json:"name"`
+	// inline, file, etc.
+	Type     string   `yaml:",omitempty" json:"type,omitempty"`
+	Reverse  bool     `yaml:",omitempty" json:"reverse,omitempty"`
+	Matchers []string `json:"matchers"`
+}
+
 type BypassConfig struct {
 	Name string `json:"name"`
 	// inline, file, etc.
@@ -173,6 +181,7 @@ type ConnectorConfig struct {
 type ServiceConfig struct {
 	Name      string           `json:"name"`
 	Addr      string           `yaml:",omitempty" json:"addr,omitempty"`
+	Admission string           `yaml:",omitempty" json:"admission,omitempty"`
 	Bypass    string           `yaml:",omitempty" json:"bypass,omitempty"`
 	Resolver  string           `yaml:",omitempty" json:"resolver,omitempty"`
 	Hosts     string           `yaml:",omitempty" json:"hosts,omitempty"`
@@ -207,17 +216,18 @@ type NodeConfig struct {
 }
 
 type Config struct {
-	Services  []*ServiceConfig  `json:"services"`
-	Chains    []*ChainConfig    `yaml:",omitempty" json:"chains,omitempty"`
-	Authers   []*AutherConfig   `yaml:",omitempty" json:"authers,omitempty"`
-	Bypasses  []*BypassConfig   `yaml:",omitempty" json:"bypasses,omitempty"`
-	Resolvers []*ResolverConfig `yaml:",omitempty" json:"resolvers,omitempty"`
-	Hosts     []*HostsConfig    `yaml:",omitempty" json:"hosts,omitempty"`
-	TLS       *TLSConfig        `yaml:",omitempty" json:"tls,omitempty"`
-	Log       *LogConfig        `yaml:",omitempty" json:"log,omitempty"`
-	Profiling *ProfilingConfig  `yaml:",omitempty" json:"profiling,omitempty"`
-	API       *APIConfig        `yaml:",omitempty" json:"api,omitempty"`
-	Metrics   *MetricsConfig    `yaml:",omitempty" json:"metrics,omitempty"`
+	Services   []*ServiceConfig   `json:"services"`
+	Chains     []*ChainConfig     `yaml:",omitempty" json:"chains,omitempty"`
+	Authers    []*AutherConfig    `yaml:",omitempty" json:"authers,omitempty"`
+	Admissions []*AdmissionConfig `yaml:",omitempty" json:"admissions,omitempty"`
+	Bypasses   []*BypassConfig    `yaml:",omitempty" json:"bypasses,omitempty"`
+	Resolvers  []*ResolverConfig  `yaml:",omitempty" json:"resolvers,omitempty"`
+	Hosts      []*HostsConfig     `yaml:",omitempty" json:"hosts,omitempty"`
+	TLS        *TLSConfig         `yaml:",omitempty" json:"tls,omitempty"`
+	Log        *LogConfig         `yaml:",omitempty" json:"log,omitempty"`
+	Profiling  *ProfilingConfig   `yaml:",omitempty" json:"profiling,omitempty"`
+	API        *APIConfig         `yaml:",omitempty" json:"api,omitempty"`
+	Metrics    *MetricsConfig     `yaml:",omitempty" json:"metrics,omitempty"`
 }
 
 func (c *Config) Load() error {

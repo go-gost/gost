@@ -151,8 +151,7 @@ func deleteResolver(ctx *gin.Context) {
 	var req deleteResolverRequest
 	ctx.ShouldBindUri(&req)
 
-	svc := registry.Resolver().Get(req.Resolver)
-	if svc == nil {
+	if !registry.Resolver().IsRegistered(req.Resolver) {
 		writeError(ctx, ErrNotFound)
 		return
 	}

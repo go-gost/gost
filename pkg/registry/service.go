@@ -18,7 +18,7 @@ type serviceRegistry struct {
 	m sync.Map
 }
 
-func (r *serviceRegistry) Register(name string, svc service.Servicer) error {
+func (r *serviceRegistry) Register(name string, svc service.Service) error {
 	if name == "" || svc == nil {
 		return nil
 	}
@@ -38,7 +38,7 @@ func (r *serviceRegistry) IsRegistered(name string) bool {
 	return ok
 }
 
-func (r *serviceRegistry) Get(name string) service.Servicer {
+func (r *serviceRegistry) Get(name string) service.Service {
 	if name == "" {
 		return nil
 	}
@@ -46,5 +46,5 @@ func (r *serviceRegistry) Get(name string) service.Servicer {
 	if !ok {
 		return nil
 	}
-	return v.(service.Servicer)
+	return v.(service.Service)
 }

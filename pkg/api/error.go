@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	ErrInvalid  = &Error{statusCode: http.StatusBadRequest, Code: 40001, Msg: "instance invalid"}
-	ErrDup      = &Error{statusCode: http.StatusBadRequest, Code: 40002, Msg: "instance duplicated"}
-	ErrCreate   = &Error{statusCode: http.StatusConflict, Code: 40003, Msg: "instance creation failed"}
-	ErrNotFound = &Error{statusCode: http.StatusBadRequest, Code: 40004, Msg: "instance not found"}
+	ErrInvalid  = &Error{statusCode: http.StatusBadRequest, Code: 40001, Msg: "object invalid"}
+	ErrDup      = &Error{statusCode: http.StatusBadRequest, Code: 40002, Msg: "object duplicated"}
+	ErrCreate   = &Error{statusCode: http.StatusConflict, Code: 40003, Msg: "object creation failed"}
+	ErrNotFound = &Error{statusCode: http.StatusBadRequest, Code: 40004, Msg: "object not found"}
 	ErrSave     = &Error{statusCode: http.StatusInternalServerError, Code: 40005, Msg: "save config failed"}
 )
 

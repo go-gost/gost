@@ -173,6 +173,24 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			service.Handler.Retries = v
 			md.Del("retries")
 		}
+		if v := metadata.GetString(md, "admission"); v != "" {
+			admCfg := &config.AdmissionConfig{
+				Name: fmt.Sprintf("admission-%d", len(cfg.Admissions)),
+			}
+			if v[0] == '~' {
+				admCfg.Reverse = true
+				v = v[1:]
+			}
+			for _, s := range strings.Split(v, ",") {
+				if s == "" {
+					continue
+				}
+				admCfg.Matchers = append(admCfg.Matchers, s)
+			}
+			service.Admission = admCfg.Name
+			cfg.Admissions = append(cfg.Admissions, admCfg)
+			md.Del("admission")
+		}
 		if v := metadata.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
 				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),

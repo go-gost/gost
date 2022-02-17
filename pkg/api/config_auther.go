@@ -141,8 +141,7 @@ func deleteAuther(ctx *gin.Context) {
 	var req deleteAutherRequest
 	ctx.ShouldBindUri(&req)
 
-	svc := registry.Auther().Get(req.Auther)
-	if svc == nil {
+	if !registry.Auther().IsRegistered(req.Auther) {
 		writeError(ctx, ErrNotFound)
 		return
 	}

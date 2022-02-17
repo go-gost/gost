@@ -5,47 +5,64 @@ import (
 	"net"
 	"time"
 
+	"github.com/go-gost/gost/pkg/admission"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
-type Servicer interface {
+type options struct {
+	admission admission.Admission
+	logger    logger.Logger
+}
+
+type Option func(opts *options)
+
+func AdmissionOption(admission admission.Admission) Option {
+	return func(opts *options) {
+		opts.admission = admission
+	}
+}
+
+func LoggerOption(logger logger.Logger) Option {
+	return func(opts *options) {
+		opts.logger = logger
+	}
+}
+
+type Service interface {
 	Serve() error
 	Addr() net.Addr
 	Close() error
 }
 
-type Service struct {
+type service struct {
 	listener listener.Listener
 	handler  handler.Handler
-	logger   logger.Logger
+	options  options
 }
 
-func (s *Service) WithListener(ln listener.Listener) *Service {
-	s.listener = ln
-	return s
+func NewService(ln listener.Listener, h handler.Handler, opts ...Option) Service {
+	var options options
+	for _, opt := range opts {
+		opt(&options)
+	}
+	return &service{
+		listener: ln,
+		handler:  h,
+		options:  options,
+	}
 }
 
-func (s *Service) WithHandler(h handler.Handler) *Service {
-	s.handler = h
-	return s
-}
-
-func (s *Service) WithLogger(logger logger.Logger) *Service {
-	s.logger = logger
-	return s
-}
-
-func (s *Service) Addr() net.Addr {
+func (s *service) Addr() net.Addr {
 	return s.listener.Addr()
 }
 
-func (s *Service) Close() error {
+func (s *service) Close() error {
 	return s.listener.Close()
 }
 
-func (s *Service) Serve() error {
+func (s *service) Serve() error {
 	var tempDelay time.Duration
 	for {
 		conn, e := s.listener.Accept()
@@ -59,14 +76,21 @@ func (s *Service) Serve() error {
 				if max := 5 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				s.logger.Warnf("accept: %v, retrying in %v", e, tempDelay)
+				s.options.logger.Warnf("accept: %v, retrying in %v", e, tempDelay)
 				time.Sleep(tempDelay)
 				continue
 			}
-			s.logger.Errorf("accept: %v", e)
+			s.options.logger.Errorf("accept: %v", e)
 			return e
 		}
 		tempDelay = 0
+
+		if s.options.admission != nil &&
+			!s.options.admission.Admit(conn.RemoteAddr().String()) {
+			s.options.logger.Infof("admission: %s is denied", conn.RemoteAddr())
+			conn.Close()
+			continue
+		}
 
 		go s.handler.Handle(context.Background(), conn)
 	}

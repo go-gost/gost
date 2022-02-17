@@ -20,6 +20,25 @@ definitions:
         x-go-name: PathPrefix
     type: object
     x-go-package: github.com/go-gost/gost/pkg/config
+  AdmissionConfig:
+    properties:
+      matchers:
+        items:
+          type: string
+        type: array
+        x-go-name: Matchers
+      name:
+        type: string
+        x-go-name: Name
+      reverse:
+        type: boolean
+        x-go-name: Reverse
+      type:
+        description: inline, file, etc.
+        type: string
+        x-go-name: Type
+    type: object
+    x-go-package: github.com/go-gost/gost/pkg/config
   AuthConfig:
     properties:
       password:
@@ -81,6 +100,11 @@ definitions:
     x-go-package: github.com/go-gost/gost/pkg/config
   Config:
     properties:
+      admissions:
+        items:
+          $ref: '#/definitions/AdmissionConfig'
+        type: array
+        x-go-name: Admissions
       api:
         $ref: '#/definitions/APIConfig'
       authers:
@@ -403,6 +427,9 @@ definitions:
       addr:
         type: string
         x-go-name: Addr
+      admission:
+        type: string
+        x-go-name: Admission
       bypass:
         type: string
         x-go-name: Bypass
@@ -479,6 +506,65 @@ paths:
       - basicAuth:
         - '[]'
       summary: Save current config to file (gost.yaml or gost.json).
+      tags:
+      - ConfigManagement
+  /config/admissions:
+    post:
+      operationId: createAdmissionRequest
+      parameters:
+      - in: body
+        name: data
+        schema:
+          $ref: '#/definitions/AdmissionConfig'
+        x-go-name: Data
+      responses:
+        "200":
+          $ref: '#/responses/createAdmissionResponse'
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Create a new admission, the name of admission must be unique in admission
+        list.
+      tags:
+      - ConfigManagement
+  /config/admissions/{admission}:
+    delete:
+      operationId: deleteAdmissionRequest
+      parameters:
+      - in: path
+        name: admission
+        required: true
+        type: string
+        x-go-name: Admission
+      responses:
+        "200":
+          $ref: '#/responses/deleteAdmissionResponse'
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Delete admission by name.
+      tags:
+      - ConfigManagement
+    put:
+      operationId: updateAdmissionRequest
+      parameters:
+      - in: path
+        name: admission
+        required: true
+        type: string
+        x-go-name: Admission
+      - in: body
+        name: data
+        schema:
+          $ref: '#/definitions/AdmissionConfig'
+        x-go-name: Data
+      responses:
+        "200":
+          $ref: '#/responses/updateAdmissionResponse'
+      security:
+      - basicAuth:
+        - '[]'
+      summary: Update admission by name, the admission must already exist.
       tags:
       - ConfigManagement
   /config/authers:
@@ -835,6 +921,12 @@ paths:
 produces:
 - application/json
 responses:
+  createAdmissionResponse:
+    description: successful operation.
+    headers:
+      Data: {}
+    schema:
+      $ref: '#/definitions/Response'
   createAutherResponse:
     description: successful operation.
     headers:
@@ -866,6 +958,12 @@ responses:
     schema:
       $ref: '#/definitions/Response'
   createServiceResponse:
+    description: successful operation.
+    headers:
+      Data: {}
+    schema:
+      $ref: '#/definitions/Response'
+  deleteAdmissionResponse:
     description: successful operation.
     headers:
       Data: {}
@@ -914,6 +1012,12 @@ responses:
     schema:
       $ref: '#/definitions/Config'
   saveConfigResponse:
+    description: successful operation.
+    headers:
+      Data: {}
+    schema:
+      $ref: '#/definitions/Response'
+  updateAdmissionResponse:
     description: successful operation.
     headers:
       Data: {}

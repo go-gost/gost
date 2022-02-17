@@ -8,6 +8,7 @@ import (
 
 	pb "github.com/go-gost/gost/pkg/common/util/grpc/proto"
 	"github.com/go-gost/gost/pkg/logger"
+	"google.golang.org/grpc/peer"
 )
 
 type server struct {
@@ -23,6 +24,9 @@ func (s *server) Tunnel(srv pb.GostTunel_TunnelServer) error {
 		localAddr:  s.localAddr,
 		remoteAddr: &net.TCPAddr{},
 		closed:     make(chan struct{}),
+	}
+	if p, ok := peer.FromContext(srv.Context()); ok {
+		c.remoteAddr = p.Addr
 	}
 
 	select {

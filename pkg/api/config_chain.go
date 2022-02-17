@@ -152,8 +152,7 @@ func deleteChain(ctx *gin.Context) {
 	var req deleteChainRequest
 	ctx.ShouldBindUri(&req)
 
-	svc := registry.Chain().Get(req.Chain)
-	if svc == nil {
+	if !registry.Chain().IsRegistered(req.Chain) {
 		writeError(ctx, ErrNotFound)
 		return
 	}

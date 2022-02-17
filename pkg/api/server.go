@@ -113,6 +113,10 @@ func registerConfig(config *gin.RouterGroup) {
 	config.PUT("/authers/:auther", updateAuther)
 	config.DELETE("/authers/:auther", deleteAuther)
 
+	config.POST("/admissions", createAdmission)
+	config.PUT("/admissions/:admission", updateAdmission)
+	config.DELETE("/admissions/:admission", deleteAdmission)
+
 	config.POST("/bypasses", createBypass)
 	config.PUT("/bypasses/:bypass", updateBypass)
 	config.DELETE("/bypasses/:bypass", deleteBypass)

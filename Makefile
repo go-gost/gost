@@ -19,6 +19,7 @@ PLATFORM_LIST = \
 	linux-mipsle-hardfloat \
 	linux-mips64 \
 	linux-mips64le \
+	linux-s390x \
 	freebsd-386 \
 	freebsd-amd64
 
@@ -26,7 +27,7 @@ WINDOWS_ARCH_LIST = \
 	windows-386 \
 	windows-amd64
 
-all: linux-amd64 darwin-amd64 windows-amd64 # Most used
+all: linux-amd64 darwin-amd64 darwin-arm64 windows-amd64 # Most used
 
 darwin-amd64:
 	GOARCH=amd64 GOOS=darwin $(GOBUILD) -o $(BINDIR)/$(NAME)-$@ $(GOFILES)
@@ -69,6 +70,9 @@ linux-mips64:
 
 linux-mips64le:
 	GOARCH=mips64le GOOS=linux $(GOBUILD) -o $(BINDIR)/$(NAME)-$@ $(GOFILES)
+
+linux-s390x:
+	GOARCH=s390x GOOS=linux $(GOBUILD) -o $(BINDIR)/$(NAME)-$@ $(GOFILES)
 
 freebsd-386:
 	GOARCH=386 GOOS=freebsd $(GOBUILD) -o $(BINDIR)/$(NAME)-$@ $(GOFILES)

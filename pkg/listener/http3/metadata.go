@@ -1,4 +1,4 @@
-package pht
+package http3
 
 import (
 	"strings"
@@ -20,7 +20,7 @@ type metadata struct {
 	backlog       int
 }
 
-func (l *phtListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *http3Listener) parseMetadata(md mdata.Metadata) (err error) {
 	const (
 		authorizePath = "authorizePath"
 		pushPath      = "pushPath"

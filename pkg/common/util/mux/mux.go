@@ -38,7 +38,7 @@ func (session *Session) GetConn() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &StreamConn{Conn: session.conn, stream: stream}, nil
+	return &streamConn{Conn: session.conn, stream: stream}, nil
 }
 
 func (session *Session) Accept() (net.Conn, error) {
@@ -46,7 +46,7 @@ func (session *Session) Accept() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &StreamConn{Conn: session.conn, stream: stream}, nil
+	return &streamConn{Conn: session.conn, stream: stream}, nil
 }
 
 func (session *Session) Close() error {
@@ -67,19 +67,19 @@ func (session *Session) NumStreams() int {
 	return session.session.NumStreams()
 }
 
-type StreamConn struct {
+type streamConn struct {
 	net.Conn
 	stream *smux.Stream
 }
 
-func (c *StreamConn) Read(b []byte) (n int, err error) {
+func (c *streamConn) Read(b []byte) (n int, err error) {
 	return c.stream.Read(b)
 }
 
-func (c *StreamConn) Write(b []byte) (n int, err error) {
+func (c *streamConn) Write(b []byte) (n int, err error) {
 	return c.stream.Write(b)
 }
 
-func (c *StreamConn) Close() error {
+func (c *streamConn) Close() error {
 	return c.stream.Close()
 }

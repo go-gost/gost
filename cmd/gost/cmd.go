@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/metadata"
+	"github.com/go-gost/gost/pkg/metrics"
 	"github.com/go-gost/gost/pkg/registry"
 )
 
@@ -40,9 +41,8 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 	}
 	if v := os.Getenv("GOST_METRICS"); v != "" {
 		cfg.Metrics = &config.MetricsConfig{
-			Addr:   v,
-			Path:   "/metrics",
-			Enable: true,
+			Addr: v,
+			Path: metrics.DefaultPath,
 		}
 	}
 

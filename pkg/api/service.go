@@ -7,6 +7,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-gost/gost/pkg/auth"
+	"github.com/go-gost/gost/pkg/service"
 )
 
 type options struct {
@@ -35,12 +36,12 @@ func AutherOption(auther auth.Authenticator) Option {
 	}
 }
 
-type Server struct {
+type server struct {
 	s  *http.Server
 	ln net.Listener
 }
 
-func NewServer(addr string, opts ...Option) (*Server, error) {
+func NewService(addr string, opts ...Option) (service.Service, error) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
@@ -77,7 +78,7 @@ func NewServer(addr string, opts ...Option) (*Server, error) {
 	config.Use(mwBasicAuth(options.auther))
 	registerConfig(config)
 
-	return &Server{
+	return &server{
 		s: &http.Server{
 			Handler: r,
 		},
@@ -85,15 +86,15 @@ func NewServer(addr string, opts ...Option) (*Server, error) {
 	}, nil
 }
 
-func (s *Server) Serve() error {
+func (s *server) Serve() error {
 	return s.s.Serve(s.ln)
 }
 
-func (s *Server) Addr() net.Addr {
+func (s *server) Addr() net.Addr {
 	return s.ln.Addr()
 }
 
-func (s *Server) Close() error {
+func (s *server) Close() error {
 	return s.s.Close()
 }
 

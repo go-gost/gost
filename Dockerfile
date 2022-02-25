@@ -1,5 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.17.7-alpine as builder
-# FROM --platform=$BUILDPLATFORM golang:1.18-rc-alpine as builder
+FROM --platform=$BUILDPLATFORM golang:1.18rc1-alpine as builder
 
 # Convert TARGETPLATFORM to GOARCH format
 # https://github.com/tonistiigi/xx

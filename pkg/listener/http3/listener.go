@@ -1,6 +1,4 @@
-// plain http tunnel
-
-package pht
+package http3
 
 import (
 	"net"
@@ -18,7 +16,7 @@ func init() {
 	registry.RegisterListener("h3", NewListener)
 }
 
-type phtListener struct {
+type http3Listener struct {
 	addr    net.Addr
 	server  *pht_util.Server
 	logger  logger.Logger
@@ -31,13 +29,13 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	for _, opt := range opts {
 		opt(&options)
 	}
-	return &phtListener{
+	return &http3Listener{
 		logger:  options.Logger,
 		options: options,
 	}
 }
 
-func (l *phtListener) Init(md md.Metadata) (err error) {
+func (l *http3Listener) Init(md md.Metadata) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}
@@ -65,14 +63,14 @@ func (l *phtListener) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (l *phtListener) Accept() (conn net.Conn, err error) {
+func (l *http3Listener) Accept() (conn net.Conn, err error) {
 	return l.server.Accept()
 }
 
-func (l *phtListener) Addr() net.Addr {
+func (l *http3Listener) Addr() net.Addr {
 	return l.addr
 }
 
-func (l *phtListener) Close() (err error) {
+func (l *http3Listener) Close() (err error) {
 	return l.server.Close()
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/config/parsing"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/metrics"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/go-gost/gost/pkg/service"
 )
@@ -119,15 +120,22 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 	return logger.NewLogger(opts...)
 }
 
-func buildAPIServer(cfg *config.APIConfig) (*api.Server, error) {
+func buildAPIService(cfg *config.APIConfig) (service.Service, error) {
 	auther := parsing.ParseAutherFromAuth(cfg.Auth)
 	if cfg.Auther != "" {
 		auther = registry.Auther().Get(cfg.Auther)
 	}
-	return api.NewServer(
+	return api.NewService(
 		cfg.Addr,
 		api.PathPrefixOption(cfg.PathPrefix),
 		api.AccessLogOption(cfg.AccessLog),
 		api.AutherOption(auther),
+	)
+}
+
+func buildMetricsService(cfg *config.MetricsConfig) (service.Service, error) {
+	return metrics.NewService(
+		cfg.Addr,
+		metrics.PathOption(cfg.Path),
 	)
 }

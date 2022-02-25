@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/metrics"
 )
 
 var (
@@ -21,6 +22,7 @@ var (
 	nodes        stringList
 	debug        bool
 	apiAddr      string
+	metricsAddr  string
 )
 
 func init() {
@@ -32,7 +34,8 @@ func init() {
 	flag.BoolVar(&printVersion, "V", false, "print version")
 	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
 	flag.BoolVar(&debug, "D", false, "debug mode")
-	flag.StringVar(&apiAddr, "api", "", "api server addr")
+	flag.StringVar(&apiAddr, "api", "", "api service address")
+	flag.StringVar(&metricsAddr, "metrics", "", "metrics service address")
 	flag.Parse()
 
 	if printVersion {
@@ -56,6 +59,12 @@ func main() {
 		if apiAddr != "" {
 			cfg.API = &config.APIConfig{
 				Addr: apiAddr,
+			}
+		}
+		if metricsAddr != "" {
+			cfg.Metrics = &config.MetricsConfig{
+				Addr: metricsAddr,
+				Path: metrics.DefaultPath,
 			}
 		}
 	} else {
@@ -92,14 +101,27 @@ func main() {
 	}
 
 	if cfg.API != nil {
-		s, err := buildAPIServer(cfg.API)
+		s, err := buildAPIService(cfg.API)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer s.Close()
 
 		go func() {
-			log.Info("api server on ", s.Addr())
+			log.Info("api service on ", s.Addr())
+			log.Fatal(s.Serve())
+		}()
+	}
+
+	if cfg.Metrics != nil {
+		s, err := buildMetricsService(cfg.Metrics)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer s.Close()
+
+		go func() {
+			log.Info("metrics service on ", s.Addr())
 			log.Fatal(s.Serve())
 		}()
 	}

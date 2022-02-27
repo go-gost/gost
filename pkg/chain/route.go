@@ -181,7 +181,7 @@ func (r *Route) bindLocal(ctx context.Context, network, address string, opts ...
 		if err != nil {
 			return nil, err
 		}
-		logger := logger.Default().WithFields(map[string]interface{}{
+		logger := logger.Default().WithFields(map[string]any{
 			"network": network,
 			"address": address,
 		})

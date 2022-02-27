@@ -16,7 +16,7 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 		return nil, nil
 	}
 
-	chainLogger := logger.Default().WithFields(map[string]interface{}{
+	chainLogger := logger.Default().WithFields(map[string]any{
 		"kind":  "chain",
 		"chain": cfg.Name,
 	})
@@ -26,14 +26,14 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 	for _, hop := range cfg.Hops {
 		group := &chain.NodeGroup{}
 		for _, v := range hop.Nodes {
-			nodeLogger := chainLogger.WithFields(map[string]interface{}{
+			nodeLogger := chainLogger.WithFields(map[string]any{
 				"kind":      "node",
 				"connector": v.Connector.Type,
 				"dialer":    v.Dialer.Type,
 				"hop":       hop.Name,
 				"node":      v.Name,
 			})
-			connectorLogger := nodeLogger.WithFields(map[string]interface{}{
+			connectorLogger := nodeLogger.WithFields(map[string]any{
 				"kind": "connector",
 			})
 
@@ -49,21 +49,21 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 				return nil, err
 			}
 
-			cr := registry.GetConnector(v.Connector.Type)(
+			cr := registry.ConnectorRegistry().Get(v.Connector.Type)(
 				connector.AuthOption(parseAuth(v.Connector.Auth)),
 				connector.TLSConfigOption(tlsConfig),
 				connector.LoggerOption(connectorLogger),
 			)
 
 			if v.Connector.Metadata == nil {
-				v.Connector.Metadata = make(map[string]interface{})
+				v.Connector.Metadata = make(map[string]any)
 			}
 			if err := cr.Init(metadata.MapMetadata(v.Connector.Metadata)); err != nil {
 				connectorLogger.Error("init: ", err)
 				return nil, err
 			}
 
-			dialerLogger := nodeLogger.WithFields(map[string]interface{}{
+			dialerLogger := nodeLogger.WithFields(map[string]any{
 				"kind": "dialer",
 			})
 
@@ -79,14 +79,14 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 				return nil, err
 			}
 
-			d := registry.GetDialer(v.Dialer.Type)(
+			d := registry.DialerRegistry().Get(v.Dialer.Type)(
 				dialer.AuthOption(parseAuth(v.Dialer.Auth)),
 				dialer.TLSConfigOption(tlsConfig),
 				dialer.LoggerOption(dialerLogger),
 			)
 
 			if v.Dialer.Metadata == nil {
-				v.Dialer.Metadata = make(map[string]interface{})
+				v.Dialer.Metadata = make(map[string]any)
 			}
 			if err := d.Init(metadata.MapMetadata(v.Dialer.Metadata)); err != nil {
 				dialerLogger.Error("init: ", err)
@@ -112,9 +112,9 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 				Name:      v.Name,
 				Addr:      v.Addr,
 				Transport: tr,
-				Bypass:    registry.Bypass().Get(v.Bypass),
-				Resolver:  registry.Resolver().Get(v.Resolver),
-				Hosts:     registry.Hosts().Get(v.Hosts),
+				Bypass:    registry.BypassRegistry().Get(v.Bypass),
+				Resolver:  registry.ResolverRegistry().Get(v.Resolver),
+				Hosts:     registry.HostsRegistry().Get(v.Hosts),
 				Marker:    &chain.FailMarker{},
 			}
 			group.AddNode(node)

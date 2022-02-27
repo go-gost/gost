@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("ftcp", NewListener)
+	registry.ListenerRegistry().Register("ftcp", NewListener)
 }
 
 type ftcpListener struct {
@@ -69,7 +69,7 @@ func (l *ftcpListener) Accept() (conn net.Conn, err error) {
 
 func (l *ftcpListener) Close() error {
 	err := l.conn.Close()
-	l.connPool.Range(func(k interface{}, v *serverConn) bool {
+	l.connPool.Range(func(k any, v *serverConn) bool {
 		v.Close()
 		return true
 	})
@@ -128,7 +128,7 @@ type connPool struct {
 	m    sync.Map
 }
 
-func (p *connPool) Get(key interface{}) (conn *serverConn, ok bool) {
+func (p *connPool) Get(key any) (conn *serverConn, ok bool) {
 	v, ok := p.m.Load(key)
 	if ok {
 		conn, ok = v.(*serverConn)
@@ -136,18 +136,18 @@ func (p *connPool) Get(key interface{}) (conn *serverConn, ok bool) {
 	return
 }
 
-func (p *connPool) Set(key interface{}, conn *serverConn) {
+func (p *connPool) Set(key any, conn *serverConn) {
 	p.m.Store(key, conn)
 	atomic.AddInt64(&p.size, 1)
 }
 
-func (p *connPool) Delete(key interface{}) {
+func (p *connPool) Delete(key any) {
 	p.m.Delete(key)
 	atomic.AddInt64(&p.size, -1)
 }
 
-func (p *connPool) Range(f func(key interface{}, value *serverConn) bool) {
-	p.m.Range(func(k, v interface{}) bool {
+func (p *connPool) Range(f func(key any, value *serverConn) bool) {
+	p.m.Range(func(k, v any) bool {
 		return f(k, v.(*serverConn))
 	})
 }

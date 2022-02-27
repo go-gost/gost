@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	registry.RegiserConnector("http2", NewConnector)
+	registry.ConnectorRegistry().Register("http2", NewConnector)
 }
 
 type http2Connector struct {
@@ -44,7 +44,7 @@ func (c *http2Connector) Init(md md.Metadata) (err error) {
 }
 
 func (c *http2Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"local":   conn.LocalAddr().String(),
 		"remote":  conn.RemoteAddr().String(),
 		"network": network,

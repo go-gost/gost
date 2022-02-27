@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("tcp", NewDialer)
+	registry.DialerRegistry().Register("tcp", NewDialer)
 }
 
 type tcpDialer struct {

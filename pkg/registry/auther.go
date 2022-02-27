@@ -1,52 +1,26 @@
 package registry
 
 import (
-	"sync"
-
 	"github.com/go-gost/gost/pkg/auth"
 )
 
-var (
-	autherReg = &autherRegistry{}
-)
-
-func Auther() *autherRegistry {
-	return autherReg
-}
-
 type autherRegistry struct {
-	m sync.Map
+	registry
 }
 
-func (r *autherRegistry) Register(name string, auther auth.Authenticator) error {
-	if name == "" || auther == nil {
-		return nil
-	}
-	if _, loaded := r.m.LoadOrStore(name, auther); loaded {
-		return ErrDup
-	}
-
-	return nil
-}
-
-func (r *autherRegistry) Unregister(name string) {
-	r.m.Delete(name)
-}
-
-func (r *autherRegistry) IsRegistered(name string) bool {
-	_, ok := r.m.Load(name)
-	return ok
+func (r *autherRegistry) Register(name string, v auth.Authenticator) error {
+	return r.registry.Register(name, v)
 }
 
 func (r *autherRegistry) Get(name string) auth.Authenticator {
-	if name == "" {
-		return nil
+	if name != "" {
+		return &autherWrapper{name: name, r: r}
 	}
-	return &autherWrapper{name: name}
+	return nil
 }
 
 func (r *autherRegistry) get(name string) auth.Authenticator {
-	if v, ok := r.m.Load(name); ok {
+	if v := r.registry.Get(name); v != nil {
 		return v.(auth.Authenticator)
 	}
 	return nil
@@ -54,10 +28,11 @@ func (r *autherRegistry) get(name string) auth.Authenticator {
 
 type autherWrapper struct {
 	name string
+	r    *autherRegistry
 }
 
 func (w *autherWrapper) Authenticate(user, password string) bool {
-	v := autherReg.get(w.name)
+	v := w.r.get(w.name)
 	if v == nil {
 		return true
 	}

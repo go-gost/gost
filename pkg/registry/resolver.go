@@ -3,52 +3,27 @@ package registry
 import (
 	"context"
 	"net"
-	"sync"
 
 	"github.com/go-gost/gost/pkg/resolver"
 )
 
-var (
-	resolverReg = &resolverRegistry{}
-)
-
-func Resolver() *resolverRegistry {
-	return resolverReg
-}
-
 type resolverRegistry struct {
-	m sync.Map
+	registry
 }
 
-func (r *resolverRegistry) Register(name string, resolver resolver.Resolver) error {
-	if name == "" || resolver == nil {
-		return nil
-	}
-	if _, loaded := r.m.LoadOrStore(name, resolver); loaded {
-		return ErrDup
-	}
-
-	return nil
-}
-
-func (r *resolverRegistry) Unregister(name string) {
-	r.m.Delete(name)
-}
-
-func (r *resolverRegistry) IsRegistered(name string) bool {
-	_, ok := r.m.Load(name)
-	return ok
+func (r *resolverRegistry) Register(name string, v resolver.Resolver) error {
+	return r.registry.Register(name, v)
 }
 
 func (r *resolverRegistry) Get(name string) resolver.Resolver {
-	if name == "" {
-		return nil
+	if name != "" {
+		return &resolverWrapper{name: name, r: r}
 	}
-	return &resolverWrapper{name: name}
+	return nil
 }
 
 func (r *resolverRegistry) get(name string) resolver.Resolver {
-	if v, ok := r.m.Load(name); ok {
+	if v := r.registry.Get(name); v != nil {
 		return v.(resolver.Resolver)
 	}
 	return nil
@@ -56,10 +31,11 @@ func (r *resolverRegistry) get(name string) resolver.Resolver {
 
 type resolverWrapper struct {
 	name string
+	r    *resolverRegistry
 }
 
 func (w *resolverWrapper) Resolve(ctx context.Context, network, host string) ([]net.IP, error) {
-	r := Resolver().get(w.name)
+	r := w.r.get(w.name)
 	if r == nil {
 		return nil, resolver.ErrInvalid
 	}

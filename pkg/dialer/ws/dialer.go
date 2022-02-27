@@ -15,8 +15,8 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("ws", NewDialer)
-	registry.RegisterDialer("wss", NewTLSDialer)
+	registry.DialerRegistry().Register("ws", NewDialer)
+	registry.DialerRegistry().Register("wss", NewTLSDialer)
 }
 
 type wsDialer struct {

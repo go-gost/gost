@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("ftcp", NewDialer)
+	registry.DialerRegistry().Register("ftcp", NewDialer)
 }
 
 type ftcpDialer struct {

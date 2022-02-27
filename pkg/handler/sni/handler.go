@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("sni", NewHandler)
+	registry.HandlerRegistry().Register("sni", NewHandler)
 }
 
 type sniHandler struct {
@@ -40,9 +40,9 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 		options: options,
 	}
 
-	if f := registry.GetHandler("http"); f != nil {
+	if f := registry.HandlerRegistry().Get("http"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(h.options.Logger.WithFields(map[string]interface{}{"type": "http"})))
+			handler.LoggerOption(h.options.Logger.WithFields(map[string]any{"type": "http"})))
 		h.httpHandler = f(v...)
 	}
 
@@ -77,14 +77,14 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -125,7 +125,7 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 	target := net.JoinHostPort(host, "443")
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": target,
 	})
 	log.Infof("%s >> %s", conn.RemoteAddr(), target)
@@ -149,7 +149,7 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), target)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), target)
 }

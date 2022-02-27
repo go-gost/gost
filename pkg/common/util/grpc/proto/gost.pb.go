@@ -95,7 +95,7 @@ func file_gost_proto_rawDescGZIP() []byte {
 }
 
 var file_gost_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_gost_proto_goTypes = []interface{}{
+var file_gost_proto_goTypes = []any{
 	(*Chunk)(nil), // 0: Chunk
 }
 var file_gost_proto_depIdxs = []int32{
@@ -114,7 +114,7 @@ func file_gost_proto_init() {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_gost_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_gost_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*Chunk); i {
 			case 0:
 				return &v.state

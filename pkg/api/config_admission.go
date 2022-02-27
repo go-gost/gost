@@ -42,7 +42,7 @@ func createAdmission(ctx *gin.Context) {
 
 	v := parsing.ParseAdmission(&req.Data)
 
-	if err := registry.Admission().Register(req.Data.Name, v); err != nil {
+	if err := registry.AdmissionRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -86,7 +86,7 @@ func updateAdmission(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.Admission().IsRegistered(req.Admission) {
+	if !registry.AdmissionRegistry().IsRegistered(req.Admission) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -95,9 +95,9 @@ func updateAdmission(ctx *gin.Context) {
 
 	v := parsing.ParseAdmission(&req.Data)
 
-	registry.Admission().Unregister(req.Admission)
+	registry.AdmissionRegistry().Unregister(req.Admission)
 
-	if err := registry.Admission().Register(req.Admission, v); err != nil {
+	if err := registry.AdmissionRegistry().Register(req.Admission, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -143,11 +143,11 @@ func deleteAdmission(ctx *gin.Context) {
 	var req deleteAdmissionRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.Admission().IsRegistered(req.Admission) {
+	if !registry.AdmissionRegistry().IsRegistered(req.Admission) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.Admission().Unregister(req.Admission)
+	registry.AdmissionRegistry().Unregister(req.Admission)
 
 	cfg := config.Global()
 	admissiones := cfg.Admissions

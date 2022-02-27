@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("redu", NewListener)
+	registry.ListenerRegistry().Register("redu", NewListener)
 }
 
 type redirectListener struct {

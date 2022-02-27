@@ -17,7 +17,7 @@ func mwLogger() gin.HandlerFunc {
 		ctx.Next()
 		duration := time.Since(startTime)
 
-		logger.Default().WithFields(map[string]interface{}{
+		logger.Default().WithFields(map[string]any{
 			"kind":     "api",
 			"method":   ctx.Request.Method,
 			"uri":      ctx.Request.RequestURI,

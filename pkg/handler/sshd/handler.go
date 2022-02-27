@@ -23,7 +23,7 @@ const (
 )
 
 func init() {
-	registry.RegisterHandler("sshd", NewHandler)
+	registry.HandlerRegistry().Register("sshd", NewHandler)
 }
 
 type forwardHandler struct {
@@ -62,7 +62,7 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
@@ -81,7 +81,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 func (h *forwardHandler) handleDirectForward(ctx context.Context, conn *sshd_util.DirectForwardConn, log logger.Logger) {
 	targetAddr := conn.DstAddr()
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", targetAddr, "tcp"),
 		"cmd": "connect",
 	})
@@ -102,7 +102,7 @@ func (h *forwardHandler) handleDirectForward(ctx context.Context, conn *sshd_uti
 	t := time.Now()
 	log.Infof("%s <-> %s", cc.LocalAddr(), targetAddr)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", cc.LocalAddr(), targetAddr)
 }
@@ -116,7 +116,7 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 	network := "tcp"
 	addr := net.JoinHostPort(t.Host, strconv.Itoa(int(t.Port)))
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", addr, network),
 		"cmd": "bind",
 	})
@@ -132,7 +132,7 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 	}
 	defer ln.Close()
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"bind": fmt.Sprintf("%s/%s", ln.Addr(), ln.Addr().Network()),
 	})
 	log.Debugf("bind on %s OK", ln.Addr())
@@ -167,7 +167,7 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 			go func(conn net.Conn) {
 				defer conn.Close()
 
-				log := log.WithFields(map[string]interface{}{
+				log := log.WithFields(map[string]any{
 					"local":  conn.LocalAddr().String(),
 					"remote": conn.RemoteAddr().String(),
 				})
@@ -195,7 +195,7 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 				t := time.Now()
 				log.Infof("%s <-> %s", conn.LocalAddr(), conn.RemoteAddr())
 				handler.Transport(ch, conn)
-				log.WithFields(map[string]interface{}{
+				log.WithFields(map[string]any{
 					"duration": time.Since(t),
 				}).Infof("%s >-< %s", conn.LocalAddr(), conn.RemoteAddr())
 			}(cc)
@@ -205,7 +205,7 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 	tm := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	<-conn.Done()
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(tm),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }

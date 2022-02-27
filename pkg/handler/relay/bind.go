@@ -14,7 +14,7 @@ import (
 )
 
 func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "bind",
 	})
@@ -70,7 +70,7 @@ func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, addr
 		return
 	}
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"bind": fmt.Sprintf("%s/%s", ln.Addr(), ln.Addr().Network()),
 	})
 	log.Debugf("bind on %s OK", ln.Addr())
@@ -107,7 +107,7 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 		return
 	}
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"bind": pc.LocalAddr().String(),
 	})
 	log.Debugf("bind on %s OK", pc.LocalAddr())
@@ -120,7 +120,7 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), pc.LocalAddr())
 	relay.Run()
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), pc.LocalAddr())
 }
@@ -157,7 +157,7 @@ func (h *relayHandler) serveTCPBind(ctx context.Context, conn net.Conn, ln net.L
 		go func(c net.Conn) {
 			defer c.Close()
 
-			log = log.WithFields(map[string]interface{}{
+			log = log.WithFields(map[string]any{
 				"local":  ln.Addr().String(),
 				"remote": c.RemoteAddr().String(),
 			})
@@ -184,7 +184,7 @@ func (h *relayHandler) serveTCPBind(ctx context.Context, conn net.Conn, ln net.L
 			t := time.Now()
 			log.Infof("%s <-> %s", c.LocalAddr(), c.RemoteAddr())
 			handler.Transport(sc, c)
-			log.WithFields(map[string]interface{}{"duration": time.Since(t)}).
+			log.WithFields(map[string]any{"duration": time.Since(t)}).
 				Infof("%s >-< %s", c.LocalAddr(), c.RemoteAddr())
 		}(rc)
 	}

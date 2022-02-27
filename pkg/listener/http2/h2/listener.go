@@ -16,8 +16,8 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("h2c", NewListener)
-	registry.RegisterListener("h2", NewTLSListener)
+	registry.ListenerRegistry().Register("h2c", NewListener)
+	registry.ListenerRegistry().Register("h2", NewTLSListener)
 }
 
 type h2Listener struct {

@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("grpc", NewListener)
+	registry.ListenerRegistry().Register("grpc", NewListener)
 }
 
 type grpcListener struct {

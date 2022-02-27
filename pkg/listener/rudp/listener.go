@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("rudp", NewListener)
+	registry.ListenerRegistry().Register("rudp", NewListener)
 }
 
 type rudpListener struct {

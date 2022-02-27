@@ -29,17 +29,17 @@ const (
 )
 
 type Logger interface {
-	WithFields(map[string]interface{}) Logger
-	Debug(args ...interface{})
-	Debugf(format string, args ...interface{})
-	Info(args ...interface{})
-	Infof(format string, args ...interface{})
-	Warn(args ...interface{})
-	Warnf(format string, args ...interface{})
-	Error(args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fatal(args ...interface{})
-	Fatalf(format string, args ...interface{})
+	WithFields(map[string]any) Logger
+	Debug(args ...any)
+	Debugf(format string, args ...any)
+	Info(args ...any)
+	Infof(format string, args ...any)
+	Warn(args ...any)
+	Warnf(format string, args ...any)
+	Error(args ...any)
+	Errorf(format string, args ...any)
+	Fatal(args ...any)
+	Fatalf(format string, args ...any)
 	GetLevel() LogLevel
 	IsLevelEnabled(level LogLevel) bool
 }

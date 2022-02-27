@@ -8,22 +8,22 @@ import (
 
 type Metadata interface {
 	IsExists(key string) bool
-	Set(key string, value interface{})
-	Get(key string) interface{}
+	Set(key string, value any)
+	Get(key string) any
 }
 
-type MapMetadata map[string]interface{}
+type MapMetadata map[string]any
 
 func (m MapMetadata) IsExists(key string) bool {
 	_, ok := m[key]
 	return ok
 }
 
-func (m MapMetadata) Set(key string, value interface{}) {
+func (m MapMetadata) Set(key string, value any) {
 	m[key] = value
 }
 
-func (m MapMetadata) Get(key string) interface{} {
+func (m MapMetadata) Get(key string) any {
 	if m != nil {
 		return m[key]
 	}
@@ -112,7 +112,7 @@ func GetStrings(md Metadata, key string) (ss []string) {
 	switch v := md.Get(key).(type) {
 	case []string:
 		ss = v
-	case []interface{}:
+	case []any:
 		for _, vv := range v {
 			if s, ok := vv.(string); ok {
 				ss = append(ss, s)
@@ -122,12 +122,12 @@ func GetStrings(md Metadata, key string) (ss []string) {
 	return
 }
 
-func GetStringMap(md Metadata, key string) (m map[string]interface{}) {
+func GetStringMap(md Metadata, key string) (m map[string]any) {
 	switch vv := md.Get(key).(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		return vv
-	case map[interface{}]interface{}:
-		m = make(map[string]interface{})
+	case map[any]any:
+		m = make(map[string]any)
 		for k, v := range vv {
 			m[fmt.Sprintf("%v", k)] = v
 		}
@@ -137,12 +137,12 @@ func GetStringMap(md Metadata, key string) (m map[string]interface{}) {
 
 func GetStringMapString(md Metadata, key string) (m map[string]string) {
 	switch vv := md.Get(key).(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		m = make(map[string]string)
 		for k, v := range vv {
 			m[k] = fmt.Sprintf("%v", v)
 		}
-	case map[interface{}]interface{}:
+	case map[any]any:
 		m = make(map[string]string)
 		for k, v := range vv {
 			m[fmt.Sprintf("%v", k)] = fmt.Sprintf("%v", v)

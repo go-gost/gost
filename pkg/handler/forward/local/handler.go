@@ -13,9 +13,9 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("tcp", NewHandler)
-	registry.RegisterHandler("udp", NewHandler)
-	registry.RegisterHandler("forward", NewHandler)
+	registry.HandlerRegistry().Register("tcp", NewHandler)
+	registry.HandlerRegistry().Register("udp", NewHandler)
+	registry.HandlerRegistry().Register("forward", NewHandler)
 }
 
 type forwardHandler struct {
@@ -66,14 +66,14 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -89,7 +89,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 		network = "udp"
 	}
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", target.Addr, network),
 	})
 
@@ -109,7 +109,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr)
 }

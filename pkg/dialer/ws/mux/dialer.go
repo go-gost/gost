@@ -18,8 +18,8 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("mws", NewDialer)
-	registry.RegisterDialer("mwss", NewTLSDialer)
+	registry.DialerRegistry().Register("mws", NewDialer)
+	registry.DialerRegistry().Register("mwss", NewTLSDialer)
 }
 
 type mwsDialer struct {
@@ -150,7 +150,7 @@ func (d *mwsDialer) dial(ctx context.Context, network, addr string, opts *dialer
 		if err != nil {
 			d.logger.Error(err)
 		} else {
-			d.logger.WithFields(map[string]interface{}{
+			d.logger.WithFields(map[string]any{
 				"src": conn.LocalAddr().String(),
 				"dst": addr,
 			}).Debug("dial with dial func")
@@ -163,7 +163,7 @@ func (d *mwsDialer) dial(ctx context.Context, network, addr string, opts *dialer
 	if err != nil {
 		d.logger.Error(err)
 	} else {
-		d.logger.WithFields(map[string]interface{}{
+		d.logger.WithFields(map[string]any{
 			"src": conn.LocalAddr().String(),
 			"dst": addr,
 		}).Debugf("dial direct %s/%s", addr, network)

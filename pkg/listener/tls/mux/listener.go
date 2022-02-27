@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("mtls", NewListener)
+	registry.ListenerRegistry().Register("mtls", NewListener)
 }
 
 type mtlsListener struct {

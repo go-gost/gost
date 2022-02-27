@@ -20,7 +20,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 
 	for _, autherCfg := range cfg.Authers {
 		if auther := parsing.ParseAuther(autherCfg); auther != nil {
-			if err := registry.Auther().Register(autherCfg.Name, auther); err != nil {
+			if err := registry.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -28,7 +28,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 
 	for _, admissionCfg := range cfg.Admissions {
 		if adm := parsing.ParseAdmission(admissionCfg); adm != nil {
-			if err := registry.Admission().Register(admissionCfg.Name, adm); err != nil {
+			if err := registry.AdmissionRegistry().Register(admissionCfg.Name, adm); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -36,7 +36,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 
 	for _, bypassCfg := range cfg.Bypasses {
 		if bp := parsing.ParseBypass(bypassCfg); bp != nil {
-			if err := registry.Bypass().Register(bypassCfg.Name, bp); err != nil {
+			if err := registry.BypassRegistry().Register(bypassCfg.Name, bp); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -48,7 +48,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 			log.Fatal(err)
 		}
 		if r != nil {
-			if err := registry.Resolver().Register(resolverCfg.Name, r); err != nil {
+			if err := registry.ResolverRegistry().Register(resolverCfg.Name, r); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -56,7 +56,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 
 	for _, hostsCfg := range cfg.Hosts {
 		if h := parsing.ParseHosts(hostsCfg); h != nil {
-			if err := registry.Hosts().Register(hostsCfg.Name, h); err != nil {
+			if err := registry.HostsRegistry().Register(hostsCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -68,7 +68,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 			log.Fatal(err)
 		}
 		if c != nil {
-			if err := registry.Chain().Register(chainCfg.Name, c); err != nil {
+			if err := registry.ChainRegistry().Register(chainCfg.Name, c); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -80,7 +80,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 			log.Fatal(err)
 		}
 		if svc != nil {
-			if err := registry.Service().Register(svcCfg.Name, svc); err != nil {
+			if err := registry.ServiceRegistry().Register(svcCfg.Name, svc); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -123,7 +123,7 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 func buildAPIService(cfg *config.APIConfig) (service.Service, error) {
 	auther := parsing.ParseAutherFromAuth(cfg.Auth)
 	if cfg.Auther != "" {
-		auther = registry.Auther().Get(cfg.Auther)
+		auther = registry.AutherRegistry().Get(cfg.Auther)
 	}
 	return api.NewService(
 		cfg.Addr,

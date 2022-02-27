@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("udp", NewListener)
+	registry.ListenerRegistry().Register("udp", NewListener)
 }
 
 type udpListener struct {

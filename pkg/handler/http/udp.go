@@ -13,7 +13,7 @@ import (
 )
 
 func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"cmd": "udp",
 	})
 
@@ -70,7 +70,7 @@ func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, network, add
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), pc.LocalAddr())
 	relay.Run()
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), pc.LocalAddr())
 }

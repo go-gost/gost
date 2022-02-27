@@ -13,8 +13,8 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("pht", NewListener)
-	registry.RegisterListener("phts", NewTLSListener)
+	registry.ListenerRegistry().Register("pht", NewListener)
+	registry.ListenerRegistry().Register("phts", NewTLSListener)
 }
 
 type phtListener struct {

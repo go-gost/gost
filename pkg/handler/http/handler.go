@@ -24,7 +24,7 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("http", NewHandler)
+	registry.HandlerRegistry().Register("http", NewHandler)
 }
 
 type httpHandler struct {
@@ -64,13 +64,13 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -120,7 +120,7 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		addr = net.JoinHostPort(addr, "80")
 	}
 
-	fields := map[string]interface{}{
+	fields := map[string]any{
 		"dst": addr,
 	}
 	if u, _, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"), log); u != "" {
@@ -216,7 +216,7 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 	start := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(start),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }

@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("http2", NewDialer)
+	registry.DialerRegistry().Register("http2", NewDialer)
 }
 
 type http2Dialer struct {
@@ -102,7 +102,7 @@ func (d *http2Dialer) dial(ctx context.Context, network, addr string, opts *dial
 		if err != nil {
 			d.logger.Error(err)
 		} else {
-			d.logger.WithFields(map[string]interface{}{
+			d.logger.WithFields(map[string]any{
 				"src": conn.LocalAddr().String(),
 				"dst": addr,
 			}).Debug("dial with dial func")
@@ -115,7 +115,7 @@ func (d *http2Dialer) dial(ctx context.Context, network, addr string, opts *dial
 	if err != nil {
 		d.logger.Error(err)
 	} else {
-		d.logger.WithFields(map[string]interface{}{
+		d.logger.WithFields(map[string]any{
 			"src": conn.LocalAddr().String(),
 			"dst": addr,
 		}).Debugf("dial direct %s/%s", addr, network)

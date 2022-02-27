@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("rtcp", NewListener)
+	registry.ListenerRegistry().Register("rtcp", NewListener)
 }
 
 type rtcpListener struct {

@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("tls", NewDialer)
+	registry.DialerRegistry().Register("tls", NewDialer)
 }
 
 type tlsDialer struct {

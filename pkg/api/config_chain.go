@@ -46,7 +46,7 @@ func createChain(ctx *gin.Context) {
 		return
 	}
 
-	if err := registry.Chain().Register(req.Data.Name, v); err != nil {
+	if err := registry.ChainRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -91,7 +91,7 @@ func updateChain(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.Chain().IsRegistered(req.Chain) {
+	if !registry.ChainRegistry().IsRegistered(req.Chain) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -104,9 +104,9 @@ func updateChain(ctx *gin.Context) {
 		return
 	}
 
-	registry.Chain().Unregister(req.Chain)
+	registry.ChainRegistry().Unregister(req.Chain)
 
-	if err := registry.Chain().Register(req.Chain, v); err != nil {
+	if err := registry.ChainRegistry().Register(req.Chain, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -152,11 +152,11 @@ func deleteChain(ctx *gin.Context) {
 	var req deleteChainRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.Chain().IsRegistered(req.Chain) {
+	if !registry.ChainRegistry().IsRegistered(req.Chain) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.Chain().Unregister(req.Chain)
+	registry.ChainRegistry().Unregister(req.Chain)
 
 	cfg := config.Global()
 	chains := cfg.Chains

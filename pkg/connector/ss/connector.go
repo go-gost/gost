@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	registry.RegiserConnector("ss", NewConnector)
+	registry.ConnectorRegistry().Register("ss", NewConnector)
 }
 
 type ssConnector struct {
@@ -51,7 +51,7 @@ func (c *ssConnector) Init(md md.Metadata) (err error) {
 }
 
 func (c *ssConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,

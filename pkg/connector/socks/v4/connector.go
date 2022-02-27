@@ -15,8 +15,8 @@ import (
 )
 
 func init() {
-	registry.RegiserConnector("socks4", NewConnector)
-	registry.RegiserConnector("socks4a", NewConnector)
+	registry.ConnectorRegistry().Register("socks4", NewConnector)
+	registry.ConnectorRegistry().Register("socks4a", NewConnector)
 }
 
 type socks4Connector struct {
@@ -40,7 +40,7 @@ func (c *socks4Connector) Init(md md.Metadata) (err error) {
 }
 
 func (c *socks4Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,

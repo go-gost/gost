@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("quic", NewDialer)
+	registry.DialerRegistry().Register("quic", NewDialer)
 }
 
 type quicDialer struct {

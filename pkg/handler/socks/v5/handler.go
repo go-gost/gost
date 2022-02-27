@@ -14,8 +14,8 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("socks5", NewHandler)
-	registry.RegisterHandler("socks", NewHandler)
+	registry.HandlerRegistry().Register("socks5", NewHandler)
+	registry.HandlerRegistry().Register("socks", NewHandler)
 }
 
 type socks5Handler struct {
@@ -64,14 +64,14 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	start := time.Now()
 
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()

@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("ssh", NewListener)
+	registry.ListenerRegistry().Register("ssh", NewListener)
 }
 
 type sshListener struct {
@@ -99,7 +99,7 @@ func (l *sshListener) serveConn(conn net.Conn) {
 	start := time.Now()
 	l.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		l.logger.WithFields(map[string]interface{}{
+		l.logger.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()

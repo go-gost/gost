@@ -1,50 +1,20 @@
 package registry
 
 import (
-	"sync"
-
 	"github.com/go-gost/gost/pkg/service"
 )
 
-var (
-	svcReg = &serviceRegistry{}
-)
-
-func Service() *serviceRegistry {
-	return svcReg
-}
-
 type serviceRegistry struct {
-	m sync.Map
+	registry
 }
 
-func (r *serviceRegistry) Register(name string, svc service.Service) error {
-	if name == "" || svc == nil {
-		return nil
-	}
-	if _, loaded := r.m.LoadOrStore(name, svc); loaded {
-		return ErrDup
-	}
-
-	return nil
-}
-
-func (r *serviceRegistry) Unregister(name string) {
-	r.m.Delete(name)
-}
-
-func (r *serviceRegistry) IsRegistered(name string) bool {
-	_, ok := r.m.Load(name)
-	return ok
+func (r *serviceRegistry) Register(name string, v service.Service) error {
+	return r.registry.Register(name, v)
 }
 
 func (r *serviceRegistry) Get(name string) service.Service {
-	if name == "" {
-		return nil
+	if v := r.registry.Get(name); v != nil {
+		return v.(service.Service)
 	}
-	v, ok := r.m.Load(name)
-	if !ok {
-		return nil
-	}
-	return v.(service.Service)
+	return nil
 }

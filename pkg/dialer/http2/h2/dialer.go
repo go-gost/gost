@@ -20,8 +20,8 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("h2", NewTLSDialer)
-	registry.RegisterDialer("h2c", NewDialer)
+	registry.DialerRegistry().Register("h2", NewTLSDialer)
+	registry.DialerRegistry().Register("h2c", NewDialer)
 }
 
 type h2Dialer struct {
@@ -171,7 +171,7 @@ func (d *h2Dialer) dial(ctx context.Context, network, addr string, opts *dialer.
 		if err != nil {
 			d.logger.Error(err)
 		} else {
-			d.logger.WithFields(map[string]interface{}{
+			d.logger.WithFields(map[string]any{
 				"src": conn.LocalAddr().String(),
 				"dst": addr,
 			}).Debug("dial with dial func")
@@ -184,7 +184,7 @@ func (d *h2Dialer) dial(ctx context.Context, network, addr string, opts *dialer.
 	if err != nil {
 		d.logger.Error(err)
 	} else {
-		d.logger.WithFields(map[string]interface{}{
+		d.logger.WithFields(map[string]any{
 			"src": conn.LocalAddr().String(),
 			"dst": addr,
 		}).Debugf("dial direct %s/%s", addr, network)

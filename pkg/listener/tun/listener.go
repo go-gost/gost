@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("tun", NewListener)
+	registry.ListenerRegistry().Register("tun", NewListener)
 }
 
 type tunListener struct {

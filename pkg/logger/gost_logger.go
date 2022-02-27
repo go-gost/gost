@@ -61,60 +61,60 @@ func NewLogger(opts ...LoggerOption) Logger {
 }
 
 // WithFields adds new fields to log.
-func (l *logger) WithFields(fields map[string]interface{}) Logger {
+func (l *logger) WithFields(fields map[string]any) Logger {
 	return &logger{
 		logger: l.logger.WithFields(logrus.Fields(fields)),
 	}
 }
 
 // Debug logs a message at level Debug.
-func (l *logger) Debug(args ...interface{}) {
+func (l *logger) Debug(args ...any) {
 	l.log(logrus.DebugLevel, args...)
 }
 
 // Debugf logs a message at level Debug.
-func (l *logger) Debugf(format string, args ...interface{}) {
+func (l *logger) Debugf(format string, args ...any) {
 	l.logf(logrus.DebugLevel, format, args...)
 }
 
 // Info logs a message at level Info.
-func (l *logger) Info(args ...interface{}) {
+func (l *logger) Info(args ...any) {
 	l.log(logrus.InfoLevel, args...)
 }
 
 // Infof logs a message at level Info.
-func (l *logger) Infof(format string, args ...interface{}) {
+func (l *logger) Infof(format string, args ...any) {
 	l.logf(logrus.InfoLevel, format, args...)
 }
 
 // Warn logs a message at level Warn.
-func (l *logger) Warn(args ...interface{}) {
+func (l *logger) Warn(args ...any) {
 	l.log(logrus.WarnLevel, args...)
 }
 
 // Warnf logs a message at level Warn.
-func (l *logger) Warnf(format string, args ...interface{}) {
+func (l *logger) Warnf(format string, args ...any) {
 	l.logf(logrus.WarnLevel, format, args...)
 }
 
 // Error logs a message at level Error.
-func (l *logger) Error(args ...interface{}) {
+func (l *logger) Error(args ...any) {
 	l.log(logrus.ErrorLevel, args...)
 }
 
 // Errorf logs a message at level Error.
-func (l *logger) Errorf(format string, args ...interface{}) {
+func (l *logger) Errorf(format string, args ...any) {
 	l.logf(logrus.ErrorLevel, format, args...)
 }
 
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
-func (l *logger) Fatal(args ...interface{}) {
+func (l *logger) Fatal(args ...any) {
 	l.log(logrus.FatalLevel, args...)
 	l.logger.Logger.Exit(1)
 }
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
-func (l *logger) Fatalf(format string, args ...interface{}) {
+func (l *logger) Fatalf(format string, args ...any) {
 	l.logf(logrus.FatalLevel, format, args...)
 	l.logger.Logger.Exit(1)
 }
@@ -128,7 +128,7 @@ func (l *logger) IsLevelEnabled(level LogLevel) bool {
 	return l.logger.Logger.IsLevelEnabled(lvl)
 }
 
-func (l *logger) log(level logrus.Level, args ...interface{}) {
+func (l *logger) log(level logrus.Level, args ...any) {
 	lg := l.logger
 	if l.logger.Logger.IsLevelEnabled(logrus.DebugLevel) {
 		lg = lg.WithField("caller", l.caller(3))
@@ -136,7 +136,7 @@ func (l *logger) log(level logrus.Level, args ...interface{}) {
 	lg.Log(level, args...)
 }
 
-func (l *logger) logf(level logrus.Level, format string, args ...interface{}) {
+func (l *logger) logf(level logrus.Level, format string, args ...any) {
 	lg := l.logger
 	if l.logger.Logger.IsLevelEnabled(logrus.DebugLevel) {
 		lg = lg.WithField("caller", l.caller(3))

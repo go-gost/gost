@@ -1,52 +1,26 @@
 package registry
 
 import (
-	"sync"
-
 	"github.com/go-gost/gost/pkg/bypass"
 )
 
-var (
-	bypassReg = &bypassRegistry{}
-)
-
-func Bypass() *bypassRegistry {
-	return bypassReg
-}
-
 type bypassRegistry struct {
-	m sync.Map
+	registry
 }
 
-func (r *bypassRegistry) Register(name string, bypass bypass.Bypass) error {
-	if name == "" || bypass == nil {
-		return nil
-	}
-	if _, loaded := r.m.LoadOrStore(name, bypass); loaded {
-		return ErrDup
-	}
-
-	return nil
-}
-
-func (r *bypassRegistry) Unregister(name string) {
-	r.m.Delete(name)
-}
-
-func (r *bypassRegistry) IsRegistered(name string) bool {
-	_, ok := r.m.Load(name)
-	return ok
+func (r *bypassRegistry) Register(name string, v bypass.Bypass) error {
+	return r.registry.Register(name, v)
 }
 
 func (r *bypassRegistry) Get(name string) bypass.Bypass {
-	if name == "" {
-		return nil
+	if name != "" {
+		return &bypassWrapper{name: name, r: r}
 	}
-	return &bypassWrapper{name: name}
+	return nil
 }
 
 func (r *bypassRegistry) get(name string) bypass.Bypass {
-	if v, ok := r.m.Load(name); ok {
+	if v := r.registry.Get(name); v != nil {
 		return v.(bypass.Bypass)
 	}
 	return nil
@@ -54,10 +28,11 @@ func (r *bypassRegistry) get(name string) bypass.Bypass {
 
 type bypassWrapper struct {
 	name string
+	r    *bypassRegistry
 }
 
 func (w *bypassWrapper) Contains(addr string) bool {
-	bp := bypassReg.get(w.name)
+	bp := w.r.get(w.name)
 	if bp == nil {
 		return false
 	}

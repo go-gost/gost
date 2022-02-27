@@ -26,7 +26,7 @@ const (
 )
 
 func init() {
-	registry.RegisterHandler("dns", NewHandler)
+	registry.HandlerRegistry().Register("dns", NewHandler)
 }
 
 type dnsHandler struct {
@@ -101,14 +101,14 @@ func (h *dnsHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()

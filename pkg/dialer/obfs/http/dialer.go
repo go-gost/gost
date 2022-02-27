@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("ohttp", NewDialer)
+	registry.DialerRegistry().Register("ohttp", NewDialer)
 }
 
 type obfsHTTPDialer struct {

@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("mtls", NewDialer)
+	registry.DialerRegistry().Register("mtls", NewDialer)
 }
 
 type mtlsDialer struct {
@@ -129,7 +129,7 @@ func (d *mtlsDialer) dial(ctx context.Context, network, addr string, opts *diale
 		if err != nil {
 			d.logger.Error(err)
 		} else {
-			d.logger.WithFields(map[string]interface{}{
+			d.logger.WithFields(map[string]any{
 				"src": conn.LocalAddr().String(),
 				"dst": addr,
 			}).Debug("dial with dial func")
@@ -142,7 +142,7 @@ func (d *mtlsDialer) dial(ctx context.Context, network, addr string, opts *diale
 	if err != nil {
 		d.logger.Error(err)
 	} else {
-		d.logger.WithFields(map[string]interface{}{
+		d.logger.WithFields(map[string]any{
 			"src": conn.LocalAddr().String(),
 			"dst": addr,
 		}).Debugf("dial direct %s/%s", addr, network)

@@ -17,7 +17,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("dns", NewListener)
+	registry.ListenerRegistry().Register("dns", NewListener)
 }
 
 type dnsListener struct {

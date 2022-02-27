@@ -16,7 +16,7 @@ import (
 
 // Bind implements connector.Binder.
 func (c *relayConnector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"network": network,
 		"address": address,
 	})

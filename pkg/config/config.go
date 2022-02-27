@@ -140,22 +140,22 @@ type HostsConfig struct {
 }
 
 type ListenerConfig struct {
-	Type     string                 `json:"type"`
-	Chain    string                 `yaml:",omitempty" json:"chain,omitempty"`
-	Auther   string                 `yaml:",omitempty" json:"auther,omitempty"`
-	Auth     *AuthConfig            `yaml:",omitempty" json:"auth,omitempty"`
-	TLS      *TLSConfig             `yaml:",omitempty" json:"tls,omitempty"`
-	Metadata map[string]interface{} `yaml:",omitempty" json:"metadata,omitempty"`
+	Type     string         `json:"type"`
+	Chain    string         `yaml:",omitempty" json:"chain,omitempty"`
+	Auther   string         `yaml:",omitempty" json:"auther,omitempty"`
+	Auth     *AuthConfig    `yaml:",omitempty" json:"auth,omitempty"`
+	TLS      *TLSConfig     `yaml:",omitempty" json:"tls,omitempty"`
+	Metadata map[string]any `yaml:",omitempty" json:"metadata,omitempty"`
 }
 
 type HandlerConfig struct {
-	Type     string                 `json:"type"`
-	Retries  int                    `yaml:",omitempty" json:"retries,omitempty"`
-	Chain    string                 `yaml:",omitempty" json:"chain,omitempty"`
-	Auther   string                 `yaml:",omitempty" json:"auther,omitempty"`
-	Auth     *AuthConfig            `yaml:",omitempty" json:"auth,omitempty"`
-	TLS      *TLSConfig             `yaml:",omitempty" json:"tls,omitempty"`
-	Metadata map[string]interface{} `yaml:",omitempty" json:"metadata,omitempty"`
+	Type     string         `json:"type"`
+	Retries  int            `yaml:",omitempty" json:"retries,omitempty"`
+	Chain    string         `yaml:",omitempty" json:"chain,omitempty"`
+	Auther   string         `yaml:",omitempty" json:"auther,omitempty"`
+	Auth     *AuthConfig    `yaml:",omitempty" json:"auth,omitempty"`
+	TLS      *TLSConfig     `yaml:",omitempty" json:"tls,omitempty"`
+	Metadata map[string]any `yaml:",omitempty" json:"metadata,omitempty"`
 }
 
 type ForwarderConfig struct {
@@ -164,17 +164,17 @@ type ForwarderConfig struct {
 }
 
 type DialerConfig struct {
-	Type     string                 `json:"type"`
-	Auth     *AuthConfig            `yaml:",omitempty" json:"auth,omitempty"`
-	TLS      *TLSConfig             `yaml:",omitempty" json:"tls,omitempty"`
-	Metadata map[string]interface{} `yaml:",omitempty" json:"metadata,omitempty"`
+	Type     string         `json:"type"`
+	Auth     *AuthConfig    `yaml:",omitempty" json:"auth,omitempty"`
+	TLS      *TLSConfig     `yaml:",omitempty" json:"tls,omitempty"`
+	Metadata map[string]any `yaml:",omitempty" json:"metadata,omitempty"`
 }
 
 type ConnectorConfig struct {
-	Type     string                 `json:"type"`
-	Auth     *AuthConfig            `yaml:",omitempty" json:"auth,omitempty"`
-	TLS      *TLSConfig             `yaml:",omitempty" json:"tls,omitempty"`
-	Metadata map[string]interface{} `yaml:",omitempty" json:"metadata,omitempty"`
+	Type     string         `json:"type"`
+	Auth     *AuthConfig    `yaml:",omitempty" json:"auth,omitempty"`
+	TLS      *TLSConfig     `yaml:",omitempty" json:"tls,omitempty"`
+	Metadata map[string]any `yaml:",omitempty" json:"metadata,omitempty"`
 }
 
 type ServiceConfig struct {

@@ -42,7 +42,7 @@ func createBypass(ctx *gin.Context) {
 
 	v := parsing.ParseBypass(&req.Data)
 
-	if err := registry.Bypass().Register(req.Data.Name, v); err != nil {
+	if err := registry.BypassRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -86,7 +86,7 @@ func updateBypass(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.Bypass().IsRegistered(req.Bypass) {
+	if !registry.BypassRegistry().IsRegistered(req.Bypass) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -95,9 +95,9 @@ func updateBypass(ctx *gin.Context) {
 
 	v := parsing.ParseBypass(&req.Data)
 
-	registry.Bypass().Unregister(req.Bypass)
+	registry.BypassRegistry().Unregister(req.Bypass)
 
-	if err := registry.Bypass().Register(req.Bypass, v); err != nil {
+	if err := registry.BypassRegistry().Register(req.Bypass, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -143,11 +143,11 @@ func deleteBypass(ctx *gin.Context) {
 	var req deleteBypassRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.Bypass().IsRegistered(req.Bypass) {
+	if !registry.BypassRegistry().IsRegistered(req.Bypass) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.Bypass().Unregister(req.Bypass)
+	registry.BypassRegistry().Unregister(req.Bypass)
 
 	cfg := config.Global()
 	bypasses := cfg.Bypasses

@@ -12,7 +12,7 @@ import (
 )
 
 func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "bind",
 	})
@@ -59,7 +59,7 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, a
 	}
 	log.Debug(reply)
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"bind": fmt.Sprintf("%s/%s", ln.Addr(), ln.Addr().Network()),
 	})
 
@@ -120,7 +120,7 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 
 		log.Debugf("peer %s accepted", rc.RemoteAddr())
 
-		log = log.WithFields(map[string]interface{}{
+		log = log.WithFields(map[string]any{
 			"local":  rc.LocalAddr().String(),
 			"remote": rc.RemoteAddr().String(),
 		})
@@ -136,7 +136,7 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 		start := time.Now()
 		log.Infof("%s <-> %s", rc.LocalAddr(), rc.RemoteAddr())
 		handler.Transport(pc2, rc)
-		log.WithFields(map[string]interface{}{"duration": time.Since(start)}).
+		log.WithFields(map[string]any{"duration": time.Since(start)}).
 			Infof("%s >-< %s", rc.LocalAddr(), rc.RemoteAddr())
 
 	case err := <-pipe():

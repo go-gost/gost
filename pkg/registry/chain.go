@@ -1,52 +1,26 @@
 package registry
 
 import (
-	"sync"
-
 	"github.com/go-gost/gost/pkg/chain"
 )
 
-var (
-	chainReg = &chainRegistry{}
-)
-
-func Chain() *chainRegistry {
-	return chainReg
-}
-
 type chainRegistry struct {
-	m sync.Map
+	registry
 }
 
-func (r *chainRegistry) Register(name string, chain chain.Chainer) error {
-	if name == "" || chain == nil {
-		return nil
-	}
-	if _, loaded := r.m.LoadOrStore(name, chain); loaded {
-		return ErrDup
-	}
-
-	return nil
-}
-
-func (r *chainRegistry) Unregister(name string) {
-	r.m.Delete(name)
-}
-
-func (r *chainRegistry) IsRegistered(name string) bool {
-	_, ok := r.m.Load(name)
-	return ok
+func (r *chainRegistry) Register(name string, v chain.Chainer) error {
+	return r.registry.Register(name, v)
 }
 
 func (r *chainRegistry) Get(name string) chain.Chainer {
-	if name == "" {
-		return nil
+	if name != "" {
+		return &chainWrapper{name: name, r: r}
 	}
-	return &chainWrapper{name: name}
+	return nil
 }
 
 func (r *chainRegistry) get(name string) chain.Chainer {
-	if v, ok := r.m.Load(name); ok {
+	if v := r.registry.Get(name); v != nil {
 		return v.(chain.Chainer)
 	}
 	return nil
@@ -54,10 +28,11 @@ func (r *chainRegistry) get(name string) chain.Chainer {
 
 type chainWrapper struct {
 	name string
+	r    *chainRegistry
 }
 
 func (w *chainWrapper) Route(network, address string) *chain.Route {
-	v := Chain().get(w.name)
+	v := w.r.get(w.name)
 	if v == nil {
 		return nil
 	}

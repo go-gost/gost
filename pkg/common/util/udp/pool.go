@@ -28,7 +28,7 @@ func (p *ConnPool) WithLogger(logger logger.Logger) *ConnPool {
 	return p
 }
 
-func (p *ConnPool) Get(key interface{}) (c *Conn, ok bool) {
+func (p *ConnPool) Get(key any) (c *Conn, ok bool) {
 	v, ok := p.m.Load(key)
 	if ok {
 		c, ok = v.(*Conn)
@@ -36,11 +36,11 @@ func (p *ConnPool) Get(key interface{}) (c *Conn, ok bool) {
 	return
 }
 
-func (p *ConnPool) Set(key interface{}, c *Conn) {
+func (p *ConnPool) Set(key any, c *Conn) {
 	p.m.Store(key, c)
 }
 
-func (p *ConnPool) Delete(key interface{}) {
+func (p *ConnPool) Delete(key any) {
 	p.m.Delete(key)
 }
 
@@ -53,7 +53,7 @@ func (p *ConnPool) Close() {
 
 	close(p.closed)
 
-	p.m.Range(func(k, v interface{}) bool {
+	p.m.Range(func(k, v any) bool {
 		if c, ok := v.(*Conn); ok && c != nil {
 			c.Close()
 		}
@@ -70,7 +70,7 @@ func (p *ConnPool) idleCheck() {
 		case <-ticker.C:
 			size := 0
 			idles := 0
-			p.m.Range(func(key, value interface{}) bool {
+			p.m.Range(func(key, value any) bool {
 				c, ok := value.(*Conn)
 				if !ok || c == nil {
 					p.Delete(key)

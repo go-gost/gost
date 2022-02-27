@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("tcp", NewListener)
+	registry.ListenerRegistry().Register("tcp", NewListener)
 }
 
 type tcpListener struct {

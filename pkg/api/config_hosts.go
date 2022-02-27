@@ -42,7 +42,7 @@ func createHosts(ctx *gin.Context) {
 
 	v := parsing.ParseHosts(&req.Data)
 
-	if err := registry.Hosts().Register(req.Data.Name, v); err != nil {
+	if err := registry.HostsRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -86,7 +86,7 @@ func updateHosts(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.Hosts().IsRegistered(req.Hosts) {
+	if !registry.HostsRegistry().IsRegistered(req.Hosts) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -95,9 +95,9 @@ func updateHosts(ctx *gin.Context) {
 
 	v := parsing.ParseHosts(&req.Data)
 
-	registry.Hosts().Unregister(req.Hosts)
+	registry.HostsRegistry().Unregister(req.Hosts)
 
-	if err := registry.Hosts().Register(req.Hosts, v); err != nil {
+	if err := registry.HostsRegistry().Register(req.Hosts, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -143,11 +143,11 @@ func deleteHosts(ctx *gin.Context) {
 	var req deleteHostsRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.Hosts().IsRegistered(req.Hosts) {
+	if !registry.HostsRegistry().IsRegistered(req.Hosts) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.Hosts().Unregister(req.Hosts)
+	registry.HostsRegistry().Unregister(req.Hosts)
 
 	cfg := config.Global()
 	hosts := cfg.Hosts

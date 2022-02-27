@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("tap", NewListener)
+	registry.ListenerRegistry().Register("tap", NewListener)
 }
 
 type tapListener struct {

@@ -2,52 +2,27 @@ package registry
 
 import (
 	"net"
-	"sync"
 
 	"github.com/go-gost/gost/pkg/hosts"
 )
 
-var (
-	hostsReg = &hostsRegistry{}
-)
-
-func Hosts() *hostsRegistry {
-	return hostsReg
-}
-
 type hostsRegistry struct {
-	m sync.Map
+	registry
 }
 
-func (r *hostsRegistry) Register(name string, hosts hosts.HostMapper) error {
-	if name == "" || hosts == nil {
-		return nil
-	}
-	if _, loaded := r.m.LoadOrStore(name, hosts); loaded {
-		return ErrDup
-	}
-
-	return nil
-}
-
-func (r *hostsRegistry) Unregister(name string) {
-	r.m.Delete(name)
-}
-
-func (r *hostsRegistry) IsRegistered(name string) bool {
-	_, ok := r.m.Load(name)
-	return ok
+func (r *hostsRegistry) Register(name string, v hosts.HostMapper) error {
+	return r.registry.Register(name, v)
 }
 
 func (r *hostsRegistry) Get(name string) hosts.HostMapper {
-	if name == "" {
-		return nil
+	if name != "" {
+		return &hostsWrapper{name: name, r: r}
 	}
-	return &hostsWrapper{name: name}
+	return nil
 }
 
 func (r *hostsRegistry) get(name string) hosts.HostMapper {
-	if v, ok := r.m.Load(name); ok {
+	if v := r.registry.Get(name); v != nil {
 		return v.(hosts.HostMapper)
 	}
 	return nil
@@ -55,10 +30,11 @@ func (r *hostsRegistry) get(name string) hosts.HostMapper {
 
 type hostsWrapper struct {
 	name string
+	r    *hostsRegistry
 }
 
 func (w *hostsWrapper) Lookup(network, host string) ([]net.IP, bool) {
-	v := Hosts().get(w.name)
+	v := w.r.get(w.name)
 	if v == nil {
 		return nil, false
 	}

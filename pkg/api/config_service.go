@@ -40,7 +40,7 @@ func createService(ctx *gin.Context) {
 		return
 	}
 
-	if registry.Service().IsRegistered(req.Data.Name) {
+	if registry.ServiceRegistry().IsRegistered(req.Data.Name) {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -51,7 +51,7 @@ func createService(ctx *gin.Context) {
 		return
 	}
 
-	if err := registry.Service().Register(req.Data.Name, svc); err != nil {
+	if err := registry.ServiceRegistry().Register(req.Data.Name, svc); err != nil {
 		svc.Close()
 		writeError(ctx, ErrDup)
 		return
@@ -98,7 +98,7 @@ func updateService(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	old := registry.Service().Get(req.Service)
+	old := registry.ServiceRegistry().Get(req.Service)
 	if old == nil {
 		writeError(ctx, ErrNotFound)
 		return
@@ -113,9 +113,9 @@ func updateService(ctx *gin.Context) {
 		return
 	}
 
-	registry.Service().Unregister(req.Service)
+	registry.ServiceRegistry().Unregister(req.Service)
 
-	if err := registry.Service().Register(req.Service, svc); err != nil {
+	if err := registry.ServiceRegistry().Register(req.Service, svc); err != nil {
 		svc.Close()
 		writeError(ctx, ErrDup)
 		return
@@ -164,13 +164,13 @@ func deleteService(ctx *gin.Context) {
 	var req deleteServiceRequest
 	ctx.ShouldBindUri(&req)
 
-	svc := registry.Service().Get(req.Service)
+	svc := registry.ServiceRegistry().Get(req.Service)
 	if svc == nil {
 		writeError(ctx, ErrNotFound)
 		return
 	}
 
-	registry.Service().Unregister(req.Service)
+	registry.ServiceRegistry().Unregister(req.Service)
 	svc.Close()
 
 	cfg := config.Global()

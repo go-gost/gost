@@ -46,7 +46,7 @@ func createResolver(ctx *gin.Context) {
 		return
 	}
 
-	if err := registry.Resolver().Register(req.Data.Name, v); err != nil {
+	if err := registry.ResolverRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -90,7 +90,7 @@ func updateResolver(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.Resolver().IsRegistered(req.Resolver) {
+	if !registry.ResolverRegistry().IsRegistered(req.Resolver) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -103,9 +103,9 @@ func updateResolver(ctx *gin.Context) {
 		return
 	}
 
-	registry.Resolver().Unregister(req.Resolver)
+	registry.ResolverRegistry().Unregister(req.Resolver)
 
-	if err := registry.Resolver().Register(req.Resolver, v); err != nil {
+	if err := registry.ResolverRegistry().Register(req.Resolver, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -151,11 +151,11 @@ func deleteResolver(ctx *gin.Context) {
 	var req deleteResolverRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.Resolver().IsRegistered(req.Resolver) {
+	if !registry.ResolverRegistry().IsRegistered(req.Resolver) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.Resolver().Unregister(req.Resolver)
+	registry.ResolverRegistry().Unregister(req.Resolver)
 
 	cfg := config.Global()
 	resolvers := cfg.Resolvers

@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("http3", NewListener)
-	registry.RegisterListener("h3", NewListener)
+	registry.ListenerRegistry().Register("http3", NewListener)
+	registry.ListenerRegistry().Register("h3", NewListener)
 }
 
 type http3Listener struct {

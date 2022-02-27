@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("http2", NewListener)
+	registry.ListenerRegistry().Register("http2", NewListener)
 }
 
 type http2Listener struct {

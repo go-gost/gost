@@ -10,7 +10,7 @@ var (
 		{
 			size: 128,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 128)
 					return &b
 				},
@@ -19,7 +19,7 @@ var (
 		{
 			size: 512,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 512)
 					return &b
 				},
@@ -28,7 +28,7 @@ var (
 		{
 			size: 1024,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 1024)
 					return &b
 				},
@@ -37,7 +37,7 @@ var (
 		{
 			size: 4096,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 4096)
 					return &b
 				},
@@ -46,7 +46,7 @@ var (
 		{
 			size: 8192,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 8192)
 					return &b
 				},
@@ -55,7 +55,7 @@ var (
 		{
 			size: 16 * 1024,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 16*1024)
 					return &b
 				},
@@ -64,7 +64,7 @@ var (
 		{
 			size: 32 * 1024,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 32*1024)
 					return &b
 				},
@@ -73,7 +73,7 @@ var (
 		{
 			size: 64 * 1024,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 64*1024)
 					return &b
 				},
@@ -82,7 +82,7 @@ var (
 		{
 			size: 65 * 1024,
 			pool: sync.Pool{
-				New: func() interface{} {
+				New: func() any {
 					b := make([]byte, 65*1024)
 					return &b
 				},

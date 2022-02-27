@@ -25,14 +25,14 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 			Type: "auto",
 		}
 	}
-	serviceLogger := logger.Default().WithFields(map[string]interface{}{
+	serviceLogger := logger.Default().WithFields(map[string]any{
 		"kind":     "service",
 		"service":  cfg.Name,
 		"listener": cfg.Listener.Type,
 		"handler":  cfg.Handler.Type,
 	})
 
-	listenerLogger := serviceLogger.WithFields(map[string]interface{}{
+	listenerLogger := serviceLogger.WithFields(map[string]any{
 		"kind": "listener",
 	})
 
@@ -49,12 +49,12 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 
 	auther := ParseAutherFromAuth(cfg.Listener.Auth)
 	if cfg.Listener.Auther != "" {
-		auther = registry.Auther().Get(cfg.Listener.Auther)
+		auther = registry.AutherRegistry().Get(cfg.Listener.Auther)
 	}
 
-	ln := registry.GetListener(cfg.Listener.Type)(
+	ln := registry.ListenerRegistry().Get(cfg.Listener.Type)(
 		listener.AddrOption(cfg.Addr),
-		listener.ChainOption(registry.Chain().Get(cfg.Listener.Chain)),
+		listener.ChainOption(registry.ChainRegistry().Get(cfg.Listener.Chain)),
 		listener.AutherOption(auther),
 		listener.AuthOption(parseAuth(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
@@ -62,14 +62,14 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 	)
 
 	if cfg.Listener.Metadata == nil {
-		cfg.Listener.Metadata = make(map[string]interface{})
+		cfg.Listener.Metadata = make(map[string]any)
 	}
 	if err := ln.Init(metadata.MapMetadata(cfg.Listener.Metadata)); err != nil {
 		listenerLogger.Error("init: ", err)
 		return nil, err
 	}
 
-	handlerLogger := serviceLogger.WithFields(map[string]interface{}{
+	handlerLogger := serviceLogger.WithFields(map[string]any{
 		"kind": "handler",
 	})
 
@@ -86,16 +86,16 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 
 	auther = ParseAutherFromAuth(cfg.Handler.Auth)
 	if cfg.Handler.Auther != "" {
-		auther = registry.Auther().Get(cfg.Handler.Auther)
+		auther = registry.AutherRegistry().Get(cfg.Handler.Auther)
 	}
-	h := registry.GetHandler(cfg.Handler.Type)(
+	h := registry.HandlerRegistry().Get(cfg.Handler.Type)(
 		handler.AutherOption(auther),
 		handler.AuthOption(parseAuth(cfg.Handler.Auth)),
 		handler.RetriesOption(cfg.Handler.Retries),
-		handler.ChainOption(registry.Chain().Get(cfg.Handler.Chain)),
-		handler.BypassOption(registry.Bypass().Get(cfg.Bypass)),
-		handler.ResolverOption(registry.Resolver().Get(cfg.Resolver)),
-		handler.HostsOption(registry.Hosts().Get(cfg.Hosts)),
+		handler.ChainOption(registry.ChainRegistry().Get(cfg.Handler.Chain)),
+		handler.BypassOption(registry.BypassRegistry().Get(cfg.Bypass)),
+		handler.ResolverOption(registry.ResolverRegistry().Get(cfg.Resolver)),
+		handler.HostsOption(registry.HostsRegistry().Get(cfg.Hosts)),
 		handler.TLSConfigOption(tlsConfig),
 		handler.LoggerOption(handlerLogger),
 	)
@@ -105,7 +105,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 	}
 
 	if cfg.Handler.Metadata == nil {
-		cfg.Handler.Metadata = make(map[string]interface{})
+		cfg.Handler.Metadata = make(map[string]any)
 	}
 	if err := h.Init(metadata.MapMetadata(cfg.Handler.Metadata)); err != nil {
 		handlerLogger.Error("init: ", err)
@@ -113,7 +113,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 	}
 
 	s := service.NewService(ln, h,
-		service.AdmissionOption(registry.Admission().Get(cfg.Admission)),
+		service.AdmissionOption(registry.AdmissionRegistry().Get(cfg.Admission)),
 		service.LoggerOption(serviceLogger),
 	)
 

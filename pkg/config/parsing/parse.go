@@ -87,7 +87,7 @@ func ParseAdmission(cfg *config.AdmissionConfig) admission.Admission {
 	return admission.NewAdmissionPatterns(
 		cfg.Reverse,
 		cfg.Matchers,
-		admission.LoggerOption(logger.Default().WithFields(map[string]interface{}{
+		admission.LoggerOption(logger.Default().WithFields(map[string]any{
 			"kind":      "admission",
 			"admission": cfg.Name,
 		})),
@@ -101,7 +101,7 @@ func ParseBypass(cfg *config.BypassConfig) bypass.Bypass {
 	return bypass.NewBypassPatterns(
 		cfg.Reverse,
 		cfg.Matchers,
-		bypass.LoggerOption(logger.Default().WithFields(map[string]interface{}{
+		bypass.LoggerOption(logger.Default().WithFields(map[string]any{
 			"kind":   "bypass",
 			"bypass": cfg.Name,
 		})),
@@ -116,7 +116,7 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.Resolver, error) {
 	for _, server := range cfg.Nameservers {
 		nameservers = append(nameservers, resolver_impl.NameServer{
 			Addr:     server.Addr,
-			Chain:    registry.Chain().Get(server.Chain),
+			Chain:    registry.ChainRegistry().Get(server.Chain),
 			TTL:      server.TTL,
 			Timeout:  server.Timeout,
 			ClientIP: net.ParseIP(server.ClientIP),
@@ -128,7 +128,7 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.Resolver, error) {
 	return resolver_impl.NewResolver(
 		nameservers,
 		resolver_impl.LoggerResolverOption(
-			logger.Default().WithFields(map[string]interface{}{
+			logger.Default().WithFields(map[string]any{
 				"kind":     "resolver",
 				"resolver": cfg.Name,
 			}),
@@ -141,7 +141,7 @@ func ParseHosts(cfg *config.HostsConfig) hostspkg.HostMapper {
 		return nil
 	}
 	hosts := hostspkg.NewHosts()
-	hosts.Logger = logger.Default().WithFields(map[string]interface{}{
+	hosts.Logger = logger.Default().WithFields(map[string]any{
 		"kind":  "hosts",
 		"hosts": cfg.Name,
 	})

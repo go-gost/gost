@@ -13,10 +13,10 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("red", NewHandler)
-	registry.RegisterHandler("redu", NewHandler)
-	registry.RegisterHandler("redir", NewHandler)
-	registry.RegisterHandler("redirect", NewHandler)
+	registry.HandlerRegistry().Register("red", NewHandler)
+	registry.HandlerRegistry().Register("redu", NewHandler)
+	registry.HandlerRegistry().Register("redir", NewHandler)
+	registry.HandlerRegistry().Register("redirect", NewHandler)
 }
 
 type redirectHandler struct {
@@ -56,14 +56,14 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -85,7 +85,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 		}
 	}
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", dstAddr, network),
 	})
 
@@ -106,7 +106,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), dstAddr)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), dstAddr)
 }

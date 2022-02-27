@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("sshd", NewDialer)
+	registry.DialerRegistry().Register("sshd", NewDialer)
 }
 
 type sshdDialer struct {
@@ -138,7 +138,7 @@ func (d *sshdDialer) dial(ctx context.Context, network, addr string, opts *diale
 		if err != nil {
 			log.Error(err)
 		} else {
-			log.WithFields(map[string]interface{}{
+			log.WithFields(map[string]any{
 				"src": conn.LocalAddr().String(),
 				"dst": addr,
 			}).Debug("dial with dial func")
@@ -151,7 +151,7 @@ func (d *sshdDialer) dial(ctx context.Context, network, addr string, opts *diale
 	if err != nil {
 		log.Error(err)
 	} else {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"src": conn.LocalAddr().String(),
 			"dst": addr,
 		}).Debugf("dial direct %s/%s", addr, network)

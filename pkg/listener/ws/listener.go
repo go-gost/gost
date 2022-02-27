@@ -15,8 +15,8 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("ws", NewListener)
-	registry.RegisterListener("wss", NewTLSListener)
+	registry.ListenerRegistry().Register("ws", NewListener)
+	registry.ListenerRegistry().Register("wss", NewTLSListener)
 }
 
 type wsListener struct {
@@ -121,7 +121,7 @@ func (l *wsListener) Addr() net.Addr {
 
 func (l *wsListener) upgrade(w http.ResponseWriter, r *http.Request) {
 	if l.logger.IsLevelEnabled(logger.DebugLevel) {
-		log := l.logger.WithFields(map[string]interface{}{
+		log := l.logger.WithFields(map[string]any{
 			"local":  l.addr.String(),
 			"remote": r.RemoteAddr,
 		})

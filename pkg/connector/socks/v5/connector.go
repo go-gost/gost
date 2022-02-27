@@ -17,8 +17,8 @@ import (
 )
 
 func init() {
-	registry.RegiserConnector("socks5", NewConnector)
-	registry.RegiserConnector("socks", NewConnector)
+	registry.ConnectorRegistry().Register("socks5", NewConnector)
+	registry.ConnectorRegistry().Register("socks", NewConnector)
 }
 
 type socks5Connector struct {
@@ -67,7 +67,7 @@ func (c *socks5Connector) Init(md md.Metadata) (err error) {
 
 // Handshake implements connector.Handshaker.
 func (c *socks5Connector) Handshake(ctx context.Context, conn net.Conn) (net.Conn, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
@@ -87,7 +87,7 @@ func (c *socks5Connector) Handshake(ctx context.Context, conn net.Conn) (net.Con
 }
 
 func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,

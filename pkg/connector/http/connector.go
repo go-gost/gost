@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	registry.RegiserConnector("http", NewConnector)
+	registry.ConnectorRegistry().Register("http", NewConnector)
 }
 
 type httpConnector struct {
@@ -43,7 +43,7 @@ func (c *httpConnector) Init(md md.Metadata) (err error) {
 }
 
 func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"local":   conn.LocalAddr().String(),
 		"remote":  conn.RemoteAddr().String(),
 		"network": network,

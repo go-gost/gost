@@ -14,8 +14,8 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("socks4", NewHandler)
-	registry.RegisterHandler("socks4a", NewHandler)
+	registry.HandlerRegistry().Register("socks4", NewHandler)
+	registry.HandlerRegistry().Register("socks4a", NewHandler)
 }
 
 type socks4Handler struct {
@@ -56,14 +56,14 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	start := time.Now()
 
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -102,7 +102,7 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, log logger.Logger) {
 	addr := req.Addr.String()
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": addr,
 	})
 	log.Infof("%s >> %s", conn.RemoteAddr(), addr)
@@ -135,7 +135,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }

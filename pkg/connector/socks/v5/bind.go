@@ -15,7 +15,7 @@ import (
 
 // Bind implements connector.Binder.
 func (c *socks5Connector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,

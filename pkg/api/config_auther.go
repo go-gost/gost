@@ -41,7 +41,7 @@ func createAuther(ctx *gin.Context) {
 	}
 
 	v := parsing.ParseAuther(&req.Data)
-	if err := registry.Auther().Register(req.Data.Name, v); err != nil {
+	if err := registry.AutherRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -85,7 +85,7 @@ func updateAuther(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.Auther().IsRegistered(req.Auther) {
+	if !registry.AutherRegistry().IsRegistered(req.Auther) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -93,9 +93,9 @@ func updateAuther(ctx *gin.Context) {
 	req.Data.Name = req.Auther
 
 	v := parsing.ParseAuther(&req.Data)
-	registry.Auther().Unregister(req.Auther)
+	registry.AutherRegistry().Unregister(req.Auther)
 
-	if err := registry.Auther().Register(req.Auther, v); err != nil {
+	if err := registry.AutherRegistry().Register(req.Auther, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -141,11 +141,11 @@ func deleteAuther(ctx *gin.Context) {
 	var req deleteAutherRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.Auther().IsRegistered(req.Auther) {
+	if !registry.AutherRegistry().IsRegistered(req.Auther) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.Auther().Unregister(req.Auther)
+	registry.AutherRegistry().Unregister(req.Auther)
 
 	cfg := config.Global()
 	authers := cfg.Authers

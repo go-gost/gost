@@ -14,8 +14,8 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("pht", NewDialer)
-	registry.RegisterDialer("phts", NewTLSDialer)
+	registry.DialerRegistry().Register("pht", NewDialer)
+	registry.DialerRegistry().Register("phts", NewTLSDialer)
 }
 
 type phtDialer struct {

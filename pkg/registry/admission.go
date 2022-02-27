@@ -1,52 +1,26 @@
 package registry
 
 import (
-	"sync"
-
 	"github.com/go-gost/gost/pkg/admission"
 )
 
-var (
-	admissionReg = &admissionRegistry{}
-)
-
-func Admission() *admissionRegistry {
-	return admissionReg
-}
-
 type admissionRegistry struct {
-	m sync.Map
+	registry
 }
 
-func (r *admissionRegistry) Register(name string, admission admission.Admission) error {
-	if name == "" || admission == nil {
-		return nil
-	}
-	if _, loaded := r.m.LoadOrStore(name, admission); loaded {
-		return ErrDup
-	}
-
-	return nil
-}
-
-func (r *admissionRegistry) Unregister(name string) {
-	r.m.Delete(name)
-}
-
-func (r *admissionRegistry) IsRegistered(name string) bool {
-	_, ok := r.m.Load(name)
-	return ok
+func (r *admissionRegistry) Register(name string, v admission.Admission) error {
+	return r.registry.Register(name, v)
 }
 
 func (r *admissionRegistry) Get(name string) admission.Admission {
-	if name == "" {
-		return nil
+	if name != "" {
+		return &admissionWrapper{name: name, r: r}
 	}
-	return &admissionWrapper{name: name}
+	return nil
 }
 
 func (r *admissionRegistry) get(name string) admission.Admission {
-	if v, ok := r.m.Load(name); ok {
+	if v := r.registry.Get(name); v != nil {
 		return v.(admission.Admission)
 	}
 	return nil
@@ -54,10 +28,11 @@ func (r *admissionRegistry) get(name string) admission.Admission {
 
 type admissionWrapper struct {
 	name string
+	r    *admissionRegistry
 }
 
 func (w *admissionWrapper) Admit(addr string) bool {
-	p := admissionReg.get(w.name)
+	p := w.r.get(w.name)
 	if p == nil {
 		return false
 	}

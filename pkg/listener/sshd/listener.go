@@ -23,7 +23,7 @@ const (
 )
 
 func init() {
-	registry.RegisterListener("sshd", NewListener)
+	registry.ListenerRegistry().Register("sshd", NewListener)
 }
 
 type sshdListener struct {
@@ -108,7 +108,7 @@ func (l *sshdListener) serveConn(conn net.Conn) {
 	start := time.Now()
 	l.logger.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		l.logger.WithFields(map[string]interface{}{
+		l.logger.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()

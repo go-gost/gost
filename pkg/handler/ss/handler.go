@@ -17,7 +17,7 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("ss", NewHandler)
+	registry.HandlerRegistry().Register("ss", NewHandler)
 }
 
 type ssHandler struct {
@@ -66,14 +66,14 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -93,7 +93,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": addr.String(),
 	})
 
@@ -113,7 +113,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
 }

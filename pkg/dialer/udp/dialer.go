@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("udp", NewDialer)
+	registry.DialerRegistry().Register("udp", NewDialer)
 }
 
 type udpDialer struct {

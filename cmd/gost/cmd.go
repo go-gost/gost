@@ -270,10 +270,10 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		Addr: url.Host,
 	}
 
-	if h := registry.GetHandler(handler); h == nil {
+	if h := registry.HandlerRegistry().Get(handler); h == nil {
 		handler = "auto"
 	}
-	if ln := registry.GetListener(listener); ln == nil {
+	if ln := registry.ListenerRegistry().Get(listener); ln == nil {
 		listener = "tcp"
 		if handler == "ssu" {
 			listener = "udp"
@@ -378,10 +378,10 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		Addr: url.Host,
 	}
 
-	if c := registry.GetConnector(connector); c == nil {
+	if c := registry.ConnectorRegistry().Get(connector); c == nil {
 		connector = "http"
 	}
-	if d := registry.GetDialer(dialer); d == nil {
+	if d := registry.DialerRegistry().Get(dialer); d == nil {
 		dialer = "tcp"
 		if connector == "ssu" {
 			dialer = "udp"

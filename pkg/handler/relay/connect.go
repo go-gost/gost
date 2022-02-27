@@ -12,7 +12,7 @@ import (
 )
 
 func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "connect",
 	})
@@ -81,7 +81,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), address)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), address)
 }

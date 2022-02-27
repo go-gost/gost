@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("kcp", NewListener)
+	registry.ListenerRegistry().Register("kcp", NewListener)
 }
 
 type kcpListener struct {

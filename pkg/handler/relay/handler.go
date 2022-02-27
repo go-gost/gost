@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("relay", NewHandler)
+	registry.HandlerRegistry().Register("relay", NewHandler)
 }
 
 type relayHandler struct {
@@ -59,14 +59,14 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	start := time.Now()
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
@@ -102,7 +102,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	if user != "" {
-		log = log.WithFields(map[string]interface{}{"user": user})
+		log = log.WithFields(map[string]any{"user": user})
 	}
 
 	resp := relay.Response{

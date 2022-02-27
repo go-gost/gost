@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("quic", NewListener)
+	registry.ListenerRegistry().Register("quic", NewListener)
 }
 
 type quicListener struct {

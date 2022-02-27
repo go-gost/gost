@@ -17,7 +17,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("grpc", NewDialer)
+	registry.DialerRegistry().Register("grpc", NewDialer)
 }
 
 type grpcDialer struct {
@@ -119,7 +119,7 @@ func (d *grpcDialer) dial(ctx context.Context, network, addr string, opts *diale
 		if err != nil {
 			d.options.Logger.Error(err)
 		} else {
-			d.options.Logger.WithFields(map[string]interface{}{
+			d.options.Logger.WithFields(map[string]any{
 				"src": conn.LocalAddr().String(),
 				"dst": addr,
 			}).Debug("dial with dial func")
@@ -132,7 +132,7 @@ func (d *grpcDialer) dial(ctx context.Context, network, addr string, opts *diale
 	if err != nil {
 		d.options.Logger.Error(err)
 	} else {
-		d.options.Logger.WithFields(map[string]interface{}{
+		d.options.Logger.WithFields(map[string]any{
 			"src": conn.LocalAddr().String(),
 			"dst": addr,
 		}).Debugf("dial direct %s/%s", addr, network)

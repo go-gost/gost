@@ -24,7 +24,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 		return
 	}
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", target.Addr, network),
 		"cmd": "forward",
 	})
@@ -81,7 +81,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr)
 	handler.Transport(conn, cc)
-	log.WithFields(map[string]interface{}{
+	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr)
 }

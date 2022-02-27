@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	registry.RegisterHandler("auto", NewHandler)
+	registry.HandlerRegistry().Register("auto", NewHandler)
 }
 
 type autoHandler struct {
@@ -36,24 +36,24 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 		options: options,
 	}
 
-	if f := registry.GetHandler("http"); f != nil {
+	if f := registry.HandlerRegistry().Get("http"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(options.Logger.WithFields(map[string]interface{}{"type": "http"})))
+			handler.LoggerOption(options.Logger.WithFields(map[string]any{"type": "http"})))
 		h.httpHandler = f(v...)
 	}
-	if f := registry.GetHandler("socks4"); f != nil {
+	if f := registry.HandlerRegistry().Get("socks4"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(options.Logger.WithFields(map[string]interface{}{"type": "socks4"})))
+			handler.LoggerOption(options.Logger.WithFields(map[string]any{"type": "socks4"})))
 		h.socks4Handler = f(v...)
 	}
-	if f := registry.GetHandler("socks5"); f != nil {
+	if f := registry.HandlerRegistry().Get("socks5"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(options.Logger.WithFields(map[string]interface{}{"type": "socks5"})))
+			handler.LoggerOption(options.Logger.WithFields(map[string]any{"type": "socks5"})))
 		h.socks5Handler = f(v...)
 	}
-	if f := registry.GetHandler("relay"); f != nil {
+	if f := registry.HandlerRegistry().Get("relay"); f != nil {
 		v := append(opts,
-			handler.LoggerOption(options.Logger.WithFields(map[string]interface{}{"type": "relay"})))
+			handler.LoggerOption(options.Logger.WithFields(map[string]any{"type": "relay"})))
 		h.relayHandler = f(v...)
 	}
 
@@ -86,7 +86,7 @@ func (h *autoHandler) Init(md md.Metadata) error {
 }
 
 func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
-	log := h.options.Logger.WithFields(map[string]interface{}{
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
 	})
@@ -94,7 +94,7 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) {
 	start := time.Now()
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
-		log.WithFields(map[string]interface{}{
+		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()

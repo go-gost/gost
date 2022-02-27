@@ -15,7 +15,7 @@ import (
 )
 
 func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger.Logger) {
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"cmd": "udp",
 	})
 
@@ -48,7 +48,7 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger
 	}
 	log.Debug(reply)
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"bind": fmt.Sprintf("%s/%s", cc.LocalAddr(), cc.LocalAddr().Network()),
 	})
 	log.Debugf("bind on %s OK", cc.LocalAddr())
@@ -77,6 +77,6 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
 	io.Copy(ioutil.Discard, conn)
-	log.WithFields(map[string]interface{}{"duration": time.Since(t)}).
+	log.WithFields(map[string]any{"duration": time.Since(t)}).
 		Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
 }

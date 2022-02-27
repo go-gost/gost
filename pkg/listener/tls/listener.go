@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("tls", NewListener)
+	registry.ListenerRegistry().Register("tls", NewListener)
 }
 
 type tlsListener struct {

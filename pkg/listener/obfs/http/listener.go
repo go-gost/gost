@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	registry.RegisterListener("ohttp", NewListener)
+	registry.ListenerRegistry().Register("ohttp", NewListener)
 }
 
 type obfsListener struct {

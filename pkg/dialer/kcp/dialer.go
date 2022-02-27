@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("kcp", NewDialer)
+	registry.DialerRegistry().Register("kcp", NewDialer)
 }
 
 type kcpDialer struct {

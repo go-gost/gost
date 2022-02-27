@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	registry.RegiserConnector("forward", NewConnector)
+	registry.ConnectorRegistry().Register("forward", NewConnector)
 }
 
 type forwardConnector struct {
@@ -33,7 +33,7 @@ func (c *forwardConnector) Init(md md.Metadata) (err error) {
 }
 
 func (c *forwardConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,

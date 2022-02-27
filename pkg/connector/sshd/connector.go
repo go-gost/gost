@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	registry.RegiserConnector("sshd", NewConnector)
+	registry.ConnectorRegistry().Register("sshd", NewConnector)
 }
 
 type sshdConnector struct {
@@ -35,7 +35,7 @@ func (c *sshdConnector) Init(md md.Metadata) (err error) {
 }
 
 func (c *sshdConnector) Connect(ctx context.Context, conn net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,
@@ -59,7 +59,7 @@ func (c *sshdConnector) Connect(ctx context.Context, conn net.Conn, network, add
 
 // Bind implements connector.Binder.
 func (c *sshdConnector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
-	log := c.options.Logger.WithFields(map[string]interface{}{
+	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),
 		"local":   conn.LocalAddr().String(),
 		"network": network,

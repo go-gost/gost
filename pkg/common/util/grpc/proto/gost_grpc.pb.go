@@ -88,7 +88,7 @@ func RegisterGostTunelServer(s grpc.ServiceRegistrar, srv GostTunelServer) {
 	s.RegisterService(&GostTunel_ServiceDesc, srv)
 }
 
-func _GostTunel_Tunnel_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _GostTunel_Tunnel_Handler(srv any, stream grpc.ServerStream) error {
 	return srv.(GostTunelServer).Tunnel(&gostTunelTunnelServer{stream})
 }
 

@@ -13,7 +13,7 @@ import (
 )
 
 func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "mbind",
 	})
@@ -60,7 +60,7 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network
 	}
 	log.Debug(reply)
 
-	log = log.WithFields(map[string]interface{}{
+	log = log.WithFields(map[string]any{
 		"bind": fmt.Sprintf("%s/%s", ln.Addr(), ln.Addr().Network()),
 	})
 
@@ -101,7 +101,7 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 		go func(c net.Conn) {
 			defer c.Close()
 
-			log = log.WithFields(map[string]interface{}{
+			log = log.WithFields(map[string]any{
 				"local":  rc.LocalAddr().String(),
 				"remote": rc.RemoteAddr().String(),
 			})
@@ -127,7 +127,7 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 			t := time.Now()
 			log.Infof("%s <-> %s", c.LocalAddr(), c.RemoteAddr())
 			handler.Transport(sc, c)
-			log.WithFields(map[string]interface{}{"duration": time.Since(t)}).
+			log.WithFields(map[string]any{"duration": time.Since(t)}).
 				Infof("%s >-< %s", c.LocalAddr(), c.RemoteAddr())
 		}(rc)
 	}

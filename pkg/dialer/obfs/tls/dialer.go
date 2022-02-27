@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	registry.RegisterDialer("otls", NewDialer)
+	registry.DialerRegistry().Register("otls", NewDialer)
 }
 
 type obfsTLSDialer struct {

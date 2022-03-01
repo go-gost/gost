@@ -49,10 +49,9 @@ func (l *rtcpListener) Init(md md.Metadata) (err error) {
 	}
 
 	l.laddr = laddr
-	l.router = &chain.Router{
-		Chain:  l.options.Chain,
-		Logger: l.logger,
-	}
+	l.router = (&chain.Router{}).
+		WithChain(l.options.Chain).
+		WithLogger(l.logger)
 
 	return
 }

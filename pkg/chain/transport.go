@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"net"
+	"time"
 
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/dialer"
@@ -10,6 +11,7 @@ import (
 
 type Transport struct {
 	addr      string
+	ifceName  string
 	route     *Route
 	dialer    dialer.Dialer
 	connector connector.Connector
@@ -18,6 +20,11 @@ type Transport struct {
 func (tr *Transport) Copy() *Transport {
 	tr2 := &Transport{}
 	*tr2 = *tr
+	return tr
+}
+
+func (tr *Transport) WithInterface(ifceName string) *Transport {
+	tr.ifceName = ifceName
 	return tr
 }
 
@@ -32,23 +39,20 @@ func (tr *Transport) WithConnector(connector connector.Connector) *Transport {
 }
 
 func (tr *Transport) Dial(ctx context.Context, addr string) (net.Conn, error) {
-	return tr.dialer.Dial(ctx, addr, tr.dialOptions()...)
-}
-
-func (tr *Transport) dialOptions() []dialer.DialOption {
-	opts := []dialer.DialOption{
-		dialer.HostDialOption(tr.addr),
+	netd := &dialer.NetDialer{
+		Interface: tr.ifceName,
+		Timeout:   30 * time.Second,
 	}
 	if tr.route.Len() > 0 {
-		opts = append(opts,
-			dialer.DialFuncDialOption(
-				func(ctx context.Context, addr string) (net.Conn, error) {
-					return tr.route.Dial(ctx, "tcp", addr)
-				},
-			),
-		)
+		netd.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return tr.route.Dial(ctx, network, addr)
+		}
 	}
-	return opts
+	opts := []dialer.DialOption{
+		dialer.HostDialOption(tr.addr),
+		dialer.NetDialerDialOption(netd),
+	}
+	return tr.dialer.Dial(ctx, addr, opts...)
 }
 
 func (tr *Transport) Handshake(ctx context.Context, conn net.Conn) (net.Conn, error) {

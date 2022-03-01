@@ -64,10 +64,11 @@ func NewResolver(nameservers []NameServer, opts ...ResolverOption) (resolverpkg.
 		}
 		ex, err := exchanger.NewExchanger(
 			addr,
-			exchanger.RouterOption(&chain.Router{
-				Chain:  server.Chain,
-				Logger: options.logger,
-			}),
+			exchanger.RouterOption(
+				(&chain.Router{}).
+					WithChain(server.Chain).
+					WithLogger(options.logger),
+			),
 			exchanger.TimeoutOption(server.Timeout),
 			exchanger.LoggerOption(options.logger),
 		)

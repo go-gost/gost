@@ -35,8 +35,16 @@ func (d *obfsTLSDialer) Init(md md.Metadata) (err error) {
 }
 
 func (d *obfsTLSDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (net.Conn, error) {
-	var netd net.Dialer
-	conn, err := netd.DialContext(ctx, "tcp", addr)
+	options := &dialer.DialOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	netd := options.NetDialer
+	if netd == nil {
+		netd = dialer.DefaultNetDialer
+	}
+	conn, err := netd.Dial(ctx, "tcp", addr)
 	if err != nil {
 		d.logger.Error(err)
 	}

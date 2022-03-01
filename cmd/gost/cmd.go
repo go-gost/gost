@@ -145,6 +145,11 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			md.Del("hosts")
 		}
 
+		if v := metadata.GetString(md, "interface"); v != "" {
+			hopConfig.Interface = v
+			md.Del("interface")
+		}
+
 		chain.Hops = append(chain.Hops, hopConfig)
 	}
 
@@ -335,6 +340,10 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 
 	if v := metadata.GetString(md, "dns"); v != "" {
 		md.Set("dns", strings.Split(v, ","))
+	}
+	if v := metadata.GetString(md, "interface"); v != "" {
+		svc.Interface = v
+		md.Del("interface")
 	}
 
 	if svc.Forwarder != nil {

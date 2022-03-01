@@ -54,25 +54,27 @@ func (d *quicDialer) Multiplex() bool {
 }
 
 func (d *quicDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (conn net.Conn, err error) {
-	var options dialer.DialOptions
-	for _, opt := range opts {
-		opt(&options)
-	}
-
 	d.sessionMutex.Lock()
 	defer d.sessionMutex.Unlock()
 
 	session, ok := d.sessions[addr]
 	if !ok {
-		var cc *net.UDPConn
-		cc, err = net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
-		if err != nil {
-			return
+		options := &dialer.DialOptions{}
+		for _, opt := range opts {
+			opt(options)
 		}
-		conn = cc
+
+		netd := options.NetDialer
+		if netd == nil {
+			netd = dialer.DefaultNetDialer
+		}
+		conn, err = netd.Dial(ctx, "udp", "")
+		if err != nil {
+			return nil, err
+		}
 
 		if d.md.cipherKey != nil {
-			conn = quic_util.CipherConn(cc, d.md.cipherKey)
+			conn = quic_util.CipherConn(conn.(*net.UDPConn), d.md.cipherKey)
 		}
 
 		session = &quicSession{conn: conn}

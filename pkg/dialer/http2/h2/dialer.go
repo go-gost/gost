@@ -93,14 +93,22 @@ func (d *h2Dialer) Dial(ctx context.Context, address string, opts ...dialer.Dial
 		if d.h2c {
 			client.Transport = &http2.Transport{
 				DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
-					return d.dial(ctx, network, addr, options)
+					netd := options.NetDialer
+					if netd == nil {
+						netd = dialer.DefaultNetDialer
+					}
+					return netd.Dial(ctx, network, addr)
 				},
 			}
 		} else {
 			client.Transport = &http.Transport{
 				TLSClientConfig: d.options.TLSConfig,
 				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-					return d.dial(ctx, network, addr, options)
+					netd := options.NetDialer
+					if netd == nil {
+						netd = dialer.DefaultNetDialer
+					}
+					return netd.Dial(ctx, network, addr)
 				},
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,
@@ -162,32 +170,4 @@ func (d *h2Dialer) Dial(ctx context.Context, address string, opts ...dialer.Dial
 		localAddr:  &net.TCPAddr{IP: net.IPv4zero, Port: 0},
 	}
 	return conn, nil
-}
-
-func (d *h2Dialer) dial(ctx context.Context, network, addr string, opts *dialer.DialOptions) (net.Conn, error) {
-	dial := opts.DialFunc
-	if dial != nil {
-		conn, err := dial(ctx, addr)
-		if err != nil {
-			d.logger.Error(err)
-		} else {
-			d.logger.WithFields(map[string]any{
-				"src": conn.LocalAddr().String(),
-				"dst": addr,
-			}).Debug("dial with dial func")
-		}
-		return conn, err
-	}
-
-	var netd net.Dialer
-	conn, err := netd.DialContext(ctx, network, addr)
-	if err != nil {
-		d.logger.Error(err)
-	} else {
-		d.logger.WithFields(map[string]any{
-			"src": conn.LocalAddr().String(),
-			"dst": addr,
-		}).Debugf("dial direct %s/%s", addr, network)
-	}
-	return conn, err
 }

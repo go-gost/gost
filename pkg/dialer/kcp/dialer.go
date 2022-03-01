@@ -56,11 +56,6 @@ func (d *kcpDialer) Multiplex() bool {
 }
 
 func (d *kcpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (conn net.Conn, err error) {
-	var options dialer.DialOptions
-	for _, opt := range opts {
-		opt(&options)
-	}
-
 	d.sessionMutex.Lock()
 	defer d.sessionMutex.Unlock()
 
@@ -70,12 +65,17 @@ func (d *kcpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 		ok = false
 	}
 	if !ok {
-		raddr, err := net.ResolveUDPAddr("udp", addr)
-		if err != nil {
-			return nil, err
+		var options dialer.DialOptions
+		for _, opt := range opts {
+			opt(&options)
 		}
 
 		if d.md.config.TCP {
+			raddr, err := net.ResolveUDPAddr("udp", addr)
+			if err != nil {
+				return nil, err
+			}
+
 			pc, err := tcpraw.Dial("tcp", addr)
 			if err != nil {
 				return nil, err
@@ -85,7 +85,11 @@ func (d *kcpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 				PacketConn: pc,
 			}
 		} else {
-			conn, err = net.ListenUDP("udp", nil)
+			netd := options.NetDialer
+			if netd == nil {
+				netd = dialer.DefaultNetDialer
+			}
+			conn, err = netd.Dial(ctx, "udp", addr)
 			if err != nil {
 				return nil, err
 			}

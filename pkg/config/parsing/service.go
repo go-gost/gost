@@ -88,14 +88,21 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 	if cfg.Handler.Auther != "" {
 		auther = registry.AutherRegistry().Get(cfg.Handler.Auther)
 	}
+
+	router := (&chain.Router{}).
+		WithRetries(cfg.Handler.Retries).
+		// WithTimeout(timeout time.Duration).
+		WithInterface(cfg.Interface).
+		WithChain(registry.ChainRegistry().Get(cfg.Handler.Chain)).
+		WithResolver(registry.ResolverRegistry().Get(cfg.Resolver)).
+		WithHosts(registry.HostsRegistry().Get(cfg.Hosts)).
+		WithLogger(handlerLogger)
+
 	h := registry.HandlerRegistry().Get(cfg.Handler.Type)(
+		handler.RouterOption(router),
 		handler.AutherOption(auther),
 		handler.AuthOption(parseAuth(cfg.Handler.Auth)),
-		handler.RetriesOption(cfg.Handler.Retries),
-		handler.ChainOption(registry.ChainRegistry().Get(cfg.Handler.Chain)),
 		handler.BypassOption(registry.BypassRegistry().Get(cfg.Bypass)),
-		handler.ResolverOption(registry.ResolverRegistry().Get(cfg.Resolver)),
-		handler.HostsOption(registry.HostsRegistry().Get(cfg.Hosts)),
 		handler.TLSConfigOption(tlsConfig),
 		handler.LoggerOption(handlerLogger),
 	)

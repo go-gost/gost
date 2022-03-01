@@ -13,6 +13,7 @@ import (
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/bufpool"
 	"github.com/go-gost/gost/pkg/handler"
+	"github.com/go-gost/gost/pkg/hosts"
 	resolver_util "github.com/go-gost/gost/pkg/internal/util/resolver"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -33,6 +34,7 @@ type dnsHandler struct {
 	exchangers []exchanger.Exchanger
 	cache      *resolver_util.Cache
 	router     *chain.Router
+	hosts      hosts.HostMapper
 	md         metadata
 	options    handler.Options
 }
@@ -55,13 +57,12 @@ func (h *dnsHandler) Init(md md.Metadata) (err error) {
 	log := h.options.Logger
 
 	h.cache = resolver_util.NewCache().WithLogger(log)
-	h.router = &chain.Router{
-		Retries:  h.options.Retries,
-		Chain:    h.options.Chain,
-		Resolver: h.options.Resolver,
-		// Hosts:    h.options.Hosts,
-		Logger: log,
+
+	h.router = h.options.Router
+	if h.router == nil {
+		h.router = (&chain.Router{}).WithLogger(log)
 	}
+	h.hosts = h.router.Hosts()
 
 	for _, server := range h.md.dns {
 		server = strings.TrimSpace(server)
@@ -218,7 +219,7 @@ func (h *dnsHandler) exchange(ctx context.Context, msg []byte, log logger.Logger
 
 // lookup host mapper
 func (h *dnsHandler) lookupHosts(r *dns.Msg, log logger.Logger) (m *dns.Msg) {
-	if h.options.Hosts == nil ||
+	if h.hosts == nil ||
 		r.Question[0].Qclass != dns.ClassINET ||
 		(r.Question[0].Qtype != dns.TypeA && r.Question[0].Qtype != dns.TypeAAAA) {
 		return nil
@@ -231,7 +232,7 @@ func (h *dnsHandler) lookupHosts(r *dns.Msg, log logger.Logger) (m *dns.Msg) {
 
 	switch r.Question[0].Qtype {
 	case dns.TypeA:
-		ips, _ := h.options.Hosts.Lookup("ip4", host)
+		ips, _ := h.hosts.Lookup("ip4", host)
 		if len(ips) == 0 {
 			return nil
 		}
@@ -247,7 +248,7 @@ func (h *dnsHandler) lookupHosts(r *dns.Msg, log logger.Logger) (m *dns.Msg) {
 		}
 
 	case dns.TypeAAAA:
-		ips, _ := h.options.Hosts.Lookup("ip6", host)
+		ips, _ := h.hosts.Lookup("ip6", host)
 		if len(ips) == 0 {
 			return nil
 		}

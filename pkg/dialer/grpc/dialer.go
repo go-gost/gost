@@ -75,7 +75,11 @@ func (d *grpcDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 		grpcOpts := []grpc.DialOption{
 			// grpc.WithBlock(),
 			grpc.WithContextDialer(func(c context.Context, s string) (net.Conn, error) {
-				return d.dial(ctx, "tcp", s, &options)
+				netd := options.NetDialer
+				if netd == nil {
+					netd = dialer.DefaultNetDialer
+				}
+				return netd.Dial(c, "tcp", s)
 			}),
 			grpc.WithAuthority(host),
 			grpc.WithConnectParams(grpc.ConnectParams{
@@ -110,32 +114,4 @@ func (d *grpcDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 		remoteAddr: remoteAddr,
 		closed:     make(chan struct{}),
 	}, nil
-}
-
-func (d *grpcDialer) dial(ctx context.Context, network, addr string, opts *dialer.DialOptions) (net.Conn, error) {
-	dial := opts.DialFunc
-	if dial != nil {
-		conn, err := dial(ctx, addr)
-		if err != nil {
-			d.options.Logger.Error(err)
-		} else {
-			d.options.Logger.WithFields(map[string]any{
-				"src": conn.LocalAddr().String(),
-				"dst": addr,
-			}).Debug("dial with dial func")
-		}
-		return conn, err
-	}
-
-	var netd net.Dialer
-	conn, err := netd.DialContext(ctx, network, addr)
-	if err != nil {
-		d.options.Logger.Error(err)
-	} else {
-		d.options.Logger.WithFields(map[string]any{
-			"src": conn.LocalAddr().String(),
-			"dst": addr,
-		}).Debugf("dial direct %s/%s", addr, network)
-	}
-	return conn, err
 }

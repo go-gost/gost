@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/go-gost/gost/pkg/common/util/udp"
 	"github.com/go-gost/gost/pkg/connector"
+	"github.com/go-gost/gost/pkg/dialer"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
@@ -16,8 +18,9 @@ var (
 )
 
 type Route struct {
-	nodes  []*Node
-	logger logger.Logger
+	nodes    []*Node
+	ifceName string
+	logger   logger.Logger
 }
 
 func (r *Route) addNode(node *Node) {
@@ -26,7 +29,13 @@ func (r *Route) addNode(node *Node) {
 
 func (r *Route) Dial(ctx context.Context, network, address string) (net.Conn, error) {
 	if r.Len() == 0 {
-		return r.dialDirect(ctx, network, address)
+		netd := dialer.NetDialer{
+			Timeout: 30 * time.Second,
+		}
+		if r != nil {
+			netd.Interface = r.ifceName
+		}
+		return netd.Dial(ctx, network, address)
 	}
 
 	conn, err := r.connect(ctx)
@@ -40,19 +49,6 @@ func (r *Route) Dial(ctx context.Context, network, address string) (net.Conn, er
 		return nil, err
 	}
 	return cc, nil
-}
-
-func (r *Route) dialDirect(ctx context.Context, network, address string) (net.Conn, error) {
-	switch network {
-	case "udp", "udp4", "udp6":
-		if address == "" {
-			return net.ListenUDP(network, nil)
-		}
-	default:
-	}
-
-	d := net.Dialer{}
-	return d.DialContext(ctx, network, address)
 }
 
 func (r *Route) Bind(ctx context.Context, network, address string, opts ...connector.BindOption) (net.Listener, error) {

@@ -180,6 +180,7 @@ type ConnectorConfig struct {
 type ServiceConfig struct {
 	Name      string           `json:"name"`
 	Addr      string           `yaml:",omitempty" json:"addr,omitempty"`
+	Interface string           `yaml:",omitempty" json:"interface,omitempty"`
 	Admission string           `yaml:",omitempty" json:"admission,omitempty"`
 	Bypass    string           `yaml:",omitempty" json:"bypass,omitempty"`
 	Resolver  string           `yaml:",omitempty" json:"resolver,omitempty"`
@@ -196,17 +197,19 @@ type ChainConfig struct {
 }
 
 type HopConfig struct {
-	Name     string          `json:"name"`
-	Selector *SelectorConfig `yaml:",omitempty" json:"selector,omitempty"`
-	Bypass   string          `yaml:",omitempty" json:"bypass,omitempty"`
-	Resolver string          `yaml:",omitempty" json:"resolver,omitempty"`
-	Hosts    string          `yaml:",omitempty" json:"hosts,omitempty"`
-	Nodes    []*NodeConfig   `json:"nodes"`
+	Name      string          `json:"name"`
+	Interface string          `yaml:",omitempty" json:"interface,omitempty"`
+	Selector  *SelectorConfig `yaml:",omitempty" json:"selector,omitempty"`
+	Bypass    string          `yaml:",omitempty" json:"bypass,omitempty"`
+	Resolver  string          `yaml:",omitempty" json:"resolver,omitempty"`
+	Hosts     string          `yaml:",omitempty" json:"hosts,omitempty"`
+	Nodes     []*NodeConfig   `json:"nodes"`
 }
 
 type NodeConfig struct {
 	Name      string           `json:"name"`
 	Addr      string           `yaml:",omitempty" json:"addr,omitempty"`
+	Interface string           `yaml:",omitempty" json:"interface,omitempty"`
 	Bypass    string           `yaml:",omitempty" json:"bypass,omitempty"`
 	Resolver  string           `yaml:",omitempty" json:"resolver,omitempty"`
 	Hosts     string           `yaml:",omitempty" json:"hosts,omitempty"`

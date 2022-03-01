@@ -41,12 +41,9 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	h.router = &chain.Router{
-		Retries:  h.options.Retries,
-		Chain:    h.options.Chain,
-		Resolver: h.options.Resolver,
-		Hosts:    h.options.Hosts,
-		Logger:   h.options.Logger,
+	h.router = h.options.Router
+	if h.router == nil {
+		h.router = (&chain.Router{}).WithLogger(h.options.Logger)
 	}
 
 	h.selector = &serverSelector{

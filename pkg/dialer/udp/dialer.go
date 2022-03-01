@@ -35,16 +35,20 @@ func (d *udpDialer) Init(md md.Metadata) (err error) {
 }
 
 func (d *udpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (net.Conn, error) {
-	taddr, err := net.ResolveUDPAddr("udp", addr)
-	if err != nil {
-		return nil, err
+	var options dialer.DialOptions
+	for _, opt := range opts {
+		opt(&options)
 	}
 
-	c, err := net.DialUDP("udp", nil, taddr)
+	netd := options.NetDialer
+	if netd == nil {
+		netd = dialer.DefaultNetDialer
+	}
+	c, err := netd.Dial(ctx, "udp", addr)
 	if err != nil {
 		return nil, err
 	}
 	return &conn{
-		UDPConn: c,
+		UDPConn: c.(*net.UDPConn),
 	}, nil
 }

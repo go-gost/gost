@@ -71,11 +71,6 @@ func (d *mwsDialer) Multiplex() bool {
 }
 
 func (d *mwsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (conn net.Conn, err error) {
-	var options dialer.DialOptions
-	for _, opt := range opts {
-		opt(&options)
-	}
-
 	d.sessionMutex.Lock()
 	defer d.sessionMutex.Unlock()
 
@@ -85,7 +80,16 @@ func (d *mwsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 		ok = false
 	}
 	if !ok {
-		conn, err = d.dial(ctx, "tcp", addr, &options)
+		var options dialer.DialOptions
+		for _, opt := range opts {
+			opt(&options)
+		}
+
+		netd := options.NetDialer
+		if netd == nil {
+			netd = dialer.DefaultNetDialer
+		}
+		conn, err = netd.Dial(ctx, "tcp", addr)
 		if err != nil {
 			return
 		}
@@ -141,34 +145,6 @@ func (d *mwsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 	}
 
 	return cc, nil
-}
-
-func (d *mwsDialer) dial(ctx context.Context, network, addr string, opts *dialer.DialOptions) (net.Conn, error) {
-	dial := opts.DialFunc
-	if dial != nil {
-		conn, err := dial(ctx, addr)
-		if err != nil {
-			d.logger.Error(err)
-		} else {
-			d.logger.WithFields(map[string]any{
-				"src": conn.LocalAddr().String(),
-				"dst": addr,
-			}).Debug("dial with dial func")
-		}
-		return conn, err
-	}
-
-	var netd net.Dialer
-	conn, err := netd.DialContext(ctx, network, addr)
-	if err != nil {
-		d.logger.Error(err)
-	} else {
-		d.logger.WithFields(map[string]any{
-			"src": conn.LocalAddr().String(),
-			"dst": addr,
-		}).Debugf("dial direct %s/%s", addr, network)
-	}
-	return conn, err
 }
 
 func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn) (*muxSession, error) {

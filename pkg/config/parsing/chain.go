@@ -93,11 +93,6 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 				return nil, err
 			}
 
-			tr := (&chain.Transport{}).
-				WithConnector(cr).
-				WithDialer(d).
-				WithAddr(v.Addr)
-
 			if v.Bypass == "" {
 				v.Bypass = hop.Bypass
 			}
@@ -107,15 +102,24 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 			if v.Hosts == "" {
 				v.Hosts = hop.Hosts
 			}
+			if v.Interface == "" {
+				v.Interface = hop.Interface
+			}
+
+			tr := (&chain.Transport{}).
+				WithConnector(cr).
+				WithDialer(d).
+				WithAddr(v.Addr).
+				WithInterface(v.Interface)
 
 			node := &chain.Node{
 				Name:      v.Name,
 				Addr:      v.Addr,
-				Transport: tr,
 				Bypass:    registry.BypassRegistry().Get(v.Bypass),
 				Resolver:  registry.ResolverRegistry().Get(v.Resolver),
 				Hosts:     registry.HostsRegistry().Get(v.Hosts),
 				Marker:    &chain.FailMarker{},
+				Transport: tr,
 			}
 			group.AddNode(node)
 		}

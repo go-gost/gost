@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/go-gost/gost/pkg/dialer"
@@ -19,11 +20,12 @@ func init() {
 }
 
 type phtDialer struct {
-	tlsEnabled bool
-	client     *pht_util.Client
-	md         metadata
-	logger     logger.Logger
-	options    dialer.Options
+	clients     map[string]*pht_util.Client
+	clientMutex sync.Mutex
+	tlsEnabled  bool
+	md          metadata
+	logger      logger.Logger
+	options     dialer.Options
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
@@ -33,7 +35,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 
 	return &phtDialer{
-		logger:  options.Logger,
+		clients: make(map[string]*pht_util.Client),
 		options: options,
 	}
 }
@@ -46,7 +48,7 @@ func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
 
 	return &phtDialer{
 		tlsEnabled: true,
-		logger:     options.Logger,
+		clients:    make(map[string]*pht_util.Client),
 		options:    options,
 	}
 }
@@ -56,36 +58,57 @@ func (d *phtDialer) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	tr := &http.Transport{
-		// Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-	if d.tlsEnabled {
-		tr.TLSClientConfig = d.options.TLSConfig
-	}
-
-	d.client = &pht_util.Client{
-		Client: &http.Client{
-			// Timeout:   60 * time.Second,
-			Transport: tr,
-		},
-		AuthorizePath: d.md.authorizePath,
-		PushPath:      d.md.pushPath,
-		PullPath:      d.md.pullPath,
-		TLSEnabled:    d.tlsEnabled,
-		Logger:        d.options.Logger,
-	}
 	return nil
 }
 
 func (d *phtDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (net.Conn, error) {
-	return d.client.Dial(ctx, addr)
+	d.clientMutex.Lock()
+	defer d.clientMutex.Unlock()
+
+	client, ok := d.clients[addr]
+	if !ok {
+		var options dialer.DialOptions
+		for _, opt := range opts {
+			opt(&options)
+		}
+
+		host := d.md.host
+		if host == "" {
+			host = options.Host
+		}
+		if h, _, _ := net.SplitHostPort(host); h != "" {
+			host = h
+		}
+
+		tr := &http.Transport{
+			// Proxy: http.ProxyFromEnvironment,
+			DialContext: func(ctx context.Context, network, adr string) (net.Conn, error) {
+				return options.NetDialer.Dial(ctx, network, addr)
+			},
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		}
+		if d.tlsEnabled {
+			tr.TLSClientConfig = d.options.TLSConfig
+		}
+
+		client = &pht_util.Client{
+			Host: host,
+			Client: &http.Client{
+				// Timeout:   60 * time.Second,
+				Transport: tr,
+			},
+			AuthorizePath: d.md.authorizePath,
+			PushPath:      d.md.pushPath,
+			PullPath:      d.md.pullPath,
+			TLSEnabled:    d.tlsEnabled,
+			Logger:        d.options.Logger,
+		}
+		d.clients[addr] = client
+	}
+
+	return client.Dial(ctx, addr)
 }

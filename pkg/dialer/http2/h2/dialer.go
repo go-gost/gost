@@ -93,22 +93,14 @@ func (d *h2Dialer) Dial(ctx context.Context, address string, opts ...dialer.Dial
 		if d.h2c {
 			client.Transport = &http2.Transport{
 				DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
-					netd := options.NetDialer
-					if netd == nil {
-						netd = dialer.DefaultNetDialer
-					}
-					return netd.Dial(ctx, network, addr)
+					return options.NetDialer.Dial(ctx, network, addr)
 				},
 			}
 		} else {
 			client.Transport = &http.Transport{
 				TLSClientConfig: d.options.TLSConfig,
 				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-					netd := options.NetDialer
-					if netd == nil {
-						netd = dialer.DefaultNetDialer
-					}
-					return netd.Dial(ctx, network, addr)
+					return options.NetDialer.Dial(ctx, network, addr)
 				},
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,

@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/url"
 
+	"github.com/go-gost/gost/pkg/common/net/dialer"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
@@ -35,7 +36,7 @@ func LoggerOption(logger logger.Logger) Option {
 
 type DialOptions struct {
 	Host      string
-	NetDialer *NetDialer
+	NetDialer *dialer.NetDialer
 }
 
 type DialOption func(opts *DialOptions)
@@ -46,7 +47,7 @@ func HostDialOption(host string) DialOption {
 	}
 }
 
-func NetDialerDialOption(netd *NetDialer) DialOption {
+func NetDialerDialOption(netd *dialer.NetDialer) DialOption {
 	return func(opts *DialOptions) {
 		opts.NetDialer = netd
 	}

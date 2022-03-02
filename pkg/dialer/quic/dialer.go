@@ -64,11 +64,14 @@ func (d *quicDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 			opt(options)
 		}
 
-		netd := options.NetDialer
-		if netd == nil {
-			netd = dialer.DefaultNetDialer
+		host := d.md.host
+		if host == "" {
+			host = options.Host
 		}
-		conn, err = netd.Dial(ctx, "udp", "")
+		if h, _, _ := net.SplitHostPort(host); h != "" {
+			host = h
+		}
+		conn, err = options.NetDialer.Dial(ctx, "udp", "")
 		if err != nil {
 			return nil, err
 		}

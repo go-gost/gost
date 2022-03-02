@@ -7,9 +7,9 @@ import (
 	"net"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/net/dialer"
 	"github.com/go-gost/gost/pkg/common/util/udp"
 	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/dialer"
 	"github.com/go-gost/gost/pkg/logger"
 )
 

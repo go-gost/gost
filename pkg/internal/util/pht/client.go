@@ -8,12 +8,14 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"strconv"
 	"strings"
 
 	"github.com/go-gost/gost/pkg/logger"
 )
 
 type Client struct {
+	Host          string
 	Client        *http.Client
 	AuthorizePath string
 	PushPath      string
@@ -23,6 +25,16 @@ type Client struct {
 }
 
 func (c *Client) Dial(ctx context.Context, addr string) (net.Conn, error) {
+	raddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		c.Logger.Error(err)
+		return nil, err
+	}
+
+	if c.Host != "" {
+		addr = net.JoinHostPort(c.Host, strconv.Itoa(raddr.Port))
+	}
+
 	token, err := c.authorize(ctx, addr)
 	if err != nil {
 		c.Logger.Error(err)
@@ -30,13 +42,13 @@ func (c *Client) Dial(ctx context.Context, addr string) (net.Conn, error) {
 	}
 
 	cn := &clientConn{
-		client:    c.Client,
-		rxc:       make(chan []byte, 128),
-		closed:    make(chan struct{}),
-		localAddr: &net.TCPAddr{},
-		logger:    c.Logger,
+		client:     c.Client,
+		rxc:        make(chan []byte, 128),
+		closed:     make(chan struct{}),
+		localAddr:  &net.TCPAddr{},
+		remoteAddr: raddr,
+		logger:     c.Logger,
 	}
-	cn.remoteAddr, _ = net.ResolveTCPAddr("tcp", addr)
 
 	scheme := "http"
 	if c.TLSEnabled {

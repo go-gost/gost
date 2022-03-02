@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	net_dialer "github.com/go-gost/gost/pkg/common/net/dialer"
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/dialer"
 )
@@ -39,7 +40,7 @@ func (tr *Transport) WithConnector(connector connector.Connector) *Transport {
 }
 
 func (tr *Transport) Dial(ctx context.Context, addr string) (net.Conn, error) {
-	netd := &dialer.NetDialer{
+	netd := &net_dialer.NetDialer{
 		Interface: tr.ifceName,
 		Timeout:   30 * time.Second,
 	}

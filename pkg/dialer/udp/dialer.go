@@ -40,11 +40,7 @@ func (d *udpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 		opt(&options)
 	}
 
-	netd := options.NetDialer
-	if netd == nil {
-		netd = dialer.DefaultNetDialer
-	}
-	c, err := netd.Dial(ctx, "udp", addr)
+	c, err := options.NetDialer.Dial(ctx, "udp", addr)
 	if err != nil {
 		return nil, err
 	}

@@ -61,11 +61,7 @@ func (d *wsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOpt
 		opt(&options)
 	}
 
-	netd := options.NetDialer
-	if netd == nil {
-		netd = dialer.DefaultNetDialer
-	}
-	conn, err := netd.Dial(ctx, "tcp", addr)
+	conn, err := options.NetDialer.Dial(ctx, "tcp", addr)
 	if err != nil {
 		d.logger.Error(err)
 	}

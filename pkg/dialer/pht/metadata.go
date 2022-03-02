@@ -23,6 +23,7 @@ type metadata struct {
 	authorizePath string
 	pushPath      string
 	pullPath      string
+	host          string
 }
 
 func (d *phtDialer) parseMetadata(md mdata.Metadata) (err error) {
@@ -30,6 +31,7 @@ func (d *phtDialer) parseMetadata(md mdata.Metadata) (err error) {
 		authorizePath = "authorizePath"
 		pushPath      = "pushPath"
 		pullPath      = "pullPath"
+		host          = "host"
 	)
 
 	d.md.authorizePath = mdata.GetString(md, authorizePath)
@@ -44,5 +46,7 @@ func (d *phtDialer) parseMetadata(md mdata.Metadata) (err error) {
 	if !strings.HasPrefix(d.md.pullPath, "/") {
 		d.md.pullPath = defaultPullPath
 	}
+
+	d.md.host = mdata.GetString(md, host)
 	return
 }

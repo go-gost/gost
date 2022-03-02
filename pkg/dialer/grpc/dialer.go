@@ -75,11 +75,7 @@ func (d *grpcDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 		grpcOpts := []grpc.DialOption{
 			// grpc.WithBlock(),
 			grpc.WithContextDialer(func(c context.Context, s string) (net.Conn, error) {
-				netd := options.NetDialer
-				if netd == nil {
-					netd = dialer.DefaultNetDialer
-				}
-				return netd.Dial(c, "tcp", s)
+				return options.NetDialer.Dial(c, "tcp", s)
 			}),
 			grpc.WithAuthority(host),
 			grpc.WithConnectParams(grpc.ConnectParams{

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	net_dialer "github.com/go-gost/gost/pkg/common/net/dialer"
 	"github.com/go-gost/gost/pkg/dialer"
 	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
 	"github.com/go-gost/gost/pkg/logger"
@@ -75,7 +76,7 @@ func (d *http2Dialer) Dial(ctx context.Context, address string, opts ...dialer.D
 				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 					netd := options.NetDialer
 					if netd == nil {
-						netd = dialer.DefaultNetDialer
+						netd = net_dialer.DefaultNetDialer
 					}
 					return netd.Dial(ctx, network, addr)
 				},

@@ -53,6 +53,7 @@ func (c *clientConn) Write(b []byte) (n int, err error) {
 	if err != nil {
 		return
 	}
+
 	if c.logger.IsLevelEnabled(logger.DebugLevel) {
 		dump, _ := httputil.DumpRequest(r, false)
 		c.logger.Debug(string(dump))
@@ -87,6 +88,7 @@ func (c *clientConn) readLoop() {
 			if err != nil {
 				return err
 			}
+
 			if c.logger.IsLevelEnabled(logger.DebugLevel) {
 				dump, _ := httputil.DumpRequest(r, false)
 				c.logger.Debug(string(dump))

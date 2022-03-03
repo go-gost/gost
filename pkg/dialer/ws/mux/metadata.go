@@ -28,7 +28,8 @@ type metadata struct {
 	muxMaxReceiveBuffer  int
 	muxMaxStreamBuffer   int
 
-	header http.Header
+	header    http.Header
+	keepAlive time.Duration
 }
 
 func (d *mwsDialer) parseMetadata(md mdata.Metadata) (err error) {
@@ -42,7 +43,8 @@ func (d *mwsDialer) parseMetadata(md mdata.Metadata) (err error) {
 		writeBufferSize   = "writeBufferSize"
 		enableCompression = "enableCompression"
 
-		header = "header"
+		header    = "header"
+		keepAlive = "keepAlive"
 
 		muxKeepAliveDisabled = "muxKeepAliveDisabled"
 		muxKeepAliveInterval = "muxKeepAliveInterval"
@@ -79,5 +81,7 @@ func (d *mwsDialer) parseMetadata(md mdata.Metadata) (err error) {
 		}
 		d.md.header = h
 	}
+	d.md.keepAlive = mdata.GetDuration(md, keepAlive)
+
 	return
 }

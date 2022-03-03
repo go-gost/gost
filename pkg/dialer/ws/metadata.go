@@ -21,7 +21,8 @@ type metadata struct {
 	writeBufferSize   int
 	enableCompression bool
 
-	header http.Header
+	header    http.Header
+	keepAlive time.Duration
 }
 
 func (d *wsDialer) parseMetadata(md mdata.Metadata) (err error) {
@@ -35,7 +36,8 @@ func (d *wsDialer) parseMetadata(md mdata.Metadata) (err error) {
 		writeBufferSize   = "writeBufferSize"
 		enableCompression = "enableCompression"
 
-		header = "header"
+		header    = "header"
+		keepAlive = "keepAlive"
 	)
 
 	d.md.host = mdata.GetString(md, host)
@@ -58,6 +60,7 @@ func (d *wsDialer) parseMetadata(md mdata.Metadata) (err error) {
 		}
 		d.md.header = h
 	}
+	d.md.keepAlive = mdata.GetDuration(md, keepAlive)
 
 	return
 }

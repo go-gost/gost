@@ -3,6 +3,7 @@ package http3
 import (
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	pht_util "github.com/go-gost/gost/pkg/internal/util/pht"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -64,7 +65,11 @@ func (l *http3Listener) Init(md md.Metadata) (err error) {
 }
 
 func (l *http3Listener) Accept() (conn net.Conn, err error) {
-	return l.server.Accept()
+	conn, err = l.server.Accept()
+	if err != nil {
+		return
+	}
+	return metrics.WrapConn(l.options.Service, conn), nil
 }
 
 func (l *http3Listener) Addr() net.Addr {

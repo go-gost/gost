@@ -3,6 +3,7 @@ package grpc
 import (
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	pb "github.com/go-gost/gost/pkg/common/util/grpc/proto"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -42,15 +43,11 @@ func (l *grpcListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveTCPAddr("tcp", l.options.Addr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}
-
-	ln, err := net.ListenTCP("tcp", laddr)
-	if err != nil {
-		return
-	}
+	ln = metrics.WrapListener(l.options.Service, ln)
 
 	var opts []grpc.ServerOption
 	if !l.md.insecure {

@@ -59,6 +59,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 		listener.AuthOption(parseAuth(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
 		listener.LoggerOption(listenerLogger),
+		listener.ServiceOption(cfg.Name),
 	)
 
 	if cfg.Listener.Metadata == nil {
@@ -119,7 +120,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 		return nil, err
 	}
 
-	s := service.NewService(ln, h,
+	s := service.NewService(cfg.Name, ln, h,
 		service.AdmissionOption(registry.AdmissionRegistry().Get(cfg.Admission)),
 		service.LoggerOption(serviceLogger),
 	)

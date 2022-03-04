@@ -14,20 +14,20 @@ func init() {
 }
 
 type redirectListener struct {
-	addr   string
-	ln     *net.UDPConn
-	logger logger.Logger
-	md     metadata
+	ln      *net.UDPConn
+	logger  logger.Logger
+	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &redirectListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -36,7 +36,7 @@ func (l *redirectListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveUDPAddr("udp", l.addr)
+	laddr, err := net.ResolveUDPAddr("udp", l.options.Addr)
 	if err != nil {
 		return
 	}
@@ -51,7 +51,12 @@ func (l *redirectListener) Init(md md.Metadata) (err error) {
 }
 
 func (l *redirectListener) Accept() (conn net.Conn, err error) {
-	return l.accept()
+	conn, err = l.accept()
+	if err != nil {
+		return
+	}
+	// conn = metrics.WrapConn(l.options.Service, conn)
+	return
 }
 
 func (l *redirectListener) Addr() net.Addr {

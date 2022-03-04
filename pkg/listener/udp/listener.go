@@ -3,6 +3,7 @@ package udp
 import (
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/common/util/udp"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -15,20 +16,20 @@ func init() {
 }
 
 type udpListener struct {
-	addr string
-	md   metadata
 	net.Listener
-	logger logger.Logger
+	logger  logger.Logger
+	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &udpListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -37,7 +38,7 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveUDPAddr("udp", l.addr)
+	laddr, err := net.ResolveUDPAddr("udp", l.options.Addr)
 	if err != nil {
 		return
 	}
@@ -47,7 +48,9 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	l.Listener = udp.NewListener(conn, laddr,
+	l.Listener = udp.NewListener(
+		metrics.WrapPacketConn(l.options.Service, conn),
+		laddr,
 		l.md.backlog,
 		l.md.readQueueSize, l.md.readBufferSize,
 		l.md.ttl,

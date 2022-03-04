@@ -5,6 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -17,23 +18,23 @@ func init() {
 }
 
 type ftcpListener struct {
-	addr     string
-	md       metadata
 	conn     net.PacketConn
 	connChan chan net.Conn
 	errChan  chan error
 	connPool connPool
 	logger   logger.Logger
+	md       metadata
+	options  listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &ftcpListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -42,7 +43,7 @@ func (l *ftcpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	l.conn, err = tcpraw.Listen("tcp", addr)
+	l.conn, err = tcpraw.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}
@@ -59,6 +60,7 @@ func (l *ftcpListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.connChan:
+		conn = metrics.WrapConn(l.options.Service, conn)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

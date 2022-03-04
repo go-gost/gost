@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/metrics"
+	metrics "github.com/go-gost/gost/pkg/metrics/service"
 	"github.com/go-gost/gost/pkg/registry"
 )
 
@@ -43,6 +43,12 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		cfg.Metrics = &config.MetricsConfig{
 			Addr: v,
 			Path: metrics.DefaultPath,
+		}
+	}
+
+	if v := os.Getenv("GOST_LOGGING_LEVEL"); v != "" {
+		cfg.Log = &config.LogConfig{
+			Level: v,
 		}
 	}
 

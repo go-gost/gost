@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/chain"
+	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -64,12 +65,14 @@ func (l *rtcpListener) Accept() (conn net.Conn, err error) {
 	}
 
 	if l.ln == nil {
-		l.ln, err = l.router.Bind(context.Background(), "tcp", l.laddr.String(),
+		l.ln, err = l.router.Bind(
+			context.Background(), "tcp", l.laddr.String(),
 			connector.MuxBindOption(true),
 		)
 		if err != nil {
 			return nil, connector.NewAcceptError(err)
 		}
+		l.ln = metrics.WrapListener(l.options.Service, l.ln)
 	}
 	conn, err = l.ln.Accept()
 	if err != nil {

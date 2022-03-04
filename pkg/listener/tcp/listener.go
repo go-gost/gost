@@ -3,6 +3,7 @@ package tcp
 import (
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -36,15 +37,11 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveTCPAddr("tcp", l.options.Addr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}
-	ln, err := net.ListenTCP("tcp", laddr)
-	if err != nil {
-		return
-	}
+	l.Listener = metrics.WrapListener(l.options.Service, ln)
 
-	l.Listener = ln
 	return
 }

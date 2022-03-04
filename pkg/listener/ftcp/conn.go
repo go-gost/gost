@@ -10,7 +10,7 @@ import (
 
 // serverConn is a server side connection for UDP client peer, it implements net.Conn and net.PacketConn.
 type serverConn struct {
-	net.PacketConn
+	pc         net.PacketConn
 	raddr      net.Addr
 	rc         chan []byte // data receive queue
 	fresh      int32
@@ -34,11 +34,11 @@ func newServerConn(conn net.PacketConn, raddr net.Addr, cfg *serverConnConfig) *
 		cfg = &serverConnConfig{}
 	}
 	c := &serverConn{
-		PacketConn: conn,
-		raddr:      raddr,
-		rc:         make(chan []byte, cfg.qsize),
-		closed:     make(chan struct{}),
-		config:     cfg,
+		pc:     conn,
+		raddr:  raddr,
+		rc:     make(chan []byte, cfg.qsize),
+		closed: make(chan struct{}),
+		config: cfg,
 	}
 	go c.ttlWait()
 	return c
@@ -54,11 +54,6 @@ func (c *serverConn) send(b []byte) error {
 }
 
 func (c *serverConn) Read(b []byte) (n int, err error) {
-	n, _, err = c.ReadFrom(b)
-	return
-}
-
-func (c *serverConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 	select {
 	case bb := <-c.rc:
 		n = copy(b, bb)
@@ -68,13 +63,11 @@ func (c *serverConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 		return
 	}
 
-	addr = c.raddr
-
 	return
 }
 
 func (c *serverConn) Write(b []byte) (n int, err error) {
-	return c.WriteTo(b, c.raddr)
+	return c.pc.WriteTo(b, c.raddr)
 }
 
 func (c *serverConn) Close() error {
@@ -93,8 +86,24 @@ func (c *serverConn) Close() error {
 	return nil
 }
 
+func (c *serverConn) LocalAddr() net.Addr {
+	return c.pc.LocalAddr()
+}
+
 func (c *serverConn) RemoteAddr() net.Addr {
 	return c.raddr
+}
+
+func (c *serverConn) SetDeadline(t time.Time) error {
+	return c.pc.SetDeadline(t)
+}
+
+func (c *serverConn) SetReadDeadline(t time.Time) error {
+	return c.pc.SetReadDeadline(t)
+}
+
+func (c *serverConn) SetWriteDeadline(t time.Time) error {
+	return c.pc.SetWriteDeadline(t)
 }
 
 func (c *serverConn) ttlWait() {

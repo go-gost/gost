@@ -16,6 +16,7 @@ type Options struct {
 	TLSConfig *tls.Config
 	Chain     chain.Chainer
 	Logger    logger.Logger
+	Service   string
 }
 
 type Option func(opts *Options)
@@ -53,5 +54,11 @@ func ChainOption(chain chain.Chainer) Option {
 func LoggerOption(logger logger.Logger) Option {
 	return func(opts *Options) {
 		opts.Logger = logger
+	}
+}
+
+func ServiceOption(service string) Option {
+	return func(opts *Options) {
+		opts.Service = service
 	}
 }

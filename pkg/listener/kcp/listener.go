@@ -4,6 +4,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	kcp_util "github.com/go-gost/gost/pkg/common/util/kcp"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -19,22 +20,23 @@ func init() {
 }
 
 type kcpListener struct {
-	addr    string
+	conn    net.PacketConn
 	ln      *kcp.Listener
 	cqueue  chan net.Conn
 	errChan chan error
 	logger  logger.Logger
 	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &kcpListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -46,37 +48,45 @@ func (l *kcpListener) Init(md md.Metadata) (err error) {
 	config := l.md.config
 	config.Init()
 
-	var ln *kcp.Listener
+	var conn net.PacketConn
 
 	if config.TCP {
-		var conn net.PacketConn
-		conn, err = tcpraw.Listen("tcp", l.addr)
+		conn, err = tcpraw.Listen("tcp", l.options.Addr)
+	} else {
+		var udpAddr *net.UDPAddr
+		udpAddr, err = net.ResolveUDPAddr("udp", l.options.Addr)
 		if err != nil {
 			return
 		}
-		ln, err = kcp.ServeConn(
-			kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt), config.DataShard, config.ParityShard, conn)
-	} else {
-		ln, err = kcp.ListenWithOptions(l.addr,
-			kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt), config.DataShard, config.ParityShard)
+		conn, err = net.ListenUDP("udp", udpAddr)
 	}
 	if err != nil {
 		return
 	}
 
+	conn = metrics.WrapUDPConn(l.options.Service, conn)
+
+	ln, err := kcp.ServeConn(
+		kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt),
+		config.DataShard, config.ParityShard, conn)
+	if err != nil {
+		return
+	}
+
 	if config.DSCP > 0 {
-		if err = ln.SetDSCP(config.DSCP); err != nil {
-			l.logger.Warn(err)
+		if er := ln.SetDSCP(config.DSCP); er != nil {
+			l.logger.Warn(er)
 		}
 	}
-	if err = ln.SetReadBuffer(config.SockBuf); err != nil {
-		l.logger.Warn(err)
+	if er := ln.SetReadBuffer(config.SockBuf); er != nil {
+		l.logger.Warn(er)
 	}
-	if err = ln.SetWriteBuffer(config.SockBuf); err != nil {
-		l.logger.Warn(err)
+	if er := ln.SetWriteBuffer(config.SockBuf); er != nil {
+		l.logger.Warn(er)
 	}
 
 	l.ln = ln
+	l.conn = conn
 	l.cqueue = make(chan net.Conn, l.md.backlog)
 	l.errChan = make(chan error, 1)
 
@@ -98,6 +108,7 @@ func (l *kcpListener) Accept() (conn net.Conn, err error) {
 }
 
 func (l *kcpListener) Close() error {
+	l.conn.Close()
 	return l.ln.Close()
 }
 

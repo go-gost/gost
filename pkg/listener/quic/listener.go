@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	quic_util "github.com/go-gost/gost/pkg/internal/util/quic"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -52,6 +53,7 @@ func (l *quicListener) Init(md md.Metadata) (err error) {
 	}
 
 	var conn net.PacketConn = uc
+	// conn = metrics.WrapPacketConn(l.options.Service, conn)
 
 	if l.md.cipherKey != nil {
 		conn = quic_util.CipherPacketConn(uc, l.md.cipherKey)
@@ -88,6 +90,7 @@ func (l *quicListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.cqueue:
+		conn = metrics.WrapConn(l.options.Service, conn)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

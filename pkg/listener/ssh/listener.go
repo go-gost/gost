@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -18,7 +19,6 @@ func init() {
 }
 
 type sshListener struct {
-	addr string
 	net.Listener
 	config  *ssh.ServerConfig
 	cqueue  chan net.Conn
@@ -34,7 +34,6 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(&options)
 	}
 	return &sshListener{
-		addr:    options.Addr,
 		logger:  options.Logger,
 		options: options,
 	}
@@ -45,11 +44,12 @@ func (l *sshListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	ln, err := net.Listen("tcp", l.addr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return err
 	}
 
+	ln = metrics.WrapListener(l.options.Service, ln)
 	l.Listener = ln
 
 	config := &ssh.ServerConfig{

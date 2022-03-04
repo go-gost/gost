@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/chain"
+	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/connector"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -17,7 +18,7 @@ func init() {
 }
 
 type rudpListener struct {
-	laddr   *net.UDPAddr
+	laddr   net.Addr
 	ln      net.Listener
 	router  *chain.Router
 	closed  chan struct{}
@@ -64,7 +65,8 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 	}
 
 	if l.ln == nil {
-		l.ln, err = l.router.Bind(context.Background(), "udp", l.laddr.String(),
+		l.ln, err = l.router.Bind(
+			context.Background(), "udp", l.laddr.String(),
 			connector.BacklogBindOption(l.md.backlog),
 			connector.UDPConnTTLBindOption(l.md.ttl),
 			connector.UDPDataBufferSizeBindOption(l.md.readBufferSize),
@@ -80,6 +82,11 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 		l.ln = nil
 		return nil, connector.NewAcceptError(err)
 	}
+
+	if pc, ok := conn.(net.PacketConn); ok {
+		conn = metrics.WrapUDPConn(l.options.Service, pc)
+	}
+
 	return
 }
 

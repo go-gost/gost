@@ -8,7 +8,7 @@ import (
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/config/parsing"
 	"github.com/go-gost/gost/pkg/logger"
-	"github.com/go-gost/gost/pkg/metrics"
+	metrics "github.com/go-gost/gost/pkg/metrics/service"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/go-gost/gost/pkg/service"
 )

@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -44,6 +45,8 @@ func (l *mtlsListener) Init(md md.Metadata) (err error) {
 	if err != nil {
 		return
 	}
+
+	ln = metrics.WrapListener(l.options.Service, ln)
 	l.Listener = tls.NewListener(ln, l.options.TLSConfig)
 
 	l.cqueue = make(chan net.Conn, l.md.backlog)

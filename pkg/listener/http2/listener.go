@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-gost/gost/pkg/common/util"
+	"github.com/go-gost/gost/pkg/common/metrics"
 	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -58,11 +58,10 @@ func (l *http2Listener) Init(md md.Metadata) (err error) {
 		return err
 	}
 	l.addr = ln.Addr()
+	ln = metrics.WrapListener(l.options.Service, ln)
 
 	ln = tls.NewListener(
-		&util.TCPKeepAliveListener{
-			TCPListener: ln.(*net.TCPListener),
-		},
+		ln,
 		l.options.TLSConfig,
 	)
 

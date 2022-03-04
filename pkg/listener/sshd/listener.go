@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
 	sshd_util "github.com/go-gost/gost/pkg/internal/util/sshd"
 	"github.com/go-gost/gost/pkg/listener"
@@ -27,7 +28,6 @@ func init() {
 }
 
 type sshdListener struct {
-	addr string
 	net.Listener
 	config  *ssh.ServerConfig
 	cqueue  chan net.Conn
@@ -43,7 +43,6 @@ func NewListener(opts ...listener.Option) listener.Listener {
 		opt(&options)
 	}
 	return &sshdListener{
-		addr:    options.Addr,
 		logger:  options.Logger,
 		options: options,
 	}
@@ -54,11 +53,12 @@ func (l *sshdListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	ln, err := net.Listen("tcp", l.addr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return err
 	}
 
+	ln = metrics.WrapListener(l.options.Service, ln)
 	l.Listener = ln
 
 	config := &ssh.ServerConfig{

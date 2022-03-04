@@ -3,6 +3,7 @@ package http
 import (
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -14,20 +15,20 @@ func init() {
 }
 
 type obfsListener struct {
-	addr string
-	md   metadata
 	net.Listener
-	logger logger.Logger
+	logger  logger.Logger
+	md      metadata
+	options listener.Options
 }
 
 func NewListener(opts ...listener.Option) listener.Listener {
-	options := &listener.Options{}
+	options := listener.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 	return &obfsListener{
-		addr:   options.Addr,
-		logger: options.Logger,
+		logger:  options.Logger,
+		options: options,
 	}
 }
 
@@ -36,14 +37,11 @@ func (l *obfsListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	laddr, err := net.ResolveTCPAddr("tcp", l.addr)
+	ln, err := net.Listen("tcp", l.options.Addr)
 	if err != nil {
 		return
 	}
-	ln, err := net.ListenTCP("tcp", laddr)
-	if err != nil {
-		return
-	}
+	ln = metrics.WrapListener(l.options.Service, ln)
 
 	l.Listener = ln
 	return

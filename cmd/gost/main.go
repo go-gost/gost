@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-gost/gost/pkg/config"
 	"github.com/go-gost/gost/pkg/logger"
-	"github.com/go-gost/gost/pkg/metrics"
+	metrics "github.com/go-gost/gost/pkg/metrics/service"
 )
 
 var (

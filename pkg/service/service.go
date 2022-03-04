@@ -9,6 +9,8 @@ import (
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/pkg/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type options struct {
@@ -37,17 +39,19 @@ type Service interface {
 }
 
 type service struct {
+	name     string
 	listener listener.Listener
 	handler  handler.Handler
 	options  options
 }
 
-func NewService(ln listener.Listener, h handler.Handler, opts ...Option) Service {
+func NewService(name string, ln listener.Listener, h handler.Handler, opts ...Option) Service {
 	var options options
 	for _, opt := range opts {
 		opt(&options)
 	}
 	return &service{
+		name:     name,
 		listener: ln,
 		handler:  h,
 		options:  options,
@@ -63,6 +67,9 @@ func (s *service) Close() error {
 }
 
 func (s *service) Serve() error {
+	metrics.Services().Inc()
+	defer metrics.Services().Dec()
+
 	var tempDelay time.Duration
 	for {
 		conn, e := s.listener.Accept()
@@ -92,6 +99,17 @@ func (s *service) Serve() error {
 			continue
 		}
 
-		go s.handler.Handle(context.Background(), conn)
+		go func() {
+			metrics.Requests(s.name).Inc()
+
+			metrics.RequestsInFlight(s.name).Inc()
+			defer metrics.RequestsInFlight(s.name).Dec()
+
+			timer := prometheus.NewTimer(
+				metrics.RequestSeconds(s.name))
+			defer timer.ObserveDuration()
+
+			s.handler.Handle(context.Background(), conn)
+		}()
 	}
 }

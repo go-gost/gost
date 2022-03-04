@@ -5,6 +5,7 @@ package pht
 import (
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	pht_util "github.com/go-gost/gost/pkg/internal/util/pht"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -78,7 +79,12 @@ func (l *phtListener) Init(md md.Metadata) (err error) {
 }
 
 func (l *phtListener) Accept() (conn net.Conn, err error) {
-	return l.server.Accept()
+	conn, err = l.server.Accept()
+	if err != nil {
+		return
+	}
+	conn = metrics.WrapConn(l.options.Service, conn)
+	return
 }
 
 func (l *phtListener) Addr() net.Addr {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 
+	"github.com/go-gost/gost/pkg/common/metrics"
 	ws_util "github.com/go-gost/gost/pkg/internal/util/ws"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -82,6 +83,8 @@ func (l *wsListener) Init(md md.Metadata) (err error) {
 	if err != nil {
 		return
 	}
+	ln = metrics.WrapListener(l.options.Service, ln)
+
 	if l.tlsEnabled {
 		ln = tls.NewListener(ln, l.options.TLSConfig)
 	}

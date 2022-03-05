@@ -2,16 +2,17 @@ package relay
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/handler"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/relay"
 )
 
-func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string, log logger.Logger) {
+func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string, log logger.Logger) error {
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,
@@ -20,8 +21,9 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	if target == nil {
 		resp.Status = relay.StatusServiceUnavailable
 		resp.WriteTo(conn)
-		log.Error("no target available")
-		return
+		err := errors.New("target not available")
+		log.Error(err)
+		return err
 	}
 
 	log = log.WithFields(map[string]any{
@@ -41,7 +43,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 		resp.WriteTo(conn)
 		log.Error(err)
 
-		return
+		return err
 	}
 	defer cc.Close()
 	target.Marker.Reset()
@@ -49,7 +51,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	if h.md.noDelay {
 		if _, err := resp.WriteTo(conn); err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 	}
 
@@ -61,7 +63,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 		if !h.md.noDelay {
 			// cache the header
 			if _, err := resp.WriteTo(&rc.wbuf); err != nil {
-				return
+				return err
 			}
 		}
 		conn = rc
@@ -72,7 +74,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 		if !h.md.noDelay {
 			// cache the header
 			if _, err := resp.WriteTo(&rc.wbuf); err != nil {
-				return
+				return err
 			}
 		}
 		conn = rc
@@ -80,8 +82,10 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr)
+
+	return nil
 }

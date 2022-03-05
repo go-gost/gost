@@ -28,13 +28,13 @@ func WrapConn(service string, c net.Conn) net.Conn {
 
 func (c *serverConn) Read(b []byte) (n int, err error) {
 	n, err = c.Conn.Read(b)
-	metrics.RequestInputBytes(c.service).Add(float64(n))
+	metrics.InputBytes(c.service).Add(float64(n))
 	return
 }
 
 func (c *serverConn) Write(b []byte) (n int, err error) {
 	n, err = c.Conn.Write(b)
-	metrics.RequestOutputBytes(c.service).Add(float64(n))
+	metrics.OutputBytes(c.service).Add(float64(n))
 	return
 }
 
@@ -52,13 +52,13 @@ func WrapPacketConn(service string, pc net.PacketConn) net.PacketConn {
 
 func (c *packetConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
 	n, addr, err = c.PacketConn.ReadFrom(p)
-	metrics.RequestInputBytes(c.service).Add(float64(n))
+	metrics.InputBytes(c.service).Add(float64(n))
 	return
 }
 
 func (c *packetConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	n, err = c.PacketConn.WriteTo(p, addr)
-	metrics.RequestOutputBytes(c.service).Add(float64(n))
+	metrics.OutputBytes(c.service).Add(float64(n))
 	return
 }
 
@@ -98,7 +98,7 @@ func (c *udpConn) SetWriteBuffer(n int) error {
 func (c *udpConn) Read(b []byte) (n int, err error) {
 	if nc, ok := c.PacketConn.(io.Reader); ok {
 		n, err = nc.Read(b)
-		metrics.RequestInputBytes(c.service).Add(float64(n))
+		metrics.InputBytes(c.service).Add(float64(n))
 		return
 	}
 	err = errUnsupport
@@ -107,14 +107,14 @@ func (c *udpConn) Read(b []byte) (n int, err error) {
 
 func (c *udpConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
 	n, addr, err = c.PacketConn.ReadFrom(p)
-	metrics.RequestInputBytes(c.service).Add(float64(n))
+	metrics.InputBytes(c.service).Add(float64(n))
 	return
 }
 
 func (c *udpConn) ReadFromUDP(b []byte) (n int, addr *net.UDPAddr, err error) {
 	if nc, ok := c.PacketConn.(readUDP); ok {
 		n, addr, err = nc.ReadFromUDP(b)
-		metrics.RequestInputBytes(c.service).Add(float64(n))
+		metrics.InputBytes(c.service).Add(float64(n))
 		return
 	}
 	err = errUnsupport
@@ -124,7 +124,7 @@ func (c *udpConn) ReadFromUDP(b []byte) (n int, addr *net.UDPAddr, err error) {
 func (c *udpConn) ReadMsgUDP(b, oob []byte) (n, oobn, flags int, addr *net.UDPAddr, err error) {
 	if nc, ok := c.PacketConn.(readUDP); ok {
 		n, oobn, flags, addr, err = nc.ReadMsgUDP(b, oob)
-		metrics.RequestInputBytes(c.service).Add(float64(n + oobn))
+		metrics.InputBytes(c.service).Add(float64(n + oobn))
 		return
 	}
 	err = errUnsupport
@@ -134,7 +134,7 @@ func (c *udpConn) ReadMsgUDP(b, oob []byte) (n, oobn, flags int, addr *net.UDPAd
 func (c *udpConn) Write(b []byte) (n int, err error) {
 	if nc, ok := c.PacketConn.(io.Writer); ok {
 		n, err = nc.Write(b)
-		metrics.RequestOutputBytes(c.service).Add(float64(n))
+		metrics.OutputBytes(c.service).Add(float64(n))
 		return
 	}
 	err = errUnsupport
@@ -143,14 +143,14 @@ func (c *udpConn) Write(b []byte) (n int, err error) {
 
 func (c *udpConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	n, err = c.PacketConn.WriteTo(p, addr)
-	metrics.RequestOutputBytes(c.service).Add(float64(n))
+	metrics.OutputBytes(c.service).Add(float64(n))
 	return
 }
 
 func (c *udpConn) WriteToUDP(b []byte, addr *net.UDPAddr) (n int, err error) {
 	if nc, ok := c.PacketConn.(writeUDP); ok {
 		n, err = nc.WriteToUDP(b, addr)
-		metrics.RequestOutputBytes(c.service).Add(float64(n))
+		metrics.OutputBytes(c.service).Add(float64(n))
 		return
 	}
 	err = errUnsupport
@@ -160,7 +160,7 @@ func (c *udpConn) WriteToUDP(b []byte, addr *net.UDPAddr) (n int, err error) {
 func (c *udpConn) WriteMsgUDP(b, oob []byte, addr *net.UDPAddr) (n, oobn int, err error) {
 	if nc, ok := c.PacketConn.(writeUDP); ok {
 		n, oobn, err = nc.WriteMsgUDP(b, oob, addr)
-		metrics.RequestOutputBytes(c.service).Add(float64(n + oobn))
+		metrics.OutputBytes(c.service).Add(float64(n + oobn))
 		return
 	}
 	err = errUnsupport

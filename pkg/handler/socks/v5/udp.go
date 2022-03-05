@@ -2,6 +2,7 @@ package v5
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,22 +10,21 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
+	"github.com/go-gost/gost/pkg/common/net/relay"
 	"github.com/go-gost/gost/pkg/common/util/socks"
-	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
-func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger.Logger) {
+func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger.Logger) error {
 	log = log.WithFields(map[string]any{
 		"cmd": "udp",
 	})
 
 	if !h.md.enableUDP {
 		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
-		reply.Write(conn)
 		log.Debug(reply)
-		log.Error("UDP relay is diabled")
-		return
+		log.Error("socks5: UDP relay is disabled")
+		return reply.Write(conn)
 	}
 
 	cc, err := net.ListenUDP("udp", nil)
@@ -33,7 +33,7 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger
 		reply := gosocks5.NewReply(gosocks5.Failure, nil)
 		reply.Write(conn)
 		log.Debug(reply)
-		return
+		return err
 	}
 	defer cc.Close()
 
@@ -44,7 +44,7 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger
 	reply := gosocks5.NewReply(gosocks5.Succeeded, &saddr)
 	if err := reply.Write(conn); err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	log.Debug(reply)
 
@@ -57,26 +57,29 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger
 	c, err := h.router.Dial(ctx, "udp", "") // UDP association
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	defer c.Close()
 
 	pc, ok := c.(net.PacketConn)
 	if !ok {
-		log.Errorf("wrong connection type")
-		return
+		err := errors.New("socks5: wrong connection type")
+		log.Error(err)
+		return err
 	}
 
-	relay := handler.NewUDPRelay(socks.UDPConn(cc, h.md.udpBufferSize), pc).
+	r := relay.NewUDPRelay(socks.UDPConn(cc, h.md.udpBufferSize), pc).
 		WithBypass(h.options.Bypass).
 		WithLogger(log)
-	relay.SetBufferSize(h.md.udpBufferSize)
+	r.SetBufferSize(h.md.udpBufferSize)
 
-	go relay.Run()
+	go r.Run()
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), cc.LocalAddr())
 	io.Copy(ioutil.Discard, conn)
 	log.WithFields(map[string]any{"duration": time.Since(t)}).
 		Infof("%s >-< %s", conn.RemoteAddr(), cc.LocalAddr())
+
+	return nil
 }

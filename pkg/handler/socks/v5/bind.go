@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/handler"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
-func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "bind",
@@ -21,17 +21,16 @@ func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, 
 
 	if !h.md.enableBind {
 		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
-		reply.Write(conn)
 		log.Debug(reply)
-		log.Error("BIND is diabled")
-		return
+		log.Error("socks5: BIND is disabled")
+		return reply.Write(conn)
 	}
 
 	// BIND does not support chain.
-	h.bindLocal(ctx, conn, network, address, log)
+	return h.bindLocal(ctx, conn, network, address, log)
 }
 
-func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
 	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
 		log.Error(err)
@@ -40,7 +39,7 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, a
 			log.Error(err)
 		}
 		log.Debug(reply)
-		return
+		return err
 	}
 
 	socksAddr := gosocks5.Addr{}
@@ -55,7 +54,7 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, a
 	if err := reply.Write(conn); err != nil {
 		log.Error(err)
 		ln.Close()
-		return
+		return err
 	}
 	log.Debug(reply)
 
@@ -66,6 +65,7 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, a
 	log.Debugf("bind on %s OK", ln.Addr())
 
 	h.serveBind(ctx, conn, ln, log)
+	return nil
 }
 
 func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) {
@@ -95,7 +95,7 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 			defer close(errc)
 			defer pc1.Close()
 
-			errc <- handler.Transport(conn, pc1)
+			errc <- netpkg.Transport(conn, pc1)
 		}()
 
 		return errc
@@ -135,7 +135,7 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 
 		start := time.Now()
 		log.Infof("%s <-> %s", rc.LocalAddr(), rc.RemoteAddr())
-		handler.Transport(pc2, rc)
+		netpkg.Transport(pc2, rc)
 		log.WithFields(map[string]any{"duration": time.Since(start)}).
 			Infof("%s >-< %s", rc.LocalAddr(), rc.RemoteAddr())
 

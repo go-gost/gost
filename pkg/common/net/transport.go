@@ -1,4 +1,4 @@
-package handler
+package net
 
 import (
 	"bufio"

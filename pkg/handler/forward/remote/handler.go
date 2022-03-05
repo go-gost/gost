@@ -2,11 +2,13 @@ package remote
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
 
 	"github.com/go-gost/gost/pkg/chain"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/handler"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
@@ -53,7 +55,7 @@ func (h *forwardHandler) Forward(group *chain.NodeGroup) {
 	h.group = group
 }
 
-func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -71,8 +73,9 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	target := h.group.Next()
 	if target == nil {
-		log.Error("no target available")
-		return
+		err := errors.New("target not available")
+		log.Error(err)
+		return err
 	}
 
 	network := "tcp"
@@ -92,15 +95,17 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 		// TODO: the router itself may be failed due to the failed node in the router,
 		// the dead marker may be a wrong operation.
 		target.Marker.Mark()
-		return
+		return err
 	}
 	defer cc.Close()
 	target.Marker.Reset()
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr)
+
+	return nil
 }

@@ -78,7 +78,7 @@ func (h *tunHandler) Forward(group *chain.NodeGroup) {
 	h.group = group
 }
 
-func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer os.Exit(0)
 	defer conn.Close()
 
@@ -86,8 +86,9 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	cc, ok := conn.(*tun_util.Conn)
 	if !ok || cc.Config() == nil {
-		log.Error("invalid connection")
-		return
+		err := errors.New("tun: wrong connection type")
+		log.Error(err)
+		return err
 	}
 
 	start := time.Now()
@@ -112,7 +113,7 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) {
 		raddr, err = net.ResolveUDPAddr(network, target.Addr)
 		if err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 		log = log.WithFields(map[string]any{
 			"dst": fmt.Sprintf("%s/%s", raddr.String(), raddr.Network()),
@@ -121,6 +122,7 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	h.handleLoop(ctx, conn, raddr, cc.Config(), log)
+	return nil
 }
 
 func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Addr, config *tun_util.Config, log logger.Logger) {

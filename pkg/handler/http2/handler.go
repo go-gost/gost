@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/chain"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/handler"
 	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
 	"github.com/go-gost/gost/pkg/logger"
@@ -60,7 +61,7 @@ func (h *http2Handler) Init(md md.Metadata) error {
 	return nil
 }
 
-func (h *http2Handler) Handle(ctx context.Context, conn net.Conn) {
+func (h *http2Handler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -77,16 +78,17 @@ func (h *http2Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	cc, ok := conn.(*http2_util.ServerConn)
 	if !ok {
-		log.Error("wrong connection type")
-		return
+		err := errors.New("wrong connection type")
+		log.Error(err)
+		return err
 	}
-	h.roundTrip(ctx, cc.Writer(), cc.Request(), log)
+	return h.roundTrip(ctx, cc.Writer(), cc.Request(), log)
 }
 
 // NOTE: there is an issue (golang/go#43989) will cause the client hangs
 // when server returns an non-200 status code,
 // May be fixed in go1.18.
-func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.Logger) {
+func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.Logger) error {
 	// Try to get the actual host.
 	// Compatible with GOST 2.x.
 	if v := req.Header.Get("Gost-Target"); v != "" {
@@ -129,7 +131,7 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		w.WriteHeader(http.StatusForbidden)
 		log.Info("bypass: ", addr)
-		return
+		return nil
 	}
 
 	resp := &http.Response{
@@ -140,7 +142,7 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 	}
 
 	if !h.authenticate(w, req, resp, log) {
-		return
+		return nil
 	}
 
 	// delete the proxy related headers.
@@ -151,7 +153,7 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusServiceUnavailable)
-		return
+		return err
 	}
 	defer cc.Close()
 
@@ -168,28 +170,31 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 			if err != nil {
 				log.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
-				return
+				return err
 			}
 			defer conn.Close()
 
 			start := time.Now()
 			log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-			handler.Transport(conn, cc)
+			netpkg.Transport(conn, cc)
 			log.WithFields(map[string]any{
 				"duration": time.Since(start),
 			}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
 
-			return
+			return nil
 		}
 
 		start := time.Now()
 		log.Infof("%s <-> %s", req.RemoteAddr, addr)
-		handler.Transport(&readWriter{r: req.Body, w: flushWriter{w}}, cc)
+		netpkg.Transport(&readWriter{r: req.Body, w: flushWriter{w}}, cc)
 		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >-< %s", req.RemoteAddr, addr)
-		return
+		return nil
 	}
+
+	// TODO: forward request
+	return nil
 }
 
 func (h *http2Handler) decodeServerName(s string) (string, error) {

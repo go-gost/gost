@@ -2,6 +2,7 @@ package ss
 
 import (
 	"context"
+	"errors"
 	"net"
 	"time"
 
@@ -60,7 +61,7 @@ func (h *ssuHandler) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -95,14 +96,15 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 	c, err := h.router.Dial(ctx, "udp", "") // UDP association
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	defer c.Close()
 
 	cc, ok := c.(net.PacketConn)
 	if !ok {
-		log.Errorf("wrong connection type")
-		return
+		err := errors.New("ss: wrong connection type")
+		log.Error(err)
+		return err
 	}
 
 	t := time.Now()
@@ -110,6 +112,8 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn) {
 	h.relayPacket(pc, cc, log)
 	log.WithFields(map[string]any{"duration": time.Since(t)}).
 		Infof("%s >-< %s", conn.LocalAddr(), cc.LocalAddr())
+
+	return nil
 }
 
 func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.Logger) (err error) {

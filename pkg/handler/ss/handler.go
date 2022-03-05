@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	"github.com/go-gost/gost/pkg/chain"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/common/util/ss"
 	"github.com/go-gost/gost/pkg/handler"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -59,7 +60,7 @@ func (h *ssHandler) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -87,7 +88,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 	if _, err := addr.ReadFrom(conn); err != nil {
 		log.Error(err)
 		io.Copy(ioutil.Discard, conn)
-		return
+		return err
 	}
 
 	log = log.WithFields(map[string]any{
@@ -98,19 +99,21 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(addr.String()) {
 		log.Info("bypass: ", addr.String())
-		return
+		return nil
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", addr.String())
 	if err != nil {
-		return
+		return err
 	}
 	defer cc.Close()
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
+
+	return nil
 }

@@ -3,12 +3,14 @@ package ssh
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
 	"time"
 
 	"github.com/go-gost/gost/pkg/chain"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/handler"
 	sshd_util "github.com/go-gost/gost/pkg/internal/util/sshd"
 	"github.com/go-gost/gost/pkg/logger"
@@ -56,7 +58,7 @@ func (h *forwardHandler) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	log := h.options.Logger.WithFields(map[string]any{
@@ -66,16 +68,17 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	switch cc := conn.(type) {
 	case *sshd_util.DirectForwardConn:
-		h.handleDirectForward(ctx, cc, log)
+		return h.handleDirectForward(ctx, cc, log)
 	case *sshd_util.RemoteForwardConn:
-		h.handleRemoteForward(ctx, cc, log)
+		return h.handleRemoteForward(ctx, cc, log)
 	default:
-		log.Error("wrong connection type")
-		return
+		err := errors.New("sshd: wrong connection type")
+		log.Error(err)
+		return err
 	}
 }
 
-func (h *forwardHandler) handleDirectForward(ctx context.Context, conn *sshd_util.DirectForwardConn, log logger.Logger) {
+func (h *forwardHandler) handleDirectForward(ctx context.Context, conn *sshd_util.DirectForwardConn, log logger.Logger) error {
 	targetAddr := conn.DstAddr()
 
 	log = log.WithFields(map[string]any{
@@ -87,28 +90,33 @@ func (h *forwardHandler) handleDirectForward(ctx context.Context, conn *sshd_uti
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(targetAddr) {
 		log.Infof("bypass %s", targetAddr)
-		return
+		return nil
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", targetAddr)
 	if err != nil {
-		return
+		return err
 	}
 	defer cc.Close()
 
 	t := time.Now()
 	log.Infof("%s <-> %s", cc.LocalAddr(), targetAddr)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", cc.LocalAddr(), targetAddr)
+
+	return nil
 }
 
-func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_util.RemoteForwardConn, log logger.Logger) {
+func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_util.RemoteForwardConn, log logger.Logger) error {
 	req := conn.Request()
 
 	t := tcpipForward{}
-	ssh.Unmarshal(req.Payload, &t)
+	if err := ssh.Unmarshal(req.Payload, &t); err != nil {
+		log.Error(err)
+		return err
+	}
 
 	network := "tcp"
 	addr := net.JoinHostPort(t.Host, strconv.Itoa(int(t.Port)))
@@ -125,7 +133,7 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 	if err != nil {
 		log.Error(err)
 		req.Reply(false, nil)
-		return
+		return err
 	}
 	defer ln.Close()
 
@@ -149,7 +157,7 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 	}()
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 
 	sshConn := conn.Conn()
@@ -191,7 +199,7 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 
 				t := time.Now()
 				log.Infof("%s <-> %s", conn.LocalAddr(), conn.RemoteAddr())
-				handler.Transport(ch, conn)
+				netpkg.Transport(ch, conn)
 				log.WithFields(map[string]any{
 					"duration": time.Since(t),
 				}).Infof("%s >-< %s", conn.LocalAddr(), conn.RemoteAddr())
@@ -205,6 +213,8 @@ func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_uti
 	log.WithFields(map[string]any{
 		"duration": time.Since(tm),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
+
+	return nil
 }
 
 func getHostPortFromAddr(addr net.Addr) (host string, port int, err error) {

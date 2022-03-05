@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/common/bufpool"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/handler"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
@@ -70,7 +71,7 @@ func (h *sniHandler) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -89,7 +90,7 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	var hdr [dissector.RecordHeaderLen]byte
 	if _, err := io.ReadFull(conn, hdr[:]); err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 
 	if hdr[0] != dissector.Handshake {
@@ -100,9 +101,9 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 		}
 
 		if h.httpHandler != nil {
-			h.httpHandler.Handle(ctx, conn)
+			return h.httpHandler.Handle(ctx, conn)
 		}
-		return
+		return nil
 	}
 
 	length := binary.BigEndian.Uint16(hdr[3:5])
@@ -111,14 +112,14 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 	defer bufpool.Put(buf)
 	if _, err := io.ReadFull(conn, (*buf)[dissector.RecordHeaderLen:]); err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	copy(*buf, hdr[:])
 
 	opaque, host, err := h.decodeHost(bytes.NewReader(*buf))
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	target := net.JoinHostPort(host, "443")
 
@@ -129,26 +130,29 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(target) {
 		log.Info("bypass: ", target)
-		return
+		return nil
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", target)
 	if err != nil {
-		return
+		log.Error(err)
+		return err
 	}
 	defer cc.Close()
 
 	if _, err := cc.Write(opaque); err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), target)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), target)
+
+	return nil
 }
 
 func (h *sniHandler) decodeHost(r io.Reader) (opaque []byte, host string, err error) {

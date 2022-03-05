@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/pkg/chain"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/handler"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
@@ -49,7 +50,7 @@ func (h *redirectHandler) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -78,7 +79,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 		dstAddr, conn, err = h.getOriginalDstAddr(conn)
 		if err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 	}
 
@@ -90,20 +91,22 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn) {
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(dstAddr.String()) {
 		log.Info("bypass: ", dstAddr)
-		return
+		return nil
 	}
 
 	cc, err := h.router.Dial(ctx, network, dstAddr.String())
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	defer cc.Close()
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), dstAddr)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), dstAddr)
+
+	return nil
 }

@@ -10,7 +10,7 @@ import (
 
 type Handler interface {
 	Init(metadata.Metadata) error
-	Handle(context.Context, net.Conn)
+	Handle(context.Context, net.Conn) error
 }
 
 type Forwarder interface {

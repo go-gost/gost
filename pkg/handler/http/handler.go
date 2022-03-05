@@ -17,6 +17,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/go-gost/gost/pkg/chain"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
@@ -57,7 +58,7 @@ func (h *httpHandler) Init(md md.Metadata) error {
 	return nil
 }
 
-func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -75,18 +76,14 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) {
 	req, err := http.ReadRequest(bufio.NewReader(conn))
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	defer req.Body.Close()
 
-	h.handleRequest(ctx, conn, req, log)
+	return h.handleRequest(ctx, conn, req, log)
 }
 
-func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request, log logger.Logger) {
-	if req == nil {
-		return
-	}
-
+func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request, log logger.Logger) error {
 	if h.md.sni && !req.URL.IsAbs() && govalidator.IsDNSName(req.Host) {
 		req.URL.Scheme = "http"
 	}
@@ -149,30 +146,27 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		}
 		log.Info("bypass: ", addr)
 
-		resp.Write(conn)
-		return
+		return resp.Write(conn)
 	}
 
 	if !h.authenticate(conn, req, resp, log) {
-		return
+		return nil
 	}
 
 	if network == "udp" {
-		h.handleUDP(ctx, conn, network, req.Host, log)
-		return
+		return h.handleUDP(ctx, conn, network, req.Host, log)
 	}
 
 	if req.Method == "PRI" ||
 		(req.Method != http.MethodConnect && req.URL.Scheme != "http") {
 		resp.StatusCode = http.StatusBadRequest
-		resp.Write(conn)
 
 		if log.IsLevelEnabled(logger.DebugLevel) {
 			dump, _ := httputil.DumpResponse(resp, false)
 			log.Debug(string(dump))
 		}
 
-		return
+		return resp.Write(conn)
 	}
 
 	req.Header.Del("Proxy-Authorization")
@@ -180,13 +174,12 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 	cc, err := h.router.Dial(ctx, network, addr)
 	if err != nil {
 		resp.StatusCode = http.StatusServiceUnavailable
-		resp.Write(conn)
 
 		if log.IsLevelEnabled(logger.DebugLevel) {
 			dump, _ := httputil.DumpResponse(resp, false)
 			log.Debug(string(dump))
 		}
-		return
+		return resp.Write(conn)
 	}
 	defer cc.Close()
 
@@ -200,22 +193,24 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		}
 		if err = resp.Write(conn); err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 	} else {
 		req.Header.Del("Proxy-Connection")
 		if err = req.Write(cc); err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 	}
 
 	start := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(start),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
+
+	return nil
 }
 
 func (h *httpHandler) decodeServerName(s string) (string, error) {
@@ -292,7 +287,7 @@ func (h *httpHandler) authenticate(conn net.Conn, req *http.Request, resp *http.
 			defer cc.Close()
 
 			req.Write(cc)
-			handler.Transport(conn, cc)
+			netpkg.Transport(conn, cc)
 			return
 		case "file":
 			f, _ := os.Open(pr.Value)

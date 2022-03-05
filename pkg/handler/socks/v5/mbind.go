@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/common/util/mux"
-	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 )
 
-func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "mbind",
@@ -22,16 +22,15 @@ func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, networ
 
 	if !h.md.enableBind {
 		reply := gosocks5.NewReply(gosocks5.NotAllowed, nil)
-		reply.Write(conn)
 		log.Debug(reply)
-		log.Error("BIND is diabled")
-		return
+		log.Error("socks5: BIND is disabled")
+		return reply.Write(conn)
 	}
 
-	h.muxBindLocal(ctx, conn, network, address, log)
+	return h.muxBindLocal(ctx, conn, network, address, log)
 }
 
-func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
 	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
 		log.Error(err)
@@ -40,7 +39,7 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network
 			log.Error(err)
 		}
 		log.Debug(reply)
-		return
+		return err
 	}
 
 	socksAddr := gosocks5.Addr{}
@@ -56,7 +55,7 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network
 	if err := reply.Write(conn); err != nil {
 		log.Error(err)
 		ln.Close()
-		return
+		return err
 	}
 	log.Debug(reply)
 
@@ -66,15 +65,15 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network
 
 	log.Debugf("bind on %s OK", ln.Addr())
 
-	h.serveMuxBind(ctx, conn, ln, log)
+	return h.serveMuxBind(ctx, conn, ln, log)
 }
 
-func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) {
+func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) error {
 	// Upgrade connection to multiplex stream.
 	session, err := mux.ClientSession(conn)
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	defer session.Close()
 
@@ -94,7 +93,7 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 		rc, err := ln.Accept()
 		if err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 		log.Debugf("peer %s accepted", rc.RemoteAddr())
 
@@ -126,7 +125,7 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 
 			t := time.Now()
 			log.Infof("%s <-> %s", c.LocalAddr(), c.RemoteAddr())
-			handler.Transport(sc, c)
+			netpkg.Transport(sc, c)
 			log.WithFields(map[string]any{"duration": time.Since(t)}).
 				Infof("%s >-< %s", c.LocalAddr(), c.RemoteAddr())
 		}(rc)

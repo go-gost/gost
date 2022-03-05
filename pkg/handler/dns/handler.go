@@ -98,7 +98,7 @@ func (h *dnsHandler) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (h *dnsHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *dnsHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -120,18 +120,20 @@ func (h *dnsHandler) Handle(ctx context.Context, conn net.Conn) {
 	n, err := conn.Read(*b)
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 
 	reply, err := h.exchange(ctx, (*b)[:n], log)
 	if err != nil {
-		return
+		return err
 	}
 	defer bufpool.Put(&reply)
 
 	if _, err = conn.Write(reply); err != nil {
 		log.Error(err)
+		return err
 	}
+	return nil
 }
 
 func (h *dnsHandler) exchange(ctx context.Context, msg []byte, log logger.Logger) ([]byte, error) {

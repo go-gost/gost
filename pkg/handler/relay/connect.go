@@ -2,16 +2,17 @@ package relay
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/handler"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/relay"
 )
 
-func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "connect",
@@ -27,29 +28,30 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	if address == "" {
 		resp.Status = relay.StatusBadRequest
 		resp.WriteTo(conn)
-		log.Error("target not specified")
-		return
+		err := errors.New("target not specified")
+		log.Error(err)
+		return err
 	}
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(address) {
 		log.Info("bypass: ", address)
 		resp.Status = relay.StatusForbidden
-		resp.WriteTo(conn)
-		return
+		_, err := resp.WriteTo(conn)
+		return err
 	}
 
 	cc, err := h.router.Dial(ctx, network, address)
 	if err != nil {
 		resp.Status = relay.StatusNetworkUnreachable
 		resp.WriteTo(conn)
-		return
+		return err
 	}
 	defer cc.Close()
 
 	if h.md.noDelay {
 		if _, err := resp.WriteTo(conn); err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 	}
 
@@ -61,7 +63,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 		if !h.md.noDelay {
 			// cache the header
 			if _, err := resp.WriteTo(&rc.wbuf); err != nil {
-				return
+				return err
 			}
 		}
 		conn = rc
@@ -72,7 +74,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 		if !h.md.noDelay {
 			// cache the header
 			if _, err := resp.WriteTo(&rc.wbuf); err != nil {
-				return
+				return err
 			}
 		}
 		conn = rc
@@ -80,8 +82,10 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), address)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), address)
+
+	return nil
 }

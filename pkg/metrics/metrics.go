@@ -5,16 +5,33 @@ import (
 )
 
 var (
-	global = newMetrics()
+	metrics = newMetrics()
 )
 
+type Gauge interface {
+	Inc()
+	Dec()
+	Add(float64)
+	Set(float64)
+}
+
+type Counter interface {
+	Inc()
+	Add(float64)
+}
+
+type Observer interface {
+	Observe(float64)
+}
+
 type Metrics struct {
-	services           prometheus.Gauge
-	requests           *prometheus.CounterVec
-	requestsInFlight   *prometheus.GaugeVec
-	requestSeconds     *prometheus.HistogramVec
-	requestInputBytes  *prometheus.CounterVec
-	requestOutputBytes *prometheus.CounterVec
+	services         prometheus.Gauge
+	requests         *prometheus.CounterVec
+	requestsInFlight *prometheus.GaugeVec
+	requestSeconds   *prometheus.HistogramVec
+	inputBytes       *prometheus.CounterVec
+	outputBytes      *prometheus.CounterVec
+	handlerErrors    *prometheus.CounterVec
 }
 
 func newMetrics() *Metrics {
@@ -44,20 +61,26 @@ func newMetrics() *Metrics {
 				Name: "gost_service_request_duration_seconds",
 				Help: "Distribution of request latencies",
 				Buckets: []float64{
-					.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30,
+					.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 30, 60,
 				},
 			},
 			[]string{"service"}),
-		requestInputBytes: prometheus.NewCounterVec(
+		inputBytes: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: "gost_service_request_transfer_input_bytes_total",
-				Help: "Total request input data transfer size in bytes",
+				Name: "gost_service_transfer_input_bytes_total",
+				Help: "Total service input data transfer size in bytes",
 			},
 			[]string{"service"}),
-		requestOutputBytes: prometheus.NewCounterVec(
+		outputBytes: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: "gost_service_request_transfer_output_bytes_total",
-				Help: "Total request output data transfer size in bytes",
+				Name: "gost_service_transfer_output_bytes_total",
+				Help: "Total service output data transfer size in bytes",
+			},
+			[]string{"service"}),
+		handlerErrors: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "gost_service_handler_errors_total",
+				Help: "Total service handler errors",
 			},
 			[]string{"service"}),
 	}
@@ -65,31 +88,35 @@ func newMetrics() *Metrics {
 	prometheus.MustRegister(m.requests)
 	prometheus.MustRegister(m.requestsInFlight)
 	prometheus.MustRegister(m.requestSeconds)
-	prometheus.MustRegister(m.requestInputBytes)
-	prometheus.MustRegister(m.requestOutputBytes)
+	prometheus.MustRegister(m.inputBytes)
+	prometheus.MustRegister(m.outputBytes)
 	return m
 }
 
-func Services() prometheus.Gauge {
-	return global.services
+func Services() Gauge {
+	return metrics.services
 }
 
-func Requests(service string) prometheus.Counter {
-	return global.requests.With(prometheus.Labels{"service": service})
+func Requests(service string) Counter {
+	return metrics.requests.With(prometheus.Labels{"service": service})
 }
 
-func RequestsInFlight(service string) prometheus.Gauge {
-	return global.requestsInFlight.With(prometheus.Labels{"service": service})
+func RequestsInFlight(service string) Gauge {
+	return metrics.requestsInFlight.With(prometheus.Labels{"service": service})
 }
 
-func RequestSeconds(service string) prometheus.Observer {
-	return global.requestSeconds.With(prometheus.Labels{"service": service})
+func RequestSeconds(service string) Observer {
+	return metrics.requestSeconds.With(prometheus.Labels{"service": service})
 }
 
-func RequestInputBytes(service string) prometheus.Counter {
-	return global.requestInputBytes.With(prometheus.Labels{"service": service})
+func InputBytes(service string) Counter {
+	return metrics.inputBytes.With(prometheus.Labels{"service": service})
 }
 
-func RequestOutputBytes(service string) prometheus.Counter {
-	return global.requestOutputBytes.With(prometheus.Labels{"service": service})
+func OutputBytes(service string) Counter {
+	return metrics.outputBytes.With(prometheus.Labels{"service": service})
+}
+
+func HandlerErrors(service string) Counter {
+	return metrics.handlerErrors.With(prometheus.Labels{"service": service})
 }

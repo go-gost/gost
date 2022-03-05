@@ -10,7 +10,6 @@ import (
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/gost/pkg/metrics"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type options struct {
@@ -105,11 +104,14 @@ func (s *service) Serve() error {
 			metrics.RequestsInFlight(s.name).Inc()
 			defer metrics.RequestsInFlight(s.name).Dec()
 
-			timer := prometheus.NewTimer(
-				metrics.RequestSeconds(s.name))
-			defer timer.ObserveDuration()
+			start := time.Now()
+			defer func() {
+				metrics.RequestSeconds(s.name).Observe(time.Since(start).Seconds())
+			}()
 
-			s.handler.Handle(context.Background(), conn)
+			if err := s.handler.Handle(context.Background(), conn); err != nil {
+				metrics.HandlerErrors(s.name).Inc()
+			}
 		}()
 	}
 }

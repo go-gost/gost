@@ -2,6 +2,7 @@ package relay
 
 import (
 	"context"
+	"errors"
 	"net"
 	"strconv"
 	"time"
@@ -11,6 +12,11 @@ import (
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/go-gost/relay"
+)
+
+var (
+	ErrBadVersion = errors.New("relay: bad version")
+	ErrUnknownCmd = errors.New("relay: unknown command")
 )
 
 func init() {
@@ -53,7 +59,7 @@ func (h *relayHandler) Forward(group *chain.NodeGroup) {
 	h.group = group
 }
 
-func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -76,14 +82,15 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	req := relay.Request{}
 	if _, err := req.ReadFrom(conn); err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 
 	conn.SetReadDeadline(time.Time{})
 
 	if req.Version != relay.Version1 {
-		log.Error("bad version")
-		return
+		err := ErrBadVersion
+		log.Error(err)
+		return err
 	}
 
 	var user, pass string
@@ -109,9 +116,9 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 	if h.options.Auther != nil && !h.options.Auther.Authenticate(user, pass) {
 		resp.Status = relay.StatusUnauthorized
-		resp.WriteTo(conn)
 		log.Error("unauthorized")
-		return
+		_, err := resp.WriteTo(conn)
+		return err
 	}
 
 	network := "tcp"
@@ -122,19 +129,19 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn) {
 	if h.group != nil {
 		if address != "" {
 			resp.Status = relay.StatusForbidden
-			resp.WriteTo(conn)
 			log.Error("forward mode, connect is forbidden")
-			return
+			_, err := resp.WriteTo(conn)
+			return err
 		}
 		// forward mode
-		h.handleForward(ctx, conn, network, log)
-		return
+		return h.handleForward(ctx, conn, network, log)
 	}
 
 	switch req.Flags & relay.CmdMask {
 	case 0, relay.CONNECT:
-		h.handleConnect(ctx, conn, network, address, log)
+		return h.handleConnect(ctx, conn, network, address, log)
 	case relay.BIND:
-		h.handleBind(ctx, conn, network, address, log)
+		return h.handleBind(ctx, conn, network, address, log)
 	}
+	return ErrUnknownCmd
 }

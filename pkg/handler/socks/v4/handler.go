@@ -2,15 +2,22 @@ package v4
 
 import (
 	"context"
+	"errors"
 	"net"
 	"time"
 
 	"github.com/go-gost/gosocks4"
 	"github.com/go-gost/gost/pkg/chain"
+	netpkg "github.com/go-gost/gost/pkg/common/net"
 	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+)
+
+var (
+	ErrUnknownCmd    = errors.New("socks4: unknown command")
+	ErrUnimplemented = errors.New("socks4: unimplemented")
 )
 
 func init() {
@@ -48,7 +55,7 @@ func (h *socks4Handler) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
+func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -72,7 +79,7 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 	req, err := gosocks4.ReadRequest(conn)
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	log.Debug(req)
 
@@ -81,22 +88,23 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) {
 	if h.options.Auther != nil &&
 		!h.options.Auther.Authenticate(string(req.Userid), "") {
 		resp := gosocks4.NewReply(gosocks4.RejectedUserid, nil)
-		resp.Write(conn)
 		log.Debug(resp)
-		return
+		return resp.Write(conn)
 	}
 
 	switch req.Cmd {
 	case gosocks4.CmdConnect:
-		h.handleConnect(ctx, conn, req, log)
+		return h.handleConnect(ctx, conn, req, log)
 	case gosocks4.CmdBind:
-		h.handleBind(ctx, conn, req)
+		return h.handleBind(ctx, conn, req)
 	default:
-		log.Errorf("unknown cmd: %d", req.Cmd)
+		err = ErrUnknownCmd
+		log.Error(err)
+		return err
 	}
 }
 
-func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, log logger.Logger) {
+func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, log logger.Logger) error {
 	addr := req.Addr.String()
 
 	log = log.WithFields(map[string]any{
@@ -106,10 +114,9 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 
 	if h.options.Bypass != nil && h.options.Bypass.Contains(addr) {
 		resp := gosocks4.NewReply(gosocks4.Rejected, nil)
-		resp.Write(conn)
 		log.Debug(resp)
 		log.Info("bypass: ", addr)
-		return
+		return resp.Write(conn)
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", addr)
@@ -117,7 +124,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		resp := gosocks4.NewReply(gosocks4.Failed, nil)
 		resp.Write(conn)
 		log.Debug(resp)
-		return
+		return err
 	}
 
 	defer cc.Close()
@@ -125,18 +132,21 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 	resp := gosocks4.NewReply(gosocks4.Granted, nil)
 	if err := resp.Write(conn); err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	log.Debug(resp)
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-	handler.Transport(conn, cc)
+	netpkg.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
+
+	return nil
 }
 
-func (h *socks4Handler) handleBind(ctx context.Context, conn net.Conn, req *gosocks4.Request) {
+func (h *socks4Handler) handleBind(ctx context.Context, conn net.Conn, req *gosocks4.Request) error {
 	// TODO: bind
+	return ErrUnimplemented
 }

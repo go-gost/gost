@@ -6,14 +6,15 @@ import (
 	"net"
 	"time"
 
+	netpkg "github.com/go-gost/gost/pkg/common/net"
+	net_relay "github.com/go-gost/gost/pkg/common/net/relay"
 	"github.com/go-gost/gost/pkg/common/util/mux"
 	"github.com/go-gost/gost/pkg/common/util/socks"
-	"github.com/go-gost/gost/pkg/handler"
 	"github.com/go-gost/gost/pkg/logger"
 	"github.com/go-gost/relay"
 )
 
-func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "bind",
@@ -28,19 +29,19 @@ func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, a
 
 	if !h.md.enableBind {
 		resp.Status = relay.StatusForbidden
-		resp.WriteTo(conn)
-		log.Error("BIND is diabled")
-		return
+		log.Error("relay: BIND is disabled")
+		_, err := resp.WriteTo(conn)
+		return err
 	}
 
 	if network == "tcp" {
-		h.bindTCP(ctx, conn, network, address, log)
+		return h.bindTCP(ctx, conn, network, address, log)
 	} else {
-		h.bindUDP(ctx, conn, network, address, log)
+		return h.bindUDP(ctx, conn, network, address, log)
 	}
 }
 
-func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,
@@ -51,7 +52,7 @@ func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, addr
 		log.Error(err)
 		resp.Status = relay.StatusServiceUnavailable
 		resp.WriteTo(conn)
-		return
+		return err
 	}
 
 	af := &relay.AddrFeature{}
@@ -67,7 +68,7 @@ func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, addr
 	if _, err := resp.WriteTo(conn); err != nil {
 		log.Error(err)
 		ln.Close()
-		return
+		return err
 	}
 
 	log = log.WithFields(map[string]any{
@@ -75,10 +76,10 @@ func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, addr
 	})
 	log.Debugf("bind on %s OK", ln.Addr())
 
-	h.serveTCPBind(ctx, conn, ln, log)
+	return h.serveTCPBind(ctx, conn, ln, log)
 }
 
-func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) {
+func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,
@@ -88,7 +89,7 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 	pc, err := net.ListenUDP(network, bindAddr)
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	defer pc.Close()
 
@@ -104,7 +105,7 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 	resp.Features = append(resp.Features, af)
 	if _, err := resp.WriteTo(conn); err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 
 	log = log.WithFields(map[string]any{
@@ -112,25 +113,26 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 	})
 	log.Debugf("bind on %s OK", pc.LocalAddr())
 
-	relay := handler.NewUDPRelay(socks.UDPTunServerConn(conn), pc).
+	r := net_relay.NewUDPRelay(socks.UDPTunServerConn(conn), pc).
 		WithBypass(h.options.Bypass).
 		WithLogger(log)
-	relay.SetBufferSize(h.md.udpBufferSize)
+	r.SetBufferSize(h.md.udpBufferSize)
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), pc.LocalAddr())
-	relay.Run()
+	r.Run()
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), pc.LocalAddr())
+	return nil
 }
 
-func (h *relayHandler) serveTCPBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) {
+func (h *relayHandler) serveTCPBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) error {
 	// Upgrade connection to multiplex stream.
 	session, err := mux.ClientSession(conn)
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	defer session.Close()
 
@@ -150,7 +152,7 @@ func (h *relayHandler) serveTCPBind(ctx context.Context, conn net.Conn, ln net.L
 		rc, err := ln.Accept()
 		if err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 		log.Debugf("peer %s accepted", rc.RemoteAddr())
 
@@ -183,7 +185,7 @@ func (h *relayHandler) serveTCPBind(ctx context.Context, conn net.Conn, ln net.L
 
 			t := time.Now()
 			log.Infof("%s <-> %s", c.LocalAddr(), c.RemoteAddr())
-			handler.Transport(sc, c)
+			netpkg.Transport(sc, c)
 			log.WithFields(map[string]any{"duration": time.Since(t)}).
 				Infof("%s >-< %s", c.LocalAddr(), c.RemoteAddr())
 		}(rc)

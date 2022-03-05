@@ -2,6 +2,7 @@ package v5
 
 import (
 	"context"
+	"errors"
 	"net"
 	"time"
 
@@ -11,6 +12,10 @@ import (
 	"github.com/go-gost/gost/pkg/handler"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
+)
+
+var (
+	ErrUnknownCmd = errors.New("socks5: unknown command")
 )
 
 func init() {
@@ -56,7 +61,7 @@ func (h *socks5Handler) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
+func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
 
 	start := time.Now()
@@ -81,7 +86,7 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 	req, err := gosocks5.ReadRequest(conn)
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	log.Debug(req)
 	conn.SetReadDeadline(time.Time{})
@@ -90,20 +95,21 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn) {
 
 	switch req.Cmd {
 	case gosocks5.CmdConnect:
-		h.handleConnect(ctx, conn, "tcp", address, log)
+		return h.handleConnect(ctx, conn, "tcp", address, log)
 	case gosocks5.CmdBind:
-		h.handleBind(ctx, conn, "tcp", address, log)
+		return h.handleBind(ctx, conn, "tcp", address, log)
 	case socks.CmdMuxBind:
-		h.handleMuxBind(ctx, conn, "tcp", address, log)
+		return h.handleMuxBind(ctx, conn, "tcp", address, log)
 	case gosocks5.CmdUdp:
-		h.handleUDP(ctx, conn, log)
+		return h.handleUDP(ctx, conn, log)
 	case socks.CmdUDPTun:
-		h.handleUDPTun(ctx, conn, "udp", address, log)
+		return h.handleUDPTun(ctx, conn, "udp", address, log)
 	default:
-		log.Errorf("unknown cmd: %d", req.Cmd)
+		err = ErrUnknownCmd
+		log.Error(err)
 		resp := gosocks5.NewReply(gosocks5.CmdUnsupported, nil)
 		resp.Write(conn)
 		log.Debug(resp)
-		return
+		return err
 	}
 }

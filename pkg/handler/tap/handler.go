@@ -76,15 +76,16 @@ func (h *tapHandler) Forward(group *chain.NodeGroup) {
 	h.group = group
 }
 
-func (h *tapHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *tapHandler) Handle(ctx context.Context, conn net.Conn) error {
 	defer os.Exit(0)
 	defer conn.Close()
 
 	log := h.options.Logger
 	cc, ok := conn.(*tap_util.Conn)
 	if !ok || cc.Config() == nil {
-		log.Error("invalid connection")
-		return
+		err := errors.New("tap: wrong connection type")
+		log.Error(err)
+		return err
 	}
 
 	start := time.Now()
@@ -109,7 +110,7 @@ func (h *tapHandler) Handle(ctx context.Context, conn net.Conn) {
 		raddr, err = net.ResolveUDPAddr(network, target.Addr)
 		if err != nil {
 			log.Error(err)
-			return
+			return err
 		}
 		log = log.WithFields(map[string]any{
 			"dst": fmt.Sprintf("%s/%s", raddr.String(), raddr.Network()),
@@ -118,6 +119,7 @@ func (h *tapHandler) Handle(ctx context.Context, conn net.Conn) {
 	}
 
 	h.handleLoop(ctx, conn, raddr, cc.Config(), log)
+	return nil
 }
 
 func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Addr, config *tap_util.Config, log logger.Logger) {

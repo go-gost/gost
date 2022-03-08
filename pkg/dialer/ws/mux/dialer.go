@@ -103,11 +103,6 @@ func (d *mwsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 	d.sessionMutex.Lock()
 	defer d.sessionMutex.Unlock()
 
-	if d.md.handshakeTimeout > 0 {
-		conn.SetDeadline(time.Now().Add(d.md.handshakeTimeout))
-		defer conn.SetDeadline(time.Time{})
-	}
-
 	session, ok := d.sessions[opts.Addr]
 	if session != nil && session.conn != conn {
 		conn.Close()
@@ -156,11 +151,21 @@ func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn)
 		dialer.TLSClientConfig = d.options.TLSConfig
 	}
 
+	if d.md.handshakeTimeout > 0 {
+		conn.SetReadDeadline(time.Now().Add(d.md.handshakeTimeout))
+	}
+
 	c, resp, err := dialer.DialContext(ctx, url.String(), d.md.header)
 	if err != nil {
 		return nil, err
 	}
 	resp.Body.Close()
+
+	if d.md.handshakeTimeout > 0 {
+		conn.SetReadDeadline(time.Time{})
+	}
+
+	cc := ws_util.Conn(c)
 
 	if d.md.keepAlive > 0 {
 		c.SetReadDeadline(time.Now().Add(d.md.keepAlive * 2))
@@ -168,10 +173,8 @@ func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn)
 			c.SetReadDeadline(time.Now().Add(d.md.keepAlive * 2))
 			return nil
 		})
-		go d.keepAlive(c)
+		go d.keepAlive(cc)
 	}
-
-	conn = ws_util.Conn(c)
 
 	// stream multiplex
 	smuxConfig := smux.DefaultConfig()
@@ -192,14 +195,14 @@ func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn)
 		smuxConfig.MaxStreamBuffer = d.md.muxMaxStreamBuffer
 	}
 
-	session, err := smux.Client(conn, smuxConfig)
+	session, err := smux.Client(cc, smuxConfig)
 	if err != nil {
 		return nil, err
 	}
-	return &muxSession{conn: conn, session: session}, nil
+	return &muxSession{conn: cc, session: session}, nil
 }
 
-func (d *mwsDialer) keepAlive(conn *websocket.Conn) {
+func (d *mwsDialer) keepAlive(conn ws_util.WebsocketConn) {
 	ticker := time.NewTicker(d.md.keepAlive)
 	defer ticker.Stop()
 

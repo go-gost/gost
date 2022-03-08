@@ -26,17 +26,19 @@ type kcpDialer struct {
 	sessionMutex sync.Mutex
 	logger       logger.Logger
 	md           metadata
+	options      dialer.Options
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
-	options := &dialer.Options{}
+	options := dialer.Options{}
 	for _, opt := range opts {
-		opt(options)
+		opt(&options)
 	}
 
 	return &kcpDialer{
 		sessions: make(map[string]*muxSession),
 		logger:   options.Logger,
+		options:  options,
 	}
 }
 
@@ -50,12 +52,12 @@ func (d *kcpDialer) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-// Multiplex implements dialer.Multiplexer interface.
-func (d *kcpDialer) Multiplex() bool {
-	return true
-}
-
 func (d *kcpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (conn net.Conn, err error) {
+	raddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return nil, err
+	}
+
 	d.sessionMutex.Lock()
 	defer d.sessionMutex.Unlock()
 
@@ -70,86 +72,55 @@ func (d *kcpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 			opt(&options)
 		}
 
+		var pc net.PacketConn
 		if d.md.config.TCP {
-			raddr, err := net.ResolveUDPAddr("udp", addr)
+			pc, err = tcpraw.Dial("tcp", addr)
 			if err != nil {
 				return nil, err
 			}
-
-			pc, err := tcpraw.Dial("tcp", addr)
-			if err != nil {
-				return nil, err
-			}
-			conn = &fakeTCPConn{
+			pc = &fakeTCPConn{
 				raddr:      raddr,
 				PacketConn: pc,
 			}
 		} else {
-			conn, err = options.NetDialer.Dial(ctx, "udp", addr)
+			c, err := options.NetDialer.Dial(ctx, "udp", addr)
 			if err != nil {
 				return nil, err
 			}
+
+			var ok bool
+			pc, ok = c.(net.PacketConn)
+			if !ok {
+				c.Close()
+				return nil, errors.New("quic: wrong connection type")
+			}
 		}
-		session = &muxSession{conn: conn}
+
+		session, err = d.initSession(ctx, raddr, pc)
+		if err != nil {
+			d.logger.Error(err)
+			pc.Close()
+			return nil, err
+		}
 		d.sessions[addr] = session
 	}
 
-	return session.conn, err
-}
-
-// Handshake implements dialer.Handshaker
-func (d *kcpDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
-	opts := &dialer.HandshakeOptions{}
-	for _, option := range options {
-		option(opts)
-	}
-
-	d.sessionMutex.Lock()
-	defer d.sessionMutex.Unlock()
-
-	if d.md.handshakeTimeout > 0 {
-		conn.SetDeadline(time.Now().Add(d.md.handshakeTimeout))
-		defer conn.SetDeadline(time.Time{})
-	}
-
-	session, ok := d.sessions[opts.Addr]
-	if session != nil && session.conn != conn {
-		conn.Close()
-		return nil, errors.New("kcp: unrecognized connection")
-	}
-
-	if !ok || session.session == nil {
-		s, err := d.initSession(ctx, opts.Addr, conn)
-		if err != nil {
-			d.logger.Error(err)
-			conn.Close()
-			delete(d.sessions, opts.Addr)
-			return nil, err
-		}
-		session = s
-		d.sessions[opts.Addr] = session
-	}
-	cc, err := session.GetConn()
+	conn, err = session.GetConn()
 	if err != nil {
 		session.Close()
-		delete(d.sessions, opts.Addr)
+		delete(d.sessions, addr)
 		return nil, err
 	}
 
-	return cc, nil
+	return
 }
 
-func (d *kcpDialer) initSession(ctx context.Context, addr string, conn net.Conn) (*muxSession, error) {
-	pc, ok := conn.(net.PacketConn)
-	if !ok {
-		return nil, errors.New("kcp: wrong connection type")
-	}
-
+func (d *kcpDialer) initSession(ctx context.Context, addr net.Addr, conn net.PacketConn) (*muxSession, error) {
 	config := d.md.config
 
-	kcpconn, err := kcp.NewConn(addr,
+	kcpconn, err := kcp.NewConn(addr.String(),
 		kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt),
-		config.DataShard, config.ParityShard, pc)
+		config.DataShard, config.ParityShard, conn)
 	if err != nil {
 		return nil, err
 	}
@@ -162,15 +133,15 @@ func (d *kcpDialer) initSession(ctx context.Context, addr string, conn net.Conn)
 	kcpconn.SetACKNoDelay(config.AckNodelay)
 
 	if config.DSCP > 0 {
-		if err := kcpconn.SetDSCP(config.DSCP); err != nil {
-			d.logger.Warn("SetDSCP: ", err)
+		if er := kcpconn.SetDSCP(config.DSCP); er != nil {
+			d.logger.Warn("SetDSCP: ", er)
 		}
 	}
-	if err := kcpconn.SetReadBuffer(config.SockBuf); err != nil {
-		d.logger.Warn("SetReadBuffer: ", err)
+	if er := kcpconn.SetReadBuffer(config.SockBuf); er != nil {
+		d.logger.Warn("SetReadBuffer: ", er)
 	}
-	if err := kcpconn.SetWriteBuffer(config.SockBuf); err != nil {
-		d.logger.Warn("SetWriteBuffer: ", err)
+	if er := kcpconn.SetWriteBuffer(config.SockBuf); er != nil {
+		d.logger.Warn("SetWriteBuffer: ", er)
 	}
 
 	// stream multiplex
@@ -185,5 +156,10 @@ func (d *kcpDialer) initSession(ctx context.Context, addr string, conn net.Conn)
 	if err != nil {
 		return nil, err
 	}
-	return &muxSession{conn: conn, session: session}, nil
+	return &muxSession{session: session}, nil
+}
+
+// Multiplex implements dialer.Multiplexer interface.
+func (d *kcpDialer) Multiplex() bool {
+	return true
 }

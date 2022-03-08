@@ -18,7 +18,7 @@ func (h *tunHandler) parseMetadata(md mdata.Metadata) (err error) {
 	h.md.key = mdata.GetString(md, key)
 	h.md.bufferSize = mdata.GetInt(md, bufferSize)
 	if h.md.bufferSize <= 0 {
-		h.md.bufferSize = 1024
+		h.md.bufferSize = 1500
 	}
 	return
 }

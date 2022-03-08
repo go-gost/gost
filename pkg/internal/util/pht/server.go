@@ -69,6 +69,7 @@ func LoggerServerOption(logger logger.Logger) ServerOption {
 	}
 }
 
+// TODO: remove stale clients from conns
 type Server struct {
 	addr        net.Addr
 	httpServer  *http.Server

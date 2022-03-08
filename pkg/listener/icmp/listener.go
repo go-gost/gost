@@ -5,19 +5,20 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/common/metrics"
-	quic_util "github.com/go-gost/gost/pkg/internal/util/quic"
+	icmp_pkg "github.com/go-gost/gost/pkg/common/util/icmp"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/lucas-clemente/quic-go"
+	"golang.org/x/net/icmp"
 )
 
 func init() {
-	registry.ListenerRegistry().Register("quic", NewListener)
+	registry.ListenerRegistry().Register("icmp", NewListener)
 }
 
-type quicListener struct {
+type icmpListener struct {
 	ln      quic.Listener
 	cqueue  chan net.Conn
 	errChan chan error
@@ -31,36 +32,29 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	for _, opt := range opts {
 		opt(&options)
 	}
-	return &quicListener{
+	return &icmpListener{
 		logger:  options.Logger,
 		options: options,
 	}
 }
 
-func (l *quicListener) Init(md md.Metadata) (err error) {
+func (l *icmpListener) Init(md md.Metadata) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}
 
 	addr := l.options.Addr
-	if _, _, err := net.SplitHostPort(addr); err != nil {
-		addr = net.JoinHostPort(addr, "0")
-	}
-
-	var laddr *net.UDPAddr
-	laddr, err = net.ResolveUDPAddr("udp", addr)
-	if err != nil {
-		return
+	if host, _, err := net.SplitHostPort(addr); err == nil {
+		addr = host
 	}
 
 	var conn net.PacketConn
-	conn, err = net.ListenUDP("udp", laddr)
+	conn, err = icmp.ListenPacket("ip4:icmp", addr)
 	if err != nil {
 		return
 	}
-	if l.md.cipherKey != nil {
-		conn = quic_util.CipherPacketConn(conn, l.md.cipherKey)
-	}
+	conn = icmp_pkg.ServerConn(conn)
+	conn = metrics.WrapPacketConn(l.options.Service, conn)
 
 	config := &quic.Config{
 		KeepAlive:            l.md.keepAlive,
@@ -89,11 +83,10 @@ func (l *quicListener) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (l *quicListener) Accept() (conn net.Conn, err error) {
+func (l *icmpListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.cqueue:
-		conn = metrics.WrapConn(l.options.Service, conn)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed
@@ -102,35 +95,36 @@ func (l *quicListener) Accept() (conn net.Conn, err error) {
 	return
 }
 
-func (l *quicListener) Close() error {
+func (l *icmpListener) Close() error {
 	return l.ln.Close()
 }
 
-func (l *quicListener) Addr() net.Addr {
+func (l *icmpListener) Addr() net.Addr {
 	return l.ln.Addr()
 }
 
-func (l *quicListener) listenLoop() {
+func (l *icmpListener) listenLoop() {
 	for {
 		ctx := context.Background()
 		session, err := l.ln.Accept(ctx)
 		if err != nil {
-			l.logger.Error("accept:", err)
+			l.logger.Error("accept: ", err)
 			l.errChan <- err
 			close(l.errChan)
 			return
 		}
+		l.logger.Infof("new client session: %v", session.RemoteAddr())
 		go l.mux(ctx, session)
 	}
 }
 
-func (l *quicListener) mux(ctx context.Context, session quic.Session) {
+func (l *icmpListener) mux(ctx context.Context, session quic.Session) {
 	defer session.CloseWithError(0, "closed")
 
 	for {
 		stream, err := session.AcceptStream(ctx)
 		if err != nil {
-			l.logger.Error("accept stream:", err)
+			l.logger.Error("accept stream: ", err)
 			return
 		}
 

@@ -10,26 +10,19 @@ import (
 )
 
 type cipherConn struct {
-	*net.UDPConn
+	net.PacketConn
 	key []byte
 }
 
-func CipherConn(conn *net.UDPConn, key []byte) net.Conn {
+func CipherPacketConn(conn net.PacketConn, key []byte) net.PacketConn {
 	return &cipherConn{
-		UDPConn: conn,
-		key:     key,
-	}
-}
-
-func CipherPacketConn(conn *net.UDPConn, key []byte) net.PacketConn {
-	return &cipherConn{
-		UDPConn: conn,
-		key:     key,
+		PacketConn: conn,
+		key:        key,
 	}
 }
 
 func (conn *cipherConn) ReadFrom(data []byte) (n int, addr net.Addr, err error) {
-	n, addr, err = conn.UDPConn.ReadFrom(data)
+	n, addr, err = conn.PacketConn.ReadFrom(data)
 	if err != nil {
 		return
 	}
@@ -49,7 +42,7 @@ func (conn *cipherConn) WriteTo(data []byte, addr net.Addr) (n int, err error) {
 		return
 	}
 
-	_, err = conn.UDPConn.WriteTo(b, addr)
+	_, err = conn.PacketConn.WriteTo(b, addr)
 	if err != nil {
 		return
 	}

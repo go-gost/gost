@@ -2,23 +2,26 @@ package quic
 
 import (
 	"context"
-	"errors"
+	"math"
+	"math/rand"
 	"net"
 	"sync"
+	"time"
 
+	icmp_pkg "github.com/go-gost/gost/pkg/common/util/icmp"
 	"github.com/go-gost/gost/pkg/dialer"
-	quic_util "github.com/go-gost/gost/pkg/internal/util/quic"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"
 	"github.com/lucas-clemente/quic-go"
+	"golang.org/x/net/icmp"
 )
 
 func init() {
-	registry.DialerRegistry().Register("quic", NewDialer)
+	registry.DialerRegistry().Register("icmp", NewDialer)
 }
 
-type quicDialer struct {
+type icmpDialer struct {
 	sessions     map[string]*quicSession
 	sessionMutex sync.Mutex
 	logger       logger.Logger
@@ -32,14 +35,14 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 		opt(&options)
 	}
 
-	return &quicDialer{
+	return &icmpDialer{
 		sessions: make(map[string]*quicSession),
 		logger:   options.Logger,
 		options:  options,
 	}
 }
 
-func (d *quicDialer) Init(md md.Metadata) (err error) {
+func (d *icmpDialer) Init(md md.Metadata) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}
@@ -47,12 +50,12 @@ func (d *quicDialer) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-func (d *quicDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (conn net.Conn, err error) {
+func (d *icmpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOption) (conn net.Conn, err error) {
 	if _, _, err := net.SplitHostPort(addr); err != nil {
 		addr = net.JoinHostPort(addr, "0")
 	}
 
-	udpAddr, err := net.ResolveUDPAddr("udp", addr)
+	raddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return nil, err
 	}
@@ -67,21 +70,20 @@ func (d *quicDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 			opt(options)
 		}
 
-		c, err := options.NetDialer.Dial(ctx, "udp", "")
+		var pc net.PacketConn
+		pc, err = icmp.ListenPacket("ip4:icmp", "")
 		if err != nil {
-			return nil, err
-		}
-		pc, ok := c.(net.PacketConn)
-		if !ok {
-			c.Close()
-			return nil, errors.New("quic: wrong connection type")
+			return
 		}
 
-		if d.md.cipherKey != nil {
-			pc = quic_util.CipherPacketConn(pc, d.md.cipherKey)
+		id := raddr.Port
+		if id == 0 {
+			id = rand.New(rand.NewSource(time.Now().UnixNano())).Intn(math.MaxUint16) + 1
+			raddr.Port = id
 		}
+		pc = icmp_pkg.ClientConn(pc, id)
 
-		session, err = d.initSession(ctx, udpAddr, pc)
+		session, err = d.initSession(ctx, raddr, pc)
 		if err != nil {
 			d.logger.Error(err)
 			pc.Close()
@@ -101,7 +103,7 @@ func (d *quicDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 	return
 }
 
-func (d *quicDialer) initSession(ctx context.Context, addr net.Addr, conn net.PacketConn) (*quicSession, error) {
+func (d *icmpDialer) initSession(ctx context.Context, addr net.Addr, conn net.PacketConn) (*quicSession, error) {
 	quicConfig := &quic.Config{
 		KeepAlive:            d.md.keepAlive,
 		HandshakeIdleTimeout: d.md.handshakeTimeout,
@@ -123,6 +125,6 @@ func (d *quicDialer) initSession(ctx context.Context, addr net.Addr, conn net.Pa
 }
 
 // Multiplex implements dialer.Multiplexer interface.
-func (d *quicDialer) Multiplex() bool {
+func (d *icmpDialer) Multiplex() bool {
 	return true
 }

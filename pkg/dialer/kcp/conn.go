@@ -7,7 +7,6 @@ import (
 )
 
 type muxSession struct {
-	conn    net.Conn
 	session *smux.Session
 }
 

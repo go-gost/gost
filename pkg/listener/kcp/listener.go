@@ -49,7 +49,6 @@ func (l *kcpListener) Init(md md.Metadata) (err error) {
 	config.Init()
 
 	var conn net.PacketConn
-
 	if config.TCP {
 		conn, err = tcpraw.Listen("tcp", l.options.Addr)
 	} else {

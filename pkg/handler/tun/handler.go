@@ -132,7 +132,7 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 			var err error
 			var pc net.PacketConn
 			if addr != nil {
-				cc, err := h.router.Dial(ctx, addr.Network(), addr.String())
+				cc, err := h.router.Dial(ctx, addr.Network(), "")
 				if err != nil {
 					return err
 				}
@@ -140,7 +140,8 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 				var ok bool
 				pc, ok = cc.(net.PacketConn)
 				if !ok {
-					return errors.New("invalid connnection")
+					cc.Close()
+					return errors.New("wrong connection type")
 				}
 			} else {
 				laddr, _ := net.ResolveUDPAddr("udp", conn.LocalAddr().String())
@@ -153,8 +154,9 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 			if h.cipher != nil {
 				pc = h.cipher.PacketConn(pc)
 			}
+			defer pc.Close()
 
-			return h.transport(conn, pc, addr, log)
+			return h.transport(conn, pc, addr, config, log)
 		}()
 		if err != nil {
 			log.Error(err)
@@ -183,7 +185,7 @@ func (h *tunHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 
 }
 
-func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr, log logger.Logger) error {
+func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr, config *tun_util.Config, log logger.Logger) error {
 	errc := make(chan error, 1)
 
 	go func() {
@@ -236,7 +238,7 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 					return err
 				}
 
-				addr := h.findRouteFor(dst)
+				addr := h.findRouteFor(dst, config.Routes...)
 				if addr == nil {
 					log.Warnf("no route for %s -> %s", src, dst)
 					return nil
@@ -317,7 +319,7 @@ func (h *tunHandler) transport(tun net.Conn, conn net.PacketConn, raddr net.Addr
 					log.Warnf("no route for %s -> %s", src, addr)
 				}
 
-				if addr := h.findRouteFor(dst); addr != nil {
+				if addr := h.findRouteFor(dst, config.Routes...); addr != nil {
 					log.Debugf("find route: %s -> %s", dst, addr)
 
 					_, err := conn.WriteTo((*b)[:n], addr)

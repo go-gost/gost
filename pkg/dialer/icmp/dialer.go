@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	icmp_pkg "github.com/go-gost/gost/pkg/common/util/icmp"
 	"github.com/go-gost/gost/pkg/dialer"
+	icmp_pkg "github.com/go-gost/gost/pkg/internal/util/icmp"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"
 	"github.com/go-gost/gost/pkg/registry"

@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/pkg/common/metrics"
-	icmp_pkg "github.com/go-gost/gost/pkg/common/util/icmp"
+	icmp_pkg "github.com/go-gost/gost/pkg/internal/util/icmp"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
 	md "github.com/go-gost/gost/pkg/metadata"

@@ -20,10 +20,63 @@ const (
 	magicNumber     = 0x474F5354
 )
 
+const (
+	messageHeaderLen = 10
+)
+
+const (
+	FlagAck = 1
+)
+
 var (
 	ErrInvalidPacket = errors.New("icmp: invalid packet")
 	ErrInvalidType   = errors.New("icmp: invalid type")
+	ErrShortBuffer   = errors.New("icmp: short buffer")
 )
+
+type message struct {
+	// magic uint32 // magic number
+	flags uint16 // flags
+	// rsv   uint16 // reserved field
+	// len   uint16 // length of data
+	data []byte
+}
+
+func (m *message) Encode(b []byte) (n int, err error) {
+	if len(b) < messageHeaderLen+len(m.data) {
+		err = ErrShortBuffer
+		return
+	}
+	binary.BigEndian.PutUint32(b[:4], magicNumber) // magic number
+	binary.BigEndian.PutUint16(b[4:6], m.flags)    // flags
+	binary.BigEndian.PutUint16(b[6:8], 0)          // reserved
+	binary.BigEndian.PutUint16(b[8:10], uint16(len(m.data)))
+	copy(b[messageHeaderLen:], m.data)
+
+	n = messageHeaderLen + len(m.data)
+	return
+}
+
+func (m *message) Decode(b []byte) (n int, err error) {
+	if len(b) < messageHeaderLen {
+		err = ErrShortBuffer
+		return
+	}
+	if binary.BigEndian.Uint32(b[:4]) != magicNumber {
+		err = ErrInvalidPacket
+		return
+	}
+	m.flags = binary.BigEndian.Uint16(b[4:6])
+	length := binary.BigEndian.Uint16(b[8:10])
+	if len(b[messageHeaderLen:]) < int(length) {
+		err = ErrShortBuffer
+		return
+	}
+	m.data = b[messageHeaderLen : messageHeaderLen+length]
+
+	n = messageHeaderLen + int(length)
+	return
+}
 
 type clientConn struct {
 	net.PacketConn
@@ -50,26 +103,31 @@ func (c *clientConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 
 		m, err := icmp.ParseMessage(1, (*buf)[:n])
 		if err != nil {
-			logger.Default().Error("icmp: parse message %v", err)
+			// logger.Default().Error("icmp: parse message %v", err)
 			return 0, addr, err
 		}
 		echo, ok := m.Body.(*icmp.Echo)
 		if !ok || m.Type != ipv4.ICMPTypeEchoReply {
-			logger.Default().Warnf("icmp: invalid type %s (discarded)", m.Type)
+			// logger.Default().Warnf("icmp: invalid type %s (discarded)", m.Type)
 			continue // discard
 		}
 
 		if echo.ID != c.id {
-			logger.Default().Warnf("icmp: id mismatch got %d, should be %d (discarded)", echo.ID, c.id)
+			// logger.Default().Warnf("icmp: id mismatch got %d, should be %d (discarded)", echo.ID, c.id)
 			continue
 		}
 
-		if len(echo.Data) < 4 ||
-			binary.BigEndian.Uint32(echo.Data[:4]) != magicNumber {
-			logger.Default().Warn("icmp: invalid message (discarded)")
+		msg := message{}
+		if _, err := msg.Decode(echo.Data); err != nil {
+			logger.Default().Warn(err)
 			continue
 		}
-		n = copy(b, echo.Data[4:])
+
+		if msg.flags&FlagAck == 0 {
+			// logger.Default().Warn("icmp: invalid message (discarded)")
+			continue
+		}
+		n = copy(b, msg.data)
 		break
 	}
 
@@ -94,13 +152,18 @@ func (c *clientConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	buf := bufpool.Get(writeBufferSize)
 	defer bufpool.Put(buf)
 
-	binary.BigEndian.PutUint32((*buf)[:4], magicNumber)
-	copy((*buf)[4:], b)
+	msg := message{
+		data: b,
+	}
+	nn, err := msg.Encode(*buf)
+	if err != nil {
+		return
+	}
 
 	echo := icmp.Echo{
 		ID:   c.id,
 		Seq:  int(atomic.AddUint32(&c.seq, 1)),
-		Data: (*buf)[:len(b)+4],
+		Data: (*buf)[:nn],
 	}
 	m := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
@@ -139,25 +202,28 @@ func (c *serverConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 
 		m, err := icmp.ParseMessage(1, (*buf)[:n])
 		if err != nil {
-			logger.Default().Error("icmp: parse message %v", err)
+			// logger.Default().Error("icmp: parse message %v", err)
 			return 0, addr, err
 		}
 
 		echo, ok := m.Body.(*icmp.Echo)
 		if !ok || m.Type != ipv4.ICMPTypeEcho || echo.ID <= 0 {
-			logger.Default().Warnf("icmp: invalid type %s (discarded)", m.Type)
+			// logger.Default().Warnf("icmp: invalid type %s (discarded)", m.Type)
 			continue
 		}
 
 		atomic.StoreUint32(&c.seqs[uint16(echo.ID-1)], uint32(echo.Seq))
 
-		if len(echo.Data) < 4 ||
-			binary.BigEndian.Uint32(echo.Data[:4]) != magicNumber {
-			logger.Default().Warn("icmp: invalid message (discarded)")
+		msg := message{}
+		if _, err := msg.Decode(echo.Data); err != nil {
 			continue
 		}
 
-		n = copy(b, echo.Data[4:])
+		if msg.flags&FlagAck > 0 {
+			continue
+		}
+
+		n = copy(b, msg.data)
 
 		if v, ok := addr.(*net.IPAddr); ok {
 			addr = &net.UDPAddr{
@@ -190,13 +256,19 @@ func (c *serverConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	buf := bufpool.Get(writeBufferSize)
 	defer bufpool.Put(buf)
 
-	binary.BigEndian.PutUint32((*buf)[:4], magicNumber)
-	copy((*buf)[4:], b)
+	msg := message{
+		flags: FlagAck,
+		data:  b,
+	}
+	nn, err := msg.Encode(*buf)
+	if err != nil {
+		return
+	}
 
 	echo := icmp.Echo{
 		ID:   id,
 		Seq:  int(atomic.LoadUint32(&c.seqs[id-1])),
-		Data: (*buf)[:len(b)+4],
+		Data: (*buf)[:nn],
 	}
 	m := icmp.Message{
 		Type: ipv4.ICMPTypeEchoReply,

@@ -2,6 +2,8 @@ module github.com/go-gost/gost
 
 go 1.18
 
+replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
+
 require (
 	github.com/LiamHaworth/go-tproxy v0.0.0-20190726054950-ef7efd7f24ed
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
@@ -20,7 +22,7 @@ require (
 	github.com/milosgajdos/tenus v0.0.3
 	github.com/prometheus/client_golang v1.12.1
 	github.com/rs/xid v1.3.0
-	github.com/shadowsocks/go-shadowsocks2 v0.1.4
+	github.com/shadowsocks/go-shadowsocks2 v0.1.5
 	github.com/shadowsocks/shadowsocks-go v0.0.0-20200409064450-3e585ff90601
 	github.com/sirupsen/logrus v1.8.1
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
@@ -28,9 +30,9 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.6.1
 	github.com/xtaci/smux v1.5.16
 	github.com/xtaci/tcpraw v1.2.25
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
-	golang.org/x/sys v0.0.0-20220224120231-95c6836cb0e7
+	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0

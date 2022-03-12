@@ -110,6 +110,7 @@ func (s *service) Serve() error {
 			}()
 
 			if err := s.handler.Handle(context.Background(), conn); err != nil {
+				s.options.logger.Error(err)
 				metrics.HandlerErrors(s.name).Inc()
 			}
 		}()

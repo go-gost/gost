@@ -130,7 +130,7 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 			var pc net.PacketConn
 
 			if addr != nil {
-				cc, err := h.router.Dial(ctx, addr.Network(), addr.String())
+				cc, err := h.router.Dial(ctx, addr.Network(), "")
 				if err != nil {
 					return err
 				}
@@ -138,7 +138,7 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 				var ok bool
 				pc, ok = cc.(net.PacketConn)
 				if !ok {
-					return errors.New("invalid connection")
+					return errors.New("wrong connection type")
 				}
 			} else {
 				laddr, _ := net.ResolveUDPAddr("udp", conn.LocalAddr().String())
@@ -151,8 +151,9 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 			if h.cipher != nil {
 				pc = h.cipher.PacketConn(pc)
 			}
+			defer pc.Close()
 
-			return h.transport(conn, pc, addr, log)
+			return h.transport(conn, pc, addr, config, log)
 		}()
 		if err != nil {
 			log.Error(err)
@@ -181,7 +182,7 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 
 }
 
-func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr, log logger.Logger) error {
+func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr, config *tap_util.Config, log logger.Logger) error {
 	errc := make(chan error, 1)
 
 	go func() {

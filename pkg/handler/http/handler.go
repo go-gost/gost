@@ -179,7 +179,8 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 			dump, _ := httputil.DumpResponse(resp, false)
 			log.Debug(string(dump))
 		}
-		return resp.Write(conn)
+		resp.Write(conn)
+		return err
 	}
 	defer cc.Close()
 

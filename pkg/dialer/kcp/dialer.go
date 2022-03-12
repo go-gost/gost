@@ -83,7 +83,7 @@ func (d *kcpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 				PacketConn: pc,
 			}
 		} else {
-			c, err := options.NetDialer.Dial(ctx, "udp", addr)
+			c, err := options.NetDialer.Dial(ctx, "udp", "")
 			if err != nil {
 				return nil, err
 			}

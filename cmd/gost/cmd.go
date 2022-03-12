@@ -46,7 +46,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 	}
 
-	if v := os.Getenv("GOST_LOGGING_LEVEL"); v != "" {
+	if v := os.Getenv("GOST_LOGGER_LEVEL"); v != "" {
 		cfg.Log = &config.LogConfig{
 			Level: v,
 		}

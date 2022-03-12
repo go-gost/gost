@@ -90,6 +90,7 @@ func newMetrics() *Metrics {
 	prometheus.MustRegister(m.requestSeconds)
 	prometheus.MustRegister(m.inputBytes)
 	prometheus.MustRegister(m.outputBytes)
+	prometheus.MustRegister(m.handlerErrors)
 	return m
 }
 

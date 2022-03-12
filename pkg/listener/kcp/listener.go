@@ -4,6 +4,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/admission"
 	"github.com/go-gost/gost/pkg/common/metrics"
 	kcp_util "github.com/go-gost/gost/pkg/common/util/kcp"
 	"github.com/go-gost/gost/pkg/listener"
@@ -64,6 +65,7 @@ func (l *kcpListener) Init(md md.Metadata) (err error) {
 	}
 
 	conn = metrics.WrapUDPConn(l.options.Service, conn)
+	conn = admission.WrapUDPConn(l.options.Admission, conn)
 
 	ln, err := kcp.ServeConn(
 		kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt),

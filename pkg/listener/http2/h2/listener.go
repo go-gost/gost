@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 
+	"github.com/go-gost/gost/pkg/common/admission"
 	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -70,6 +71,7 @@ func (l *h2Listener) Init(md md.Metadata) (err error) {
 	}
 	l.addr = ln.Addr()
 	ln = metrics.WrapListener(l.options.Service, ln)
+	ln = admission.WrapListener(l.options.Admission, ln)
 
 	if l.h2c {
 		l.server.Handler = h2c.NewHandler(

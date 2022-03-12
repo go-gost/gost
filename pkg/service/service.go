@@ -93,7 +93,6 @@ func (s *service) Serve() error {
 
 		if s.options.admission != nil &&
 			!s.options.admission.Admit(conn.RemoteAddr().String()) {
-			s.options.logger.Infof("admission: %s is denied", conn.RemoteAddr())
 			conn.Close()
 			continue
 		}

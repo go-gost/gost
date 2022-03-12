@@ -41,7 +41,9 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 	if err != nil {
 		return
 	}
-	l.Listener = metrics.WrapListener(l.options.Service, ln)
+
+	ln = metrics.WrapListener(l.options.Service, ln)
+	l.Listener = ln
 
 	return
 }

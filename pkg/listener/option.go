@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/url"
 
+	"github.com/go-gost/gost/pkg/admission"
 	"github.com/go-gost/gost/pkg/auth"
 	"github.com/go-gost/gost/pkg/chain"
 	"github.com/go-gost/gost/pkg/logger"
@@ -14,6 +15,7 @@ type Options struct {
 	Auther    auth.Authenticator
 	Auth      *url.Userinfo
 	TLSConfig *tls.Config
+	Admission admission.Admission
 	Chain     chain.Chainer
 	Logger    logger.Logger
 	Service   string
@@ -42,6 +44,12 @@ func AuthOption(auth *url.Userinfo) Option {
 func TLSConfigOption(tlsConfig *tls.Config) Option {
 	return func(opts *Options) {
 		opts.TLSConfig = tlsConfig
+	}
+}
+
+func AdmissionOption(admission admission.Admission) Option {
+	return func(opts *Options) {
+		opts.Admission = admission
 	}
 }
 

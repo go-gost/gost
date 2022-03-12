@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/go-gost/gost/pkg/common/admission"
 	"github.com/go-gost/gost/pkg/common/metrics"
 	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
 	"github.com/go-gost/gost/pkg/listener"
@@ -59,6 +60,7 @@ func (l *http2Listener) Init(md md.Metadata) (err error) {
 	}
 	l.addr = ln.Addr()
 	ln = metrics.WrapListener(l.options.Service, ln)
+	ln = admission.WrapListener(l.options.Admission, ln)
 
 	ln = tls.NewListener(
 		ln,

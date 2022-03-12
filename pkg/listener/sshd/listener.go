@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/admission"
 	"github.com/go-gost/gost/pkg/common/metrics"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
 	sshd_util "github.com/go-gost/gost/pkg/internal/util/sshd"
@@ -59,6 +60,7 @@ func (l *sshdListener) Init(md md.Metadata) (err error) {
 	}
 
 	ln = metrics.WrapListener(l.options.Service, ln)
+	ln = admission.WrapListener(l.options.Admission, ln)
 	l.Listener = ln
 
 	config := &ssh.ServerConfig{

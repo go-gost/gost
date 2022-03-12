@@ -58,6 +58,7 @@ func NewAdmissionPatterns(reversed bool, patterns []string, opts ...Option) Admi
 
 func (p *admission) Admit(addr string) bool {
 	if addr == "" || p == nil || len(p.matchers) == 0 {
+		p.options.logger.Debugf("admission: %v is denied", addr)
 		return false
 	}
 
@@ -81,5 +82,8 @@ func (p *admission) Admit(addr string) bool {
 
 	b := !p.reversed && matched ||
 		p.reversed && !matched
+	if !b {
+		p.options.logger.Debugf("admission: %v is denied", addr)
+	}
 	return b
 }

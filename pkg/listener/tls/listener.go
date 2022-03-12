@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/admission"
 	"github.com/go-gost/gost/pkg/common/metrics"
 	"github.com/go-gost/gost/pkg/listener"
 	"github.com/go-gost/gost/pkg/logger"
@@ -43,6 +44,7 @@ func (l *tlsListener) Init(md md.Metadata) (err error) {
 		return
 	}
 	ln = metrics.WrapListener(l.options.Service, ln)
+	ln = admission.WrapListener(l.options.Admission, ln)
 
 	l.Listener = tls.NewListener(ln, l.options.TLSConfig)
 

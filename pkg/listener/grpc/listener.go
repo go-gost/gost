@@ -3,6 +3,7 @@ package grpc
 import (
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/admission"
 	"github.com/go-gost/gost/pkg/common/metrics"
 	pb "github.com/go-gost/gost/pkg/common/util/grpc/proto"
 	"github.com/go-gost/gost/pkg/listener"
@@ -48,6 +49,7 @@ func (l *grpcListener) Init(md md.Metadata) (err error) {
 		return
 	}
 	ln = metrics.WrapListener(l.options.Service, ln)
+	ln = admission.WrapListener(l.options.Admission, ln)
 
 	var opts []grpc.ServerOption
 	if !l.md.insecure {

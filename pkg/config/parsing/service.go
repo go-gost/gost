@@ -54,10 +54,11 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 
 	ln := registry.ListenerRegistry().Get(cfg.Listener.Type)(
 		listener.AddrOption(cfg.Addr),
-		listener.ChainOption(registry.ChainRegistry().Get(cfg.Listener.Chain)),
 		listener.AutherOption(auther),
 		listener.AuthOption(parseAuth(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
+		listener.AdmissionOption(registry.AdmissionRegistry().Get(cfg.Admission)),
+		listener.ChainOption(registry.ChainRegistry().Get(cfg.Listener.Chain)),
 		listener.LoggerOption(listenerLogger),
 		listener.ServiceOption(cfg.Name),
 	)

@@ -43,13 +43,15 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	conn, err := net.ListenUDP("udp", laddr)
+	var conn net.PacketConn
+	conn, err = net.ListenUDP("udp", laddr)
 	if err != nil {
 		return
 	}
+	conn = metrics.WrapPacketConn(l.options.Service, conn)
 
 	l.Listener = udp.NewListener(
-		metrics.WrapPacketConn(l.options.Service, conn),
+		conn,
 		laddr,
 		l.md.backlog,
 		l.md.readQueueSize, l.md.readBufferSize,

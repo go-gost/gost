@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 
+	"github.com/go-gost/gost/pkg/common/admission"
 	"github.com/go-gost/gost/pkg/common/metrics"
 	icmp_pkg "github.com/go-gost/gost/pkg/internal/util/icmp"
 	"github.com/go-gost/gost/pkg/listener"
@@ -55,6 +56,7 @@ func (l *icmpListener) Init(md md.Metadata) (err error) {
 	}
 	conn = icmp_pkg.ServerConn(conn)
 	conn = metrics.WrapPacketConn(l.options.Service, conn)
+	conn = admission.WrapPacketConn(l.options.Admission, conn)
 
 	config := &quic.Config{
 		KeepAlive:            l.md.keepAlive,

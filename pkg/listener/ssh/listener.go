@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/go-gost/gost/pkg/common/admission"
 	"github.com/go-gost/gost/pkg/common/metrics"
 	ssh_util "github.com/go-gost/gost/pkg/internal/util/ssh"
 	"github.com/go-gost/gost/pkg/listener"
@@ -50,6 +51,7 @@ func (l *sshListener) Init(md md.Metadata) (err error) {
 	}
 
 	ln = metrics.WrapListener(l.options.Service, ln)
+	ln = admission.WrapListener(l.options.Admission, ln)
 	l.Listener = ln
 
 	config := &ssh.ServerConfig{

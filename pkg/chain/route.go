@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/v3/pkg/common/net/dialer"
+	"github.com/go-gost/gost/v3/pkg/common/util/udp"
 	"github.com/go-gost/gost/v3/pkg/connector"
-	"github.com/go-gost/gost/v3/pkg/internal/util/udp"
 	"github.com/go-gost/gost/v3/pkg/logger"
 )
 

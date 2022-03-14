@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-gost/gosocks5"
 	netpkg "github.com/go-gost/gost/v3/pkg/common/net"
-	"github.com/go-gost/gost/v3/pkg/common/util/mux"
+	"github.com/go-gost/gost/v3/pkg/internal/util/mux"
 	"github.com/go-gost/gost/v3/pkg/logger"
 )
 

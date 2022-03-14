@@ -6,10 +6,10 @@ import (
 	"net"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/v3/pkg/common/util/mux"
+	"github.com/go-gost/gost/v3/pkg/common/util/udp"
 	"github.com/go-gost/gost/v3/pkg/connector"
+	"github.com/go-gost/gost/v3/pkg/internal/util/mux"
 	"github.com/go-gost/gost/v3/pkg/internal/util/socks"
-	"github.com/go-gost/gost/v3/pkg/internal/util/udp"
 	"github.com/go-gost/gost/v3/pkg/logger"
 )
 

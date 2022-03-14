@@ -6,7 +6,7 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/go-gost/gost/pkg/metrics"
+	"github.com/go-gost/gost/v3/pkg/metrics"
 )
 
 var (

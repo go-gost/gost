@@ -3,7 +3,7 @@ package admission
 import (
 	"net"
 
-	"github.com/go-gost/gost/pkg/admission"
+	"github.com/go-gost/gost/v3/pkg/admission"
 )
 
 type listener struct {

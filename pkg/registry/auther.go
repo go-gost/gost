@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"github.com/go-gost/gost/pkg/auth"
+	"github.com/go-gost/gost/v3/pkg/auth"
 )
 
 type autherRegistry struct {

@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	mdata "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/v3/pkg/metadata"
 )
 
 type metadata struct {

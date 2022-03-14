@@ -8,9 +8,9 @@ import (
 	"net/http/httputil"
 	"time"
 
-	"github.com/go-gost/gost/pkg/common/net/relay"
-	"github.com/go-gost/gost/pkg/common/util/socks"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/common/net/relay"
+	"github.com/go-gost/gost/v3/pkg/internal/util/socks"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {

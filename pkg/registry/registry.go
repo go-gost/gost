@@ -4,13 +4,13 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/go-gost/gost/pkg/admission"
-	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/bypass"
-	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/hosts"
-	"github.com/go-gost/gost/pkg/resolver"
-	"github.com/go-gost/gost/pkg/service"
+	"github.com/go-gost/gost/v3/pkg/admission"
+	"github.com/go-gost/gost/v3/pkg/auth"
+	"github.com/go-gost/gost/v3/pkg/bypass"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	"github.com/go-gost/gost/v3/pkg/hosts"
+	"github.com/go-gost/gost/v3/pkg/resolver"
+	"github.com/go-gost/gost/v3/pkg/service"
 )
 
 var (

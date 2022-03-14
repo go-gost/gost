@@ -1,14 +1,14 @@
 package parsing
 
 import (
-	"github.com/go-gost/gost/pkg/chain"
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	"github.com/go-gost/gost/pkg/config"
-	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/dialer"
-	"github.com/go-gost/gost/pkg/logger"
-	"github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	tls_util "github.com/go-gost/gost/v3/pkg/common/util/tls"
+	"github.com/go-gost/gost/v3/pkg/config"
+	"github.com/go-gost/gost/v3/pkg/connector"
+	"github.com/go-gost/gost/v3/pkg/dialer"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {

@@ -4,10 +4,10 @@ import (
 	"crypto/tls"
 	"net/url"
 
-	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/bypass"
-	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/auth"
+	"github.com/go-gost/gost/v3/pkg/bypass"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 type Options struct {
@@ -56,3 +56,8 @@ func LoggerOption(logger logger.Logger) Option {
 		opts.Logger = logger
 	}
 }
+
+type HandleOptions struct {
+}
+
+type HandleOption func(opts *HandleOptions)

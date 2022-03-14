@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/go-gost/gost/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/metadata"
 )
 
 var (
@@ -17,7 +17,26 @@ type Listener interface {
 	net.Listener
 }
 
-// Accepter represents a network endpoint that can accept connection from peer.
-type Accepter interface {
-	Accept() (net.Conn, error)
+type AcceptError struct {
+	err error
+}
+
+func NewAcceptError(err error) error {
+	return &AcceptError{err: err}
+}
+
+func (e *AcceptError) Error() string {
+	return e.err.Error()
+}
+
+func (e *AcceptError) Timeout() bool {
+	return false
+}
+
+func (e *AcceptError) Temporary() bool {
+	return true
+}
+
+func (e *AcceptError) Unwrap() error {
+	return e.err
 }

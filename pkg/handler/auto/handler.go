@@ -8,11 +8,10 @@ import (
 
 	"github.com/go-gost/gosocks4"
 	"github.com/go-gost/gosocks5"
-	netpkg "github.com/go-gost/gost/pkg/common/net"
-	"github.com/go-gost/gost/pkg/handler"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
-	"github.com/go-gost/relay"
+	netpkg "github.com/go-gost/gost/v3/pkg/common/net"
+	"github.com/go-gost/gost/v3/pkg/handler"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 func init() {
@@ -23,7 +22,6 @@ type autoHandler struct {
 	httpHandler   handler.Handler
 	socks4Handler handler.Handler
 	socks5Handler handler.Handler
-	relayHandler  handler.Handler
 	options       handler.Options
 }
 
@@ -52,11 +50,6 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 			handler.LoggerOption(options.Logger.WithFields(map[string]any{"type": "socks5"})))
 		h.socks5Handler = f(v...)
 	}
-	if f := registry.HandlerRegistry().Get("relay"); f != nil {
-		v := append(opts,
-			handler.LoggerOption(options.Logger.WithFields(map[string]any{"type": "relay"})))
-		h.relayHandler = f(v...)
-	}
 
 	return h
 }
@@ -77,16 +70,11 @@ func (h *autoHandler) Init(md md.Metadata) error {
 			return err
 		}
 	}
-	if h.relayHandler != nil {
-		if err := h.relayHandler.Init(md); err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
 
-func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) error {
+func (h *autoHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
@@ -117,10 +105,6 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn) error {
 	case gosocks5.Ver5: // socks5
 		if h.socks5Handler != nil {
 			return h.socks5Handler.Handle(ctx, conn)
-		}
-	case relay.Version1: // relay
-		if h.relayHandler != nil {
-			return h.relayHandler.Handle(ctx, conn)
 		}
 	default: // http
 		if h.httpHandler != nil {

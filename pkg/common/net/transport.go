@@ -5,7 +5,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/go-gost/gost/pkg/common/bufpool"
+	"github.com/go-gost/gost/v3/pkg/common/bufpool"
 )
 
 func Transport(rw1, rw2 io.ReadWriter) error {

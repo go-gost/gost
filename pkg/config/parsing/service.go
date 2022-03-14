@@ -3,15 +3,15 @@ package parsing
 import (
 	"strings"
 
-	"github.com/go-gost/gost/pkg/chain"
-	tls_util "github.com/go-gost/gost/pkg/common/util/tls"
-	"github.com/go-gost/gost/pkg/config"
-	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/listener"
-	"github.com/go-gost/gost/pkg/logger"
-	"github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
-	"github.com/go-gost/gost/pkg/service"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	tls_util "github.com/go-gost/gost/v3/pkg/common/util/tls"
+	"github.com/go-gost/gost/v3/pkg/config"
+	"github.com/go-gost/gost/v3/pkg/handler"
+	"github.com/go-gost/gost/v3/pkg/listener"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/service"
 )
 
 func ParseService(cfg *config.ServiceConfig) (service.Service, error) {

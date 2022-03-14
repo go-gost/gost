@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks4"
-	"github.com/go-gost/gost/pkg/chain"
-	netpkg "github.com/go-gost/gost/pkg/common/net"
-	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	netpkg "github.com/go-gost/gost/v3/pkg/common/net"
+	"github.com/go-gost/gost/v3/pkg/handler"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 var (
@@ -55,7 +55,7 @@ func (h *socks4Handler) Init(md md.Metadata) (err error) {
 	return nil
 }
 
-func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn) error {
+func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
 	defer conn.Close()
 
 	start := time.Now()

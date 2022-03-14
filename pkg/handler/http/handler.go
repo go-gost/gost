@@ -16,12 +16,12 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/go-gost/gost/pkg/chain"
-	netpkg "github.com/go-gost/gost/pkg/common/net"
-	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/logger"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	netpkg "github.com/go-gost/gost/v3/pkg/common/net"
+	"github.com/go-gost/gost/v3/pkg/handler"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 func init() {
@@ -58,7 +58,7 @@ func (h *httpHandler) Init(md md.Metadata) error {
 	return nil
 }
 
-func (h *httpHandler) Handle(ctx context.Context, conn net.Conn) error {
+func (h *httpHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
 	defer conn.Close()
 
 	start := time.Now()

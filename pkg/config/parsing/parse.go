@@ -4,16 +4,16 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/go-gost/gost/pkg/admission"
-	"github.com/go-gost/gost/pkg/auth"
-	"github.com/go-gost/gost/pkg/bypass"
-	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/config"
-	hostspkg "github.com/go-gost/gost/pkg/hosts"
-	"github.com/go-gost/gost/pkg/logger"
-	"github.com/go-gost/gost/pkg/registry"
-	"github.com/go-gost/gost/pkg/resolver"
-	resolver_impl "github.com/go-gost/gost/pkg/resolver/impl"
+	"github.com/go-gost/gost/v3/pkg/admission"
+	"github.com/go-gost/gost/v3/pkg/auth"
+	"github.com/go-gost/gost/v3/pkg/bypass"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	"github.com/go-gost/gost/v3/pkg/config"
+	hostspkg "github.com/go-gost/gost/v3/pkg/hosts"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/resolver"
+	resolver_impl "github.com/go-gost/gost/v3/pkg/resolver/impl"
 )
 
 func ParseAuther(cfg *config.AutherConfig) auth.Authenticator {
@@ -33,14 +33,14 @@ func ParseAuther(cfg *config.AutherConfig) auth.Authenticator {
 	if len(m) == 0 {
 		return nil
 	}
-	return auth.NewMapAuthenticator(m)
+	return auth.NewAuthenticator(m)
 }
 
 func ParseAutherFromAuth(au *config.AuthConfig) auth.Authenticator {
 	if au == nil || au.Username == "" {
 		return nil
 	}
-	return auth.NewMapAuthenticator(map[string]string{
+	return auth.NewAuthenticator(map[string]string{
 		au.Username: au.Password,
 	})
 }

@@ -4,8 +4,8 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/go-gost/gost/pkg/common/matcher"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/common/matcher"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 // Bypass is a filter of address (IP or domain).

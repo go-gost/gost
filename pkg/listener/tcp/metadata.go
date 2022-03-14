@@ -1,7 +1,7 @@
 package tcp
 
 import (
-	md "github.com/go-gost/gost/pkg/metadata"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
 )
 
 type metadata struct {

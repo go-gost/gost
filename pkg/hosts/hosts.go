@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 // HostMapper is a mapping from hostname to IP.

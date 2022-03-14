@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/gost/pkg/config"
-	"github.com/go-gost/gost/pkg/metadata"
-	metrics "github.com/go-gost/gost/pkg/metrics/service"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/config"
+	"github.com/go-gost/gost/v3/pkg/metadata"
+	metrics "github.com/go-gost/gost/v3/pkg/metrics/service"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 var (
@@ -41,8 +41,9 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 	}
 	if v := os.Getenv("GOST_METRICS"); v != "" {
 		cfg.Metrics = &config.MetricsConfig{
-			Addr: v,
-			Path: metrics.DefaultPath,
+			Enable: true,
+			Addr:   v,
+			Path:   metrics.DefaultPath,
 		}
 	}
 

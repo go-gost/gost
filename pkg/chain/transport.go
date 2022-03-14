@@ -5,9 +5,9 @@ import (
 	"net"
 	"time"
 
-	net_dialer "github.com/go-gost/gost/pkg/common/net/dialer"
-	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/dialer"
+	net_dialer "github.com/go-gost/gost/v3/pkg/common/net/dialer"
+	"github.com/go-gost/gost/v3/pkg/connector"
+	"github.com/go-gost/gost/v3/pkg/dialer"
 )
 
 type Transport struct {

@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-gost/gost/pkg/config"
-	"github.com/go-gost/gost/pkg/config/parsing"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/config"
+	"github.com/go-gost/gost/v3/pkg/config/parsing"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 // swagger:parameters createAdmissionRequest

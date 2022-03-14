@@ -3,9 +3,9 @@ package relay
 import (
 	"net"
 
-	"github.com/go-gost/gost/pkg/bypass"
-	"github.com/go-gost/gost/pkg/common/bufpool"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/bypass"
+	"github.com/go-gost/gost/v3/pkg/common/bufpool"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 type UDPRelay struct {

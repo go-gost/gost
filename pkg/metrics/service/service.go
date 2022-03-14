@@ -4,7 +4,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-gost/gost/pkg/service"
+	"github.com/go-gost/gost/v3/pkg/service"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 

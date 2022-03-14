@@ -5,8 +5,8 @@ import (
 	"net"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/common/util/mux"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/common/util/mux"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 type tcpListener struct {

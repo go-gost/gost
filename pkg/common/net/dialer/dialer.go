@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 var (

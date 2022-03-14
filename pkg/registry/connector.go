@@ -1,8 +1,8 @@
 package registry
 
 import (
-	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/connector"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 type NewConnector func(opts ...connector.Option) connector.Connector

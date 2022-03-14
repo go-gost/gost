@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"github.com/go-gost/gost/pkg/chain"
+	"github.com/go-gost/gost/v3/pkg/chain"
 )
 
 type chainRegistry struct {

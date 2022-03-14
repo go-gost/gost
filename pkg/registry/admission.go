@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"github.com/go-gost/gost/pkg/admission"
+	"github.com/go-gost/gost/v3/pkg/admission"
 )
 
 type admissionRegistry struct {

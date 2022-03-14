@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 type Options struct {

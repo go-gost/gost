@@ -8,9 +8,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/go-gost/gost/pkg/config"
-	"github.com/go-gost/gost/pkg/logger"
-	metrics "github.com/go-gost/gost/pkg/metrics/service"
+	"github.com/go-gost/gost/v3/pkg/config"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/metrics"
 )
 
 var (
@@ -63,8 +63,8 @@ func main() {
 		}
 		if metricsAddr != "" {
 			cfg.Metrics = &config.MetricsConfig{
-				Addr: metricsAddr,
-				Path: metrics.DefaultPath,
+				Enable: true,
+				Addr:   metricsAddr,
 			}
 		}
 	} else {
@@ -113,17 +113,19 @@ func main() {
 		}()
 	}
 
-	if cfg.Metrics != nil {
-		s, err := buildMetricsService(cfg.Metrics)
-		if err != nil {
-			log.Fatal(err)
+	if cfg.Metrics != nil && cfg.Metrics.Enable {
+		metrics.SetGlobal(metrics.NewMetrics())
+		if cfg.Metrics.Addr != "" {
+			s, err := buildMetricsService(cfg.Metrics)
+			if err != nil {
+				log.Fatal(err)
+			}
+			go func() {
+				defer s.Close()
+				log.Info("metrics service on ", s.Addr())
+				log.Fatal(s.Serve())
+			}()
 		}
-		defer s.Close()
-
-		go func() {
-			log.Info("metrics service on ", s.Addr())
-			log.Fatal(s.Serve())
-		}()
 	}
 
 	buildDefaultTLSConfig(cfg.TLS)

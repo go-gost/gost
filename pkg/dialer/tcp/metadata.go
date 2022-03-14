@@ -3,7 +3,7 @@ package tcp
 import (
 	"time"
 
-	md "github.com/go-gost/gost/pkg/metadata"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
 )
 
 const (

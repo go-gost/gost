@@ -4,9 +4,9 @@ import (
 	"context"
 	"net"
 
-	"github.com/go-gost/gost/pkg/connector"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/connector"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 func init() {

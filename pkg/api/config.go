@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-gost/gost/pkg/config"
+	"github.com/go-gost/gost/v3/pkg/config"
 )
 
 // swagger:parameters getConfigRequest

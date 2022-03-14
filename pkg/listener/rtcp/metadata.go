@@ -3,7 +3,7 @@ package rtcp
 import (
 	"time"
 
-	mdata "github.com/go-gost/gost/pkg/metadata"
+	mdata "github.com/go-gost/gost/v3/pkg/metadata"
 )
 
 const (

@@ -4,13 +4,13 @@ import (
 	"context"
 	"net"
 
-	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/common/metrics"
-	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/listener"
-	"github.com/go-gost/gost/pkg/logger"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	"github.com/go-gost/gost/v3/pkg/common/metrics"
+	"github.com/go-gost/gost/v3/pkg/connector"
+	"github.com/go-gost/gost/v3/pkg/listener"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 func init() {
@@ -73,14 +73,14 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 			connector.UDPDataQueueSizeBindOption(l.md.readQueueSize),
 		)
 		if err != nil {
-			return nil, connector.NewAcceptError(err)
+			return nil, listener.NewAcceptError(err)
 		}
 	}
 	conn, err = l.ln.Accept()
 	if err != nil {
 		l.ln.Close()
 		l.ln = nil
-		return nil, connector.NewAcceptError(err)
+		return nil, listener.NewAcceptError(err)
 	}
 
 	if pc, ok := conn.(net.PacketConn); ok {

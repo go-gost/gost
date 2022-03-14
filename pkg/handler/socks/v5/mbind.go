@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	netpkg "github.com/go-gost/gost/pkg/common/net"
-	"github.com/go-gost/gost/pkg/common/util/mux"
-	"github.com/go-gost/gost/pkg/logger"
+	netpkg "github.com/go-gost/gost/v3/pkg/common/net"
+	"github.com/go-gost/gost/v3/pkg/common/util/mux"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {

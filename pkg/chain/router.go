@@ -7,10 +7,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/connector"
-	"github.com/go-gost/gost/pkg/hosts"
-	"github.com/go-gost/gost/pkg/logger"
-	"github.com/go-gost/gost/pkg/resolver"
+	"github.com/go-gost/gost/v3/pkg/connector"
+	"github.com/go-gost/gost/v3/pkg/hosts"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/resolver"
 )
 
 type Router struct {

@@ -5,13 +5,13 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-gost/gost/pkg/common/admission"
-	"github.com/go-gost/gost/pkg/common/metrics"
-	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
-	"github.com/go-gost/gost/pkg/listener"
-	"github.com/go-gost/gost/pkg/logger"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/common/admission"
+	"github.com/go-gost/gost/v3/pkg/common/metrics"
+	http2_util "github.com/go-gost/gost/v3/pkg/internal/util/http2"
+	"github.com/go-gost/gost/v3/pkg/listener"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 	"golang.org/x/net/http2"
 )
 

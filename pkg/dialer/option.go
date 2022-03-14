@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"net/url"
 
-	"github.com/go-gost/gost/pkg/common/net/dialer"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/common/net/dialer"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 type Options struct {

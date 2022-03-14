@@ -18,13 +18,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/gost/pkg/chain"
-	netpkg "github.com/go-gost/gost/pkg/common/net"
-	"github.com/go-gost/gost/pkg/handler"
-	http2_util "github.com/go-gost/gost/pkg/internal/util/http2"
-	"github.com/go-gost/gost/pkg/logger"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	netpkg "github.com/go-gost/gost/v3/pkg/common/net"
+	"github.com/go-gost/gost/v3/pkg/handler"
+	http2_util "github.com/go-gost/gost/v3/pkg/internal/util/http2"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 func init() {
@@ -61,7 +61,7 @@ func (h *http2Handler) Init(md md.Metadata) error {
 	return nil
 }
 
-func (h *http2Handler) Handle(ctx context.Context, conn net.Conn) error {
+func (h *http2Handler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
 	defer conn.Close()
 
 	start := time.Now()

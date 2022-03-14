@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/go-gost/gost/pkg/resolver"
+	"github.com/go-gost/gost/v3/pkg/resolver"
 )
 
 type resolverRegistry struct {

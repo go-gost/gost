@@ -3,7 +3,7 @@ package registry
 import (
 	"net"
 
-	"github.com/go-gost/gost/pkg/hosts"
+	"github.com/go-gost/gost/v3/pkg/hosts"
 )
 
 type hostsRegistry struct {

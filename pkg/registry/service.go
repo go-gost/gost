@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"github.com/go-gost/gost/pkg/service"
+	"github.com/go-gost/gost/v3/pkg/service"
 )
 
 type serviceRegistry struct {

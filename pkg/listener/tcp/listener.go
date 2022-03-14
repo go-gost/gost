@@ -3,11 +3,11 @@ package tcp
 import (
 	"net"
 
-	"github.com/go-gost/gost/pkg/common/metrics"
-	"github.com/go-gost/gost/pkg/listener"
-	"github.com/go-gost/gost/pkg/logger"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/common/metrics"
+	"github.com/go-gost/gost/v3/pkg/listener"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 func init() {

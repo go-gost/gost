@@ -4,9 +4,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-gost/gost/pkg/bypass"
-	"github.com/go-gost/gost/pkg/hosts"
-	"github.com/go-gost/gost/pkg/resolver"
+	"github.com/go-gost/gost/v3/pkg/bypass"
+	"github.com/go-gost/gost/v3/pkg/hosts"
+	"github.com/go-gost/gost/v3/pkg/resolver"
 )
 
 type Node struct {

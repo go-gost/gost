@@ -7,11 +7,11 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/chain"
-	netpkg "github.com/go-gost/gost/pkg/common/net"
-	"github.com/go-gost/gost/pkg/handler"
-	md "github.com/go-gost/gost/pkg/metadata"
-	"github.com/go-gost/gost/pkg/registry"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	netpkg "github.com/go-gost/gost/v3/pkg/common/net"
+	"github.com/go-gost/gost/v3/pkg/handler"
+	md "github.com/go-gost/gost/v3/pkg/metadata"
+	"github.com/go-gost/gost/v3/pkg/registry"
 )
 
 func init() {
@@ -61,7 +61,7 @@ func (h *forwardHandler) Forward(group *chain.NodeGroup) {
 	h.group = group
 }
 
-func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn) error {
+func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
 	defer conn.Close()
 
 	start := time.Now()

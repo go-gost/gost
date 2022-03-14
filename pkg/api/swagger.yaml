@@ -19,7 +19,7 @@ definitions:
         type: string
         x-go-name: PathPrefix
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   AdmissionConfig:
     properties:
       matchers:
@@ -38,7 +38,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   AuthConfig:
     properties:
       password:
@@ -48,7 +48,7 @@ definitions:
         type: string
         x-go-name: Username
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   AutherConfig:
     properties:
       auths:
@@ -64,7 +64,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   BypassConfig:
     properties:
       matchers:
@@ -83,7 +83,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   ChainConfig:
     properties:
       hops:
@@ -97,7 +97,7 @@ definitions:
       selector:
         $ref: '#/definitions/SelectorConfig'
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   Config:
     properties:
       admissions:
@@ -146,7 +146,7 @@ definitions:
       tls:
         $ref: '#/definitions/TLSConfig'
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   ConnectorConfig:
     properties:
       auth:
@@ -162,7 +162,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   DialerConfig:
     properties:
       auth:
@@ -178,7 +178,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   Duration:
     description: |-
       A Duration represents the elapsed time between two instants
@@ -197,7 +197,7 @@ definitions:
         type: array
         x-go-name: Targets
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   HandlerConfig:
     properties:
       auth:
@@ -223,7 +223,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   HopConfig:
     properties:
       bypass:
@@ -246,7 +246,7 @@ definitions:
       selector:
         $ref: '#/definitions/SelectorConfig'
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   HostMappingConfig:
     properties:
       aliases:
@@ -261,7 +261,7 @@ definitions:
         type: string
         x-go-name: IP
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   HostsConfig:
     properties:
       mappings:
@@ -277,7 +277,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   ListenerConfig:
     properties:
       auth:
@@ -299,7 +299,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   LogConfig:
     properties:
       format:
@@ -312,7 +312,7 @@ definitions:
         type: string
         x-go-name: Output
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   MetricsConfig:
     properties:
       addr:
@@ -325,7 +325,7 @@ definitions:
         type: string
         x-go-name: Path
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   NameserverConfig:
     properties:
       addr:
@@ -348,7 +348,7 @@ definitions:
       ttl:
         $ref: '#/definitions/Duration'
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   NodeConfig:
     properties:
       addr:
@@ -371,7 +371,7 @@ definitions:
         type: string
         x-go-name: Resolver
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   ProfilingConfig:
     properties:
       addr:
@@ -381,7 +381,7 @@ definitions:
         type: boolean
         x-go-name: Enable
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   ResolverConfig:
     properties:
       name:
@@ -397,7 +397,7 @@ definitions:
         type: string
         x-go-name: Type
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   Response:
     properties:
       code:
@@ -408,7 +408,7 @@ definitions:
         type: string
         x-go-name: Msg
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/api
+    x-go-package: github.com/go-gost/gost/v3/pkg/api
   SelectorConfig:
     properties:
       failTimeout:
@@ -421,7 +421,7 @@ definitions:
         type: string
         x-go-name: Strategy
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   ServiceConfig:
     properties:
       addr:
@@ -449,7 +449,7 @@ definitions:
         type: string
         x-go-name: Resolver
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
   TLSConfig:
     properties:
       caFile:
@@ -468,7 +468,7 @@ definitions:
         type: string
         x-go-name: ServerName
     type: object
-    x-go-package: github.com/go-gost/gost/pkg/config
+    x-go-package: github.com/go-gost/gost/v3/pkg/config
 info:
   title: Documentation of Web API.
   version: 1.0.0

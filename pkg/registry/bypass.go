@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"github.com/go-gost/gost/pkg/bypass"
+	"github.com/go-gost/gost/v3/pkg/bypass"
 )
 
 type bypassRegistry struct {

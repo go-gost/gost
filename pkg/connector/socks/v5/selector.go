@@ -6,8 +6,8 @@ import (
 	"net/url"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/common/util/socks"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/internal/util/socks"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 type clientSelector struct {

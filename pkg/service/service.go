@@ -5,11 +5,11 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/gost/pkg/admission"
-	"github.com/go-gost/gost/pkg/handler"
-	"github.com/go-gost/gost/pkg/listener"
-	"github.com/go-gost/gost/pkg/logger"
-	"github.com/go-gost/gost/pkg/metrics"
+	"github.com/go-gost/gost/v3/pkg/admission"
+	"github.com/go-gost/gost/v3/pkg/handler"
+	"github.com/go-gost/gost/v3/pkg/listener"
+	"github.com/go-gost/gost/v3/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/metrics"
 )
 
 type options struct {

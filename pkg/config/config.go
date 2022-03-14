@@ -62,8 +62,9 @@ type APIConfig struct {
 }
 
 type MetricsConfig struct {
-	Addr string `json:"addr"`
-	Path string `json:"path"`
+	Enable bool   `json:"enable"`
+	Addr   string `json:"addr"`
+	Path   string `json:"path"`
 }
 
 type TLSConfig struct {

@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/gost/pkg/chain"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/chain"
+	"github.com/go-gost/gost/v3/pkg/logger"
 	"github.com/miekg/dns"
 )
 

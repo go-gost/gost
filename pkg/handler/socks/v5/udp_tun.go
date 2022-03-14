@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/go-gost/gosocks5"
-	"github.com/go-gost/gost/pkg/common/net/relay"
-	"github.com/go-gost/gost/pkg/common/util/socks"
-	"github.com/go-gost/gost/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/common/net/relay"
+	"github.com/go-gost/gost/v3/pkg/internal/util/socks"
+	"github.com/go-gost/gost/v3/pkg/logger"
 )
 
 func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {

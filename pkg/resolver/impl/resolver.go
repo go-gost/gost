@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-gost/gost/v3/pkg/chain"
-	resolver_util "github.com/go-gost/gost/v3/pkg/internal/util/resolver"
+	resolver_util "github.com/go-gost/gost/v3/pkg/common/util/resolver"
 	"github.com/go-gost/gost/v3/pkg/logger"
 	resolverpkg "github.com/go-gost/gost/v3/pkg/resolver"
 	"github.com/go-gost/gost/v3/pkg/resolver/exchanger"

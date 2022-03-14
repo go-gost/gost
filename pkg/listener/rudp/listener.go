@@ -5,12 +5,12 @@ import (
 	"net"
 
 	"github.com/go-gost/gost/v3/pkg/chain"
-	"github.com/go-gost/gost/v3/pkg/common/metrics"
 	"github.com/go-gost/gost/v3/pkg/connector"
 	"github.com/go-gost/gost/v3/pkg/listener"
 	"github.com/go-gost/gost/v3/pkg/logger"
 	md "github.com/go-gost/gost/v3/pkg/metadata"
 	"github.com/go-gost/gost/v3/pkg/registry"
+	metrics "github.com/go-gost/metrics/wrapper"
 )
 
 func init() {

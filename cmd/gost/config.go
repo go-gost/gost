@@ -8,9 +8,9 @@ import (
 	"github.com/go-gost/config"
 	"github.com/go-gost/config/parsing"
 	"github.com/go-gost/gost/v3/pkg/logger"
-	metrics "github.com/go-gost/gost/v3/pkg/metrics/service"
 	"github.com/go-gost/gost/v3/pkg/registry"
 	"github.com/go-gost/gost/v3/pkg/service"
+	metrics "github.com/go-gost/metrics/service"
 )
 
 func buildService(cfg *config.Config) (services []service.Service) {

@@ -10,10 +10,10 @@ require (
 	github.com/go-gost/config v0.0.0-20220314131548-69ef8eeb9733
 	github.com/go-gost/gosocks4 v0.0.1
 	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09
-	github.com/go-gost/x v0.0.0-20220314122750-ba23628a0e42
+	github.com/go-gost/metrics v0.0.0-20220314135054-2263ae431a5f
+	github.com/go-gost/x v0.0.0-20220314140325-7915c0401c2e
 	github.com/gobwas/glob v0.2.3
-	github.com/miekg/dns v1.1.26
-	github.com/prometheus/client_golang v1.12.1
+	github.com/miekg/dns v1.1.45
 	github.com/sirupsen/logrus v1.8.1
 	github.com/xtaci/smux v1.5.16
 	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5
@@ -60,9 +60,10 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
-	github.com/onsi/ginkgo v1.16.4 // indirect
+	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/prometheus/client_golang v1.12.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
@@ -84,12 +85,12 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.6.1 // indirect
 	github.com/xtaci/tcpraw v1.2.25 // indirect
 	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70 // indirect
-	golang.org/x/mod v0.4.2 // indirect
+	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/tools v0.1.5 // indirect
+	golang.org/x/tools v0.1.9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
+	google.golang.org/genproto v0.0.0-20220126215142-9970aeb2e350 // indirect
 	google.golang.org/grpc v1.45.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect

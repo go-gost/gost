@@ -4,9 +4,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/go-gost/gost/v3/pkg/api"
-	"github.com/go-gost/gost/v3/pkg/config"
-	"github.com/go-gost/gost/v3/pkg/config/parsing"
+	"github.com/go-gost/api"
+	"github.com/go-gost/config"
+	"github.com/go-gost/config/parsing"
 	"github.com/go-gost/gost/v3/pkg/logger"
 	metrics "github.com/go-gost/gost/v3/pkg/metrics/service"
 	"github.com/go-gost/gost/v3/pkg/registry"

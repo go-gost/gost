@@ -10,8 +10,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/go-gost/config"
 	tls_util "github.com/go-gost/gost/v3/pkg/common/util/tls"
-	"github.com/go-gost/gost/v3/pkg/config"
 )
 
 func buildDefaultTLSConfig(cfg *config.TLSConfig) {

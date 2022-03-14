@@ -8,7 +8,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/go-gost/gost/v3/pkg/config"
+	"github.com/go-gost/config"
 	"github.com/go-gost/gost/v3/pkg/logger"
 	"github.com/go-gost/gost/v3/pkg/metrics"
 )

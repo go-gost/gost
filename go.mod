@@ -11,7 +11,7 @@ require (
 	github.com/go-gost/gosocks4 v0.0.1
 	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09
 	github.com/go-gost/metrics v0.0.0-20220314135054-2263ae431a5f
-	github.com/go-gost/x v0.0.0-20220314141508-422e07f4e7b5
+	github.com/go-gost/x v0.0.0-20220315075737-506142fd0b72
 	github.com/gobwas/glob v0.2.3
 	github.com/miekg/dns v1.1.45
 	github.com/sirupsen/logrus v1.8.1
@@ -31,6 +31,7 @@ require (
 	github.com/gin-contrib/cors v1.3.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.7.7 // indirect
+	github.com/go-gost/gost v0.0.0-20220312160816-bfc1f8472cc2 // indirect
 	github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7 // indirect
 	github.com/go-gost/tls-dissector v0.0.2-0.20211125135007-2b5d5bd9c07e // indirect
 	github.com/go-playground/locales v0.13.0 // indirect

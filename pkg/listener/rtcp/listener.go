@@ -57,10 +57,10 @@ func (l *rtcpListener) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (l *rtcpListener) Accept() (conn net.Conn, md md.Metadata, err error) {
+func (l *rtcpListener) Accept() (conn net.Conn, err error) {
 	select {
 	case <-l.closed:
-		return nil, nil, net.ErrClosed
+		return nil, net.ErrClosed
 	default:
 	}
 
@@ -70,7 +70,7 @@ func (l *rtcpListener) Accept() (conn net.Conn, md md.Metadata, err error) {
 			connector.MuxBindOption(true),
 		)
 		if err != nil {
-			return nil, nil, listener.NewAcceptError(err)
+			return nil, listener.NewAcceptError(err)
 		}
 		l.ln = metrics.WrapListener(l.options.Service, l.ln)
 	}
@@ -78,7 +78,7 @@ func (l *rtcpListener) Accept() (conn net.Conn, md md.Metadata, err error) {
 	if err != nil {
 		l.ln.Close()
 		l.ln = nil
-		return nil, nil, listener.NewAcceptError(err)
+		return nil, listener.NewAcceptError(err)
 	}
 	return
 }

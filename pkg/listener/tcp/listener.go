@@ -47,9 +47,8 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (l *tcpListener) Accept() (conn net.Conn, md md.Metadata, err error) {
-	conn, err = l.ln.Accept()
-	return
+func (l *tcpListener) Accept() (conn net.Conn, err error) {
+	return l.ln.Accept()
 }
 
 func (l *tcpListener) Addr() net.Addr {

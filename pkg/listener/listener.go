@@ -14,7 +14,7 @@ var (
 // Listener is a server listener, just like a net.Listener.
 type Listener interface {
 	Init(metadata.Metadata) error
-	Accept() (net.Conn, metadata.Metadata, error)
+	Accept() (net.Conn, error)
 	Addr() net.Addr
 	Close() error
 }

@@ -71,7 +71,7 @@ func (s *service) Serve() error {
 
 	var tempDelay time.Duration
 	for {
-		conn, md, e := s.listener.Accept()
+		conn, e := s.listener.Accept()
 		if e != nil {
 			if ne, ok := e.(net.Error); ok && ne.Temporary() {
 				if tempDelay == 0 {
@@ -111,7 +111,6 @@ func (s *service) Serve() error {
 			if err := s.handler.Handle(
 				context.Background(),
 				conn,
-				handler.MetadataHandleOption(md),
 			); err != nil {
 				s.options.logger.Error(err)
 				metrics.HandlerErrors(s.name).Inc()

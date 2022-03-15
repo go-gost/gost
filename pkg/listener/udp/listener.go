@@ -60,9 +60,8 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (l *udpListener) Accept() (conn net.Conn, md md.Metadata, err error) {
-	conn, err = l.ln.Accept()
-	return
+func (l *udpListener) Accept() (conn net.Conn, err error) {
+	return l.ln.Accept()
 }
 
 func (l *udpListener) Addr() net.Addr {

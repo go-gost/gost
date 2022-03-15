@@ -8,6 +8,7 @@ import (
 	"github.com/go-gost/gost/v3/pkg/bypass"
 	"github.com/go-gost/gost/v3/pkg/chain"
 	"github.com/go-gost/gost/v3/pkg/logger"
+	"github.com/go-gost/gost/v3/pkg/metadata"
 )
 
 type Options struct {
@@ -58,6 +59,13 @@ func LoggerOption(logger logger.Logger) Option {
 }
 
 type HandleOptions struct {
+	Metadata metadata.Metadata
 }
 
 type HandleOption func(opts *HandleOptions)
+
+func MetadataHandleOption(md metadata.Metadata) HandleOption {
+	return func(opts *HandleOptions) {
+		opts.Metadata = md
+	}
+}

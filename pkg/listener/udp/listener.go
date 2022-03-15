@@ -16,7 +16,7 @@ func init() {
 }
 
 type udpListener struct {
-	net.Listener
+	ln      net.Listener
 	logger  logger.Logger
 	md      metadata
 	options listener.Options
@@ -50,7 +50,7 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 	}
 	conn = metrics.WrapPacketConn(l.options.Service, conn)
 
-	l.Listener = udp.NewListener(
+	l.ln = udp.NewListener(
 		conn,
 		laddr,
 		l.md.backlog,
@@ -58,4 +58,17 @@ func (l *udpListener) Init(md md.Metadata) (err error) {
 		l.md.ttl,
 		l.logger)
 	return
+}
+
+func (l *udpListener) Accept() (conn net.Conn, md md.Metadata, err error) {
+	conn, err = l.ln.Accept()
+	return
+}
+
+func (l *udpListener) Addr() net.Addr {
+	return l.ln.Addr()
+}
+
+func (l *udpListener) Close() error {
+	return l.ln.Close()
 }

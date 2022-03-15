@@ -17,7 +17,7 @@ func init() {
 }
 
 type tlsListener struct {
-	net.Listener
+	ln      net.Listener
 	logger  logger.Logger
 	md      metadata
 	options listener.Options
@@ -46,7 +46,20 @@ func (l *tlsListener) Init(md md.Metadata) (err error) {
 	ln = metrics.WrapListener(l.options.Service, ln)
 	ln = admission.WrapListener(l.options.Admission, ln)
 
-	l.Listener = tls.NewListener(ln, l.options.TLSConfig)
+	l.ln = tls.NewListener(ln, l.options.TLSConfig)
 
 	return
+}
+
+func (l *tlsListener) Accept() (conn net.Conn, md md.Metadata, err error) {
+	conn, err = l.ln.Accept()
+	return
+}
+
+func (l *tlsListener) Addr() net.Addr {
+	return l.ln.Addr()
+}
+
+func (l *tlsListener) Close() error {
+	return l.ln.Close()
 }

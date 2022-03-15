@@ -11,7 +11,7 @@ require (
 	github.com/go-gost/gosocks4 v0.0.1
 	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09
 	github.com/go-gost/metrics v0.0.0-20220314135054-2263ae431a5f
-	github.com/go-gost/x v0.0.0-20220314140325-7915c0401c2e
+	github.com/go-gost/x v0.0.0-20220314141508-422e07f4e7b5
 	github.com/gobwas/glob v0.2.3
 	github.com/miekg/dns v1.1.45
 	github.com/sirupsen/logrus v1.8.1

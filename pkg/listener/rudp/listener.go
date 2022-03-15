@@ -57,10 +57,10 @@ func (l *rudpListener) Init(md md.Metadata) (err error) {
 	return
 }
 
-func (l *rudpListener) Accept() (conn net.Conn, err error) {
+func (l *rudpListener) Accept() (conn net.Conn, md md.Metadata, err error) {
 	select {
 	case <-l.closed:
-		return nil, net.ErrClosed
+		return nil, nil, net.ErrClosed
 	default:
 	}
 
@@ -73,14 +73,14 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 			connector.UDPDataQueueSizeBindOption(l.md.readQueueSize),
 		)
 		if err != nil {
-			return nil, listener.NewAcceptError(err)
+			return nil, nil, listener.NewAcceptError(err)
 		}
 	}
 	conn, err = l.ln.Accept()
 	if err != nil {
 		l.ln.Close()
 		l.ln = nil
-		return nil, listener.NewAcceptError(err)
+		return nil, nil, listener.NewAcceptError(err)
 	}
 
 	if pc, ok := conn.(net.PacketConn); ok {

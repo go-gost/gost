@@ -15,7 +15,7 @@ func init() {
 }
 
 type tcpListener struct {
-	net.Listener
+	ln      net.Listener
 	logger  logger.Logger
 	md      metadata
 	options listener.Options
@@ -42,8 +42,20 @@ func (l *tcpListener) Init(md md.Metadata) (err error) {
 		return
 	}
 
-	ln = metrics.WrapListener(l.options.Service, ln)
-	l.Listener = ln
+	l.ln = metrics.WrapListener(l.options.Service, ln)
 
 	return
+}
+
+func (l *tcpListener) Accept() (conn net.Conn, md md.Metadata, err error) {
+	conn, err = l.ln.Accept()
+	return
+}
+
+func (l *tcpListener) Addr() net.Addr {
+	return l.ln.Addr()
+}
+
+func (l *tcpListener) Close() error {
+	return l.ln.Close()
 }

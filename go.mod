@@ -7,9 +7,8 @@ replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20
 require (
 	github.com/go-gost/api v0.0.0-20220316115521-ab4ad0f12488
 	github.com/go-gost/config v0.0.0-20220316114445-04016a392b1e
-	github.com/go-gost/core v0.0.0-20220316114029-7db81fcfeb66
-	github.com/go-gost/metrics v0.0.0-20220316114656-e95ab1c62ea8
-	github.com/go-gost/x v0.0.0-20220316120634-36947bcbd9f3
+	github.com/go-gost/core v0.0.0-20220316132147-6b2ccaad38a4
+	github.com/go-gost/x v0.0.0-20220316132524-2682c4d63ba5
 )
 
 require (

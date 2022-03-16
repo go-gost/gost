@@ -1,10 +1,8 @@
-module github.com/go-gost/gost/v3
+module github.com/go-gost/gost
 
 go 1.18
 
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
-
-replace github.com/go-gost/metrics => /home/gerry/code/go-gost/metrics
 
 require (
 	github.com/go-gost/api v0.0.0-20220316115521-ab4ad0f12488

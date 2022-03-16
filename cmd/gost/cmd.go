@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/go-gost/config"
-	"github.com/go-gost/gost/v3/pkg/metadata"
-	"github.com/go-gost/gost/v3/pkg/registry"
+	"github.com/go-gost/core/metadata"
+	"github.com/go-gost/core/registry"
 )
 
 var (
@@ -34,14 +34,12 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 
 	if v := os.Getenv("GOST_PROFILING"); v != "" {
 		cfg.Profiling = &config.ProfilingConfig{
-			Enable: true,
-			Addr:   v,
+			Addr: v,
 		}
 	}
 	if v := os.Getenv("GOST_METRICS"); v != "" {
 		cfg.Metrics = &config.MetricsConfig{
-			Enable: true,
-			Addr:   v,
+			Addr: v,
 		}
 	}
 

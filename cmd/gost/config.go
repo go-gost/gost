@@ -7,9 +7,9 @@ import (
 	"github.com/go-gost/api"
 	"github.com/go-gost/config"
 	"github.com/go-gost/config/parsing"
-	"github.com/go-gost/gost/v3/pkg/logger"
-	"github.com/go-gost/gost/v3/pkg/registry"
-	"github.com/go-gost/gost/v3/pkg/service"
+	"github.com/go-gost/core/logger"
+	"github.com/go-gost/core/registry"
+	"github.com/go-gost/core/service"
 	metrics "github.com/go-gost/metrics/service"
 )
 

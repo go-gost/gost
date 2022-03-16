@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-gost/config"
-	tls_util "github.com/go-gost/gost/v3/pkg/common/util/tls"
+	tls_util "github.com/go-gost/core/common/util/tls"
 )
 
 func buildDefaultTLSConfig(cfg *config.TLSConfig) {

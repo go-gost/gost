@@ -9,7 +9,7 @@ import (
 	"runtime"
 
 	"github.com/go-gost/config"
-	"github.com/go-gost/gost/v3/pkg/logger"
+	"github.com/go-gost/core/logger"
 	"github.com/go-gost/metrics"
 )
 
@@ -63,8 +63,7 @@ func main() {
 		}
 		if metricsAddr != "" {
 			cfg.Metrics = &config.MetricsConfig{
-				Enable: true,
-				Addr:   metricsAddr,
+				Addr: metricsAddr,
 			}
 		}
 	} else {
@@ -89,7 +88,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if cfg.Profiling != nil && cfg.Profiling.Enable {
+	if cfg.Profiling != nil {
 		go func() {
 			addr := cfg.Profiling.Addr
 			if addr == "" {
@@ -113,7 +112,7 @@ func main() {
 		}()
 	}
 
-	if cfg.Metrics != nil && cfg.Metrics.Enable {
+	if cfg.Metrics != nil {
 		metrics.SetGlobal(metrics.NewMetrics())
 		if cfg.Metrics.Addr != "" {
 			s, err := buildMetricsService(cfg.Metrics)

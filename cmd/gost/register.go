@@ -2,27 +2,27 @@ package main
 
 import (
 	// core components
-	_ "github.com/go-gost/gost/v3/pkg/connector/forward"
-	_ "github.com/go-gost/gost/v3/pkg/connector/http"
-	_ "github.com/go-gost/gost/v3/pkg/connector/socks/v4"
-	_ "github.com/go-gost/gost/v3/pkg/connector/socks/v5"
+	_ "github.com/go-gost/core/connector/forward"
+	_ "github.com/go-gost/core/connector/http"
+	_ "github.com/go-gost/core/connector/socks/v4"
+	_ "github.com/go-gost/core/connector/socks/v5"
 
-	_ "github.com/go-gost/gost/v3/pkg/dialer/tcp"
-	_ "github.com/go-gost/gost/v3/pkg/dialer/tls"
-	_ "github.com/go-gost/gost/v3/pkg/dialer/udp"
+	_ "github.com/go-gost/core/dialer/tcp"
+	_ "github.com/go-gost/core/dialer/tls"
+	_ "github.com/go-gost/core/dialer/udp"
 
-	_ "github.com/go-gost/gost/v3/pkg/handler/auto"
-	_ "github.com/go-gost/gost/v3/pkg/handler/forward/local"
-	_ "github.com/go-gost/gost/v3/pkg/handler/forward/remote"
-	_ "github.com/go-gost/gost/v3/pkg/handler/http"
-	_ "github.com/go-gost/gost/v3/pkg/handler/socks/v4"
-	_ "github.com/go-gost/gost/v3/pkg/handler/socks/v5"
+	_ "github.com/go-gost/core/handler/auto"
+	_ "github.com/go-gost/core/handler/forward/local"
+	_ "github.com/go-gost/core/handler/forward/remote"
+	_ "github.com/go-gost/core/handler/http"
+	_ "github.com/go-gost/core/handler/socks/v4"
+	_ "github.com/go-gost/core/handler/socks/v5"
 
-	_ "github.com/go-gost/gost/v3/pkg/listener/rtcp"
-	_ "github.com/go-gost/gost/v3/pkg/listener/rudp"
-	_ "github.com/go-gost/gost/v3/pkg/listener/tcp"
-	_ "github.com/go-gost/gost/v3/pkg/listener/tls"
-	_ "github.com/go-gost/gost/v3/pkg/listener/udp"
+	_ "github.com/go-gost/core/listener/rtcp"
+	_ "github.com/go-gost/core/listener/rudp"
+	_ "github.com/go-gost/core/listener/tcp"
+	_ "github.com/go-gost/core/listener/tls"
+	_ "github.com/go-gost/core/listener/udp"
 
 	// extended components
 	_ "github.com/go-gost/x/connector/http2"

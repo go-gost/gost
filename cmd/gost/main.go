@@ -8,9 +8,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/go-gost/config"
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/core/metrics"
+	"github.com/go-gost/x/config"
 )
 
 var (

@@ -4,13 +4,13 @@ import (
 	"io"
 	"os"
 
-	"github.com/go-gost/api"
-	"github.com/go-gost/config"
-	"github.com/go-gost/config/parsing"
 	"github.com/go-gost/core/logger"
 	metrics "github.com/go-gost/core/metrics/service"
 	"github.com/go-gost/core/registry"
 	"github.com/go-gost/core/service"
+	"github.com/go-gost/x/api"
+	"github.com/go-gost/x/config"
+	"github.com/go-gost/x/config/parsing"
 )
 
 func buildService(cfg *config.Config) (services []service.Service) {

@@ -1,283 +1,110 @@
-log:
-  output: stderr # none, stderr, stdout, /path/to/file
-  level: debug # debug, info, warn, error, fatal
-  format: json # text, json
-
 services:
-- name: http+tcp
-  addr: ":28000"
-  # bypass: bypass01
+- name: service-0
+  addr: ":8080"
+  interface: eth0
+  admission: admission-0
+  bypass: bypass-0
+  resolver: resolver-0
+  hosts: hosts-0
   handler:
     type: http
-    chain: chain01
-    metadata:
-      proxyAgent: "gost/3.0"
-      auths:
-      - user1:pass1
-      - user2:pass2
-      # probeResist: code:404 # code, web, host, file
-      # knock: example.com
+    auth:
+      username: user
+      password: pass
+    auther: auther-0
+    chain: chain-0
+    retries: 1
+    metadata: 
+      foo: bar
+      bar: baz
   listener:
     type: tcp
+    auth:
+      username: user
+      password: pass
+    auther: auther-0
+    chain: chain-0
+    tls:
+      certFile: cert.pem
+      keyFile: key.pem
+      caFile: ca.pem
     metadata:
-      keepAlive: 15s
-- name: ss
-  addr: ":28338"
-  # bypass: bypass01
-  handler:
-    type: ss
-    # chain: chain01
-    metadata:
-      method: chacha20-ietf
-      password: gost
-      readTimeout: 5s
-      udp: true
-      bufferSize: 4096
-  listener:
-    type: tcp
-    metadata:
-      keepAlive: 15s
-- name: socks5
-  addr: ":21080"
-  # bypass: bypass01
-  handler:
-    type: socks5
-    # chain: chain-ss
-    metadata:
-      auths:
-       - gost:gost
-      readTimeout: 5s
-      notls: true
-      bind: true
-      udp: true
-      # udpBufferSize: 4096 # range [512, 66560]
-  listener:
-    type: tcp
-    metadata:
-      keepAlive: 15s
-- name: socks5+tcp
-  addr: ":21081"
-  handler:
-    type: socks5
-    metadata:
-      auths:
-       - gost:gost
-      readTimeout: 5s
-      notls: true
-      # udpBufferSize: 1024
-  listener:
-    type: tcp
-    metadata:
-      keepAlive: 15s
-- name: forward
-  addr: ":10053"
+      abc: xyz
+      def: 456
   forwarder:
     targets:
-    - 192.168.8.8:53
-    - 192.168.8.1:53
-    - 1.1.1.1:53
+    - 192.168.1.1:1234
+    - 192.168.1.2:2345
     selector:
-      strategy: fifo
+      strategy: rand
       maxFails: 1
       failTimeout: 30s
-  handler:
-    type: forward
-    chain: chain-ss
-    metadata:
-      readTimeout: 5s
-  listener:
-    type: udp
-    metadata:
-      keepAlive: 15s
-
-- name: kcp-forward-tunnel
-  addr: ":8388"
-  forwarder:
-    targets:
-    - 127.0.0.1:28338
-  handler:
-    type: forward
-    metadata:
-      readTimeout: 5s
-  listener:
-    type: kcp
-    metadata:
-      keepAlive: 15s
-
-- name: rtcp
-  addr: ":28100"
-  forwarder:
-    targets:
-    - 192.168.8.8:80
-  handler:
-    type: forward
-    metadata:
-      readTimeout: 5s
-  listener:
-    type: rtcp
-    # chain: chain-socks5
-    metadata:
-      keepAlive: 15s
-      mux: true
-- name: rudp 
-  addr: ":1053"
-  forwarder:
-    targets:
-    - 192.168.8.8:53
-    - 192.168.8.1:53
-    selector:
-      strategy: round
-      maxFails: 1
-      failTimeout: 30s
-  handler:
-    type: forward
-    metadata:
-      readTimeout: 5s
-  listener:
-    type: rudp
-    chain: chain-socks5
-    metadata:
-      keepAlive: 15s
 
 chains:
-- name: chain01
-  # chain level selector
+- name: chain-0
   selector:
     strategy: round
     maxFails: 1
     failTimeout: 30s
   hops:
-  - name: hop01
-    # hop level selector
+  - name: hop-0
+    interface: 192.168.1.2
     selector:
-      strategy: round
-      maxFails: 1
-      failTimeout: 30s
+      strategy: rand
+      maxFails: 3
+      failTimeout: 60s
+    bypass: bypass-0
     nodes:
-    - name: node01
-      addr: ":8081"
-      # bypass: bypass01
-      connector:
-        type: http
-        metadata:
-          userAgent: "gost/3.0"
-          auth: user1:pass1
-      dialer:
-        type: tcp
-        metadata: {}
-    - name: node02
-      addr: ":8082"
-      # bypass: bypass01
-      connector:
-        type: http
-        metadata:
-          userAgent: "gost/3.0"
-          auth: user2:pass2
-      dialer:
-        type: tcp
-        metadata: {}
-  - name: hop02
-    # hop level selector
-    selector:
-      strategy: round
-      maxFails: 1
-      failTimeout: 30s
-    nodes:
-    - name: node03
-      addr: ":8083"
-      # bypass: bypass01
-      connector:
-        type: http
-        metadata:
-          userAgent: "gost/3.0"
-          auth: user3:pass3
-      dialer:
-        type: tcp
-        metadata: {}
-- name: chain-socks4
-  hops:
-  - name: hop01
-    nodes:
-    - name: node01
-      addr: ":8081"
-      url: "http://gost:gost@:8081"
-      # bypass: bypass01
-      connector:
-        type: socks4
-        metadata: {}
-      dialer:
-        type: tcp
-        metadata: {}
-- name: chain-socks5
-  hops:
-  - name: hop01
-    nodes:
-    - name: node01
-      addr: ":21080"
-      # bypass: bypass01
+    - name: node-0
+      addr: ":1080"
+      interface: eth1
+      bypass: bypass-0
       connector:
         type: socks5
+        auth:
+          username: user
+          password: pass
         metadata:
-          notls: true
-          auth: gost:gost
+          foo: bar
       dialer:
         type: tcp
-        metadata: {}
-- name: chain-ss
-  hops:
-  - name: hop01
-    nodes:
-    - name: node01
-      addr: ":28338"
-      url: "http://gost:gost@:8081"
-      # bypass: bypass01
-      connector:
-        type: ss
-        metadata: 
-          method: chacha20-ietf
-          password: gost
-          readTimeout: 5s
-          nodelay: true
-          udp: true
-          bufferSize: 4096
-      dialer:
-        type: tcp
-        metadata: {}
+        auth:
+          username: user
+          password: pass
+        tls:
+          caFile: "ca.pem"
+          secure: true
+          serverName: "example.com"
+        metadata:
+          bar: baz 
+
+tls:
+  certFile: "cert.pem"
+  keyFile: "key.pem"
+  caFile: "ca.pem"
+
+authers:
+- name: auther-0
+  auths:
+  - username: user1
+    password: pass1
+  - username: user2
+    password: pass2
+
+admissions:
+- name: admission-0
+  reverse: false
+  matchers:
+  - 127.0.0.1
+  - 192.168.0.0/16
 
 bypasses:
 - name: bypass-0
   reverse: false
   matchers:
-  - .baidu.com
-  - "*.example.com"       # domain wildcard
-  - .example.org        # will match example.org and *.example.org
-
-  # From IANA IPv4 Special-Purpose Address Registry
-  # http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
-  - 0.0.0.0/8           # RFC1122: "This host on this network"
-  - 10.0.0.0/8          # RFC1918: Private-Use
-  - 100.64.0.0/10       # RFC6598: Shared Address Space
-  - 127.0.0.0/8         # RFC1122: Loopback
-  - 169.254.0.0/16      # RFC3927: Link Local
-  - 172.16.0.0/12       # RFC1918: Private-Use
-  - 192.0.0.0/24        # RFC6890: IETF Protocol Assignments
-  - 192.0.2.0/24        # RFC5737: Documentation (TEST-NET-1)
-  - 192.88.99.0/24      # RFC3068: 6to4 Relay Anycast
-  - 192.168.0.0/16      # RFC1918: Private-Use
-  - 198.18.0.0/15       # RFC2544: Benchmarking
-  - 198.51.100.0/24     # RFC5737: Documentation (TEST-NET-2)
-  - 203.0.113.0/24      # RFC5737: Documentation (TEST-NET-3)
-  - 240.0.0.0/4         # RFC1112: Reserved
-  - 255.255.255.255/32  # RFC0919: Limited Broadcast
-
-  # From IANA Multicast Address Space Registry
-  # http://www.iana.org/assignments/multicast-addresses/multicast-addresses.xhtml
-  - 224.0.0.0/4         # RFC5771: Multicast/Reserved
-
-tls:
-  cert: "cert.pem"
-  key: "key.pem"
-#  ca: "root.ca"
+  - "*.example.com"
+  - .example.org
+  - 0.0.0.0/8
 
 resolvers:
 - name: resolver-0
@@ -308,6 +135,23 @@ hosts:
     - bar
     - baz
 
+log:
+  output: stderr
+  level: debug
+  format: json
+
 profiling:
   addr: ":6060"
-  enabled: true
+
+api:
+  addr: ":18080"
+  pathPrefix: /api
+  accesslog: true
+  auth:
+    username: user
+    password: pass
+  auther: auther-0
+
+metrics:
+  addr: :9000
+  path: /metrics

@@ -53,7 +53,8 @@ import (
 	// Register handlers
 	_ "github.com/go-gost/x/handler/dns"
 	_ "github.com/go-gost/x/handler/http2"
-	_ "github.com/go-gost/x/handler/redirect"
+	_ "github.com/go-gost/x/handler/redirect/tcp"
+	_ "github.com/go-gost/x/handler/redirect/udp"
 	_ "github.com/go-gost/x/handler/relay"
 	_ "github.com/go-gost/x/handler/sni"
 	_ "github.com/go-gost/x/handler/ss"
@@ -77,6 +78,7 @@ import (
 	_ "github.com/go-gost/x/listener/obfs/tls"
 	_ "github.com/go-gost/x/listener/pht"
 	_ "github.com/go-gost/x/listener/quic"
+	_ "github.com/go-gost/x/listener/redirect/tcp"
 	_ "github.com/go-gost/x/listener/redirect/udp"
 	_ "github.com/go-gost/x/listener/ssh"
 	_ "github.com/go-gost/x/listener/sshd"

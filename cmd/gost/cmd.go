@@ -158,6 +158,12 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			hopConfig.Interface = v
 			md.Del("interface")
 		}
+		if v := metadata.GetInt(md, "so_mark"); v > 0 {
+			hopConfig.SockOpts = &config.SockOptsConfig{
+				Mark: v,
+			}
+			md.Del("so_mark")
+		}
 
 		chain.Hops = append(chain.Hops, hopConfig)
 	}
@@ -353,6 +359,12 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	if v := metadata.GetString(md, "interface"); v != "" {
 		svc.Interface = v
 		md.Del("interface")
+	}
+	if v := metadata.GetInt(md, "so_mark"); v > 0 {
+		svc.SockOpts = &config.SockOptsConfig{
+			Mark: v,
+		}
+		md.Del("so_mark")
 	}
 
 	if svc.Forwarder != nil {

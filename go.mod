@@ -5,12 +5,11 @@ go 1.18
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20220329150412-47cfc087e961
-	github.com/go-gost/x v0.0.0-20220329150552-8564d711b8b0
+	github.com/go-gost/core v0.0.0-20220331130633-fc1e6e8ff2a6
+	github.com/go-gost/x v0.0.0-20220331130830-00b3d0bc7032
 )
 
 require (
-	github.com/LiamHaworth/go-tproxy v0.0.0-20190726054950-ef7efd7f24ed // indirect
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

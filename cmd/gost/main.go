@@ -131,7 +131,11 @@ func main() {
 
 	services := buildService(cfg)
 	for _, svc := range services {
-		go svc.Serve()
+		svc := svc
+		go func() {
+			svc.Serve()
+			svc.Close()
+		}()
 	}
 
 	config.SetGlobal(cfg)

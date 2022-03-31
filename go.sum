@@ -45,8 +45,6 @@ dmitri.shuralyov.com/state v0.0.0-20180228185332-28bcc343414c/go.mod h1:0PRwlb0D
 git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/LiamHaworth/go-tproxy v0.0.0-20190726054950-ef7efd7f24ed h1:eqa6queieK8SvoszxCu0WwH7lSVeL4/N/f1JwOMw1G4=
-github.com/LiamHaworth/go-tproxy v0.0.0-20190726054950-ef7efd7f24ed/go.mod h1:rA52xkgZwql9LRZXWb2arHEFP6qSR48KY2xOfWzEciQ=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da h1:KjTM2ks9d14ZYCvmHS9iAKVt9AyzRSqNU1qabPih5BY=
 github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da/go.mod h1:eHEWzANqSiWQsof+nXEI9bUVUyV6F53Fp89EuCh2EAA=
@@ -121,8 +119,8 @@ github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
-github.com/go-gost/core v0.0.0-20220329150412-47cfc087e961 h1:LEn+2WGTW60hTtfQxpVIICzGBsfZ9cUMjRdi9GuUhlo=
-github.com/go-gost/core v0.0.0-20220329150412-47cfc087e961/go.mod h1:oga1T7DJPJM+DpiQaZvTES9P9jvybRSgR/V5j+sEDpg=
+github.com/go-gost/core v0.0.0-20220331130633-fc1e6e8ff2a6 h1:KHk0dL+sRK7NlkdC7nx2vSegMLmHPfqmN1ycc29FTaw=
+github.com/go-gost/core v0.0.0-20220331130633-fc1e6e8ff2a6/go.mod h1:oga1T7DJPJM+DpiQaZvTES9P9jvybRSgR/V5j+sEDpg=
 github.com/go-gost/gosocks4 v0.0.1 h1:+k1sec8HlELuQV7rWftIkmy8UijzUt2I6t+iMPlGB2s=
 github.com/go-gost/gosocks4 v0.0.1/go.mod h1:3B6L47HbU/qugDg4JnoFPHgJXE43Inz8Bah1QaN9qCc=
 github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09 h1:A95M6UWcfZgOuJkQ7QLfG0Hs5peWIUSysCDNz4pfe04=
@@ -131,8 +129,8 @@ github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7 h1:itaaJhQJ19kUXEB
 github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
 github.com/go-gost/tls-dissector v0.0.2-0.20211125135007-2b5d5bd9c07e h1:73NGqAs22ey3wJkIYVD/ACEoovuIuOlEzQTEoqrO5+U=
 github.com/go-gost/tls-dissector v0.0.2-0.20211125135007-2b5d5bd9c07e/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
-github.com/go-gost/x v0.0.0-20220329150552-8564d711b8b0 h1:WcOeN0UsRjrVciwYPERh0knpROee9vvbrJRRsqLQn0c=
-github.com/go-gost/x v0.0.0-20220329150552-8564d711b8b0/go.mod h1:gGlqK3OtVCg1T6OSLRaeVysCnKBwug7liurnC+t+HU4=
+github.com/go-gost/x v0.0.0-20220331130830-00b3d0bc7032 h1:UDNWRkQQWMHv4Hj5MjVPMtILKrL06vXYG+tZyHZn2FM=
+github.com/go-gost/x v0.0.0-20220331130830-00b3d0bc7032/go.mod h1:leUsfOfh52v8QkEOWRLTAM4tbQaYYWIWfd9UfLB+tkg=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/log v0.1.0/go.mod h1:zbhenjAZHb184qTLMA9ZjW7ThYL0H2mk7Q6pNt4vbaY=

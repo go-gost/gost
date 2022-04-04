@@ -119,8 +119,8 @@ github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
-github.com/go-gost/core v0.0.0-20220331130633-fc1e6e8ff2a6 h1:KHk0dL+sRK7NlkdC7nx2vSegMLmHPfqmN1ycc29FTaw=
-github.com/go-gost/core v0.0.0-20220331130633-fc1e6e8ff2a6/go.mod h1:oga1T7DJPJM+DpiQaZvTES9P9jvybRSgR/V5j+sEDpg=
+github.com/go-gost/core v0.0.0-20220404042802-3cfb5fe2ca14 h1:XxaaYRfY/zXi0xOn6zeBdfKhj8h5Io3jDN4GzFETX8A=
+github.com/go-gost/core v0.0.0-20220404042802-3cfb5fe2ca14/go.mod h1:/LzdiQ+0+3FMhyqw0phjFjXFdOa1fcQR5/bL/7ripCs=
 github.com/go-gost/gosocks4 v0.0.1 h1:+k1sec8HlELuQV7rWftIkmy8UijzUt2I6t+iMPlGB2s=
 github.com/go-gost/gosocks4 v0.0.1/go.mod h1:3B6L47HbU/qugDg4JnoFPHgJXE43Inz8Bah1QaN9qCc=
 github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09 h1:A95M6UWcfZgOuJkQ7QLfG0Hs5peWIUSysCDNz4pfe04=
@@ -129,8 +129,8 @@ github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7 h1:itaaJhQJ19kUXEB
 github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
 github.com/go-gost/tls-dissector v0.0.2-0.20211125135007-2b5d5bd9c07e h1:73NGqAs22ey3wJkIYVD/ACEoovuIuOlEzQTEoqrO5+U=
 github.com/go-gost/tls-dissector v0.0.2-0.20211125135007-2b5d5bd9c07e/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
-github.com/go-gost/x v0.0.0-20220402133839-eef1b9176f59 h1:B1d3MHm5jd6+I/T86ilkSg5mEUScBJO5JcnofLmjws0=
-github.com/go-gost/x v0.0.0-20220402133839-eef1b9176f59/go.mod h1:leUsfOfh52v8QkEOWRLTAM4tbQaYYWIWfd9UfLB+tkg=
+github.com/go-gost/x v0.0.0-20220404044539-6aa1cc740156 h1:Vh48o3X5zZRT5e50wgLGr1GNnHqHV/GRVUnpMc4hrwU=
+github.com/go-gost/x v0.0.0-20220404044539-6aa1cc740156/go.mod h1:ZcHIO92IOsnu7K723MCN+aNVgwuRTgYN5pBvQku4o8s=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/log v0.1.0/go.mod h1:zbhenjAZHb184qTLMA9ZjW7ThYL0H2mk7Q6pNt4vbaY=

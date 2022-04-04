@@ -11,10 +11,12 @@ import (
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/core/metrics"
 	"github.com/go-gost/x/config"
+	"github.com/go-gost/x/config/parsing"
+	xlogger "github.com/go-gost/x/logger"
 )
 
 var (
-	log = logger.Default()
+	log logger.Logger
 
 	cfgFile      string
 	outputFormat string
@@ -43,6 +45,9 @@ func init() {
 			version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 		os.Exit(0)
 	}
+
+	log = xlogger.NewLogger()
+	logger.SetDefault(log)
 }
 
 func main() {
@@ -127,7 +132,7 @@ func main() {
 		}
 	}
 
-	buildDefaultTLSConfig(cfg.TLS)
+	parsing.BuildDefaultTLSConfig(cfg.TLS)
 
 	services := buildService(cfg)
 	for _, svc := range services {

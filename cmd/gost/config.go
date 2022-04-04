@@ -6,11 +6,12 @@ import (
 
 	"github.com/go-gost/core/logger"
 	metrics "github.com/go-gost/core/metrics/service"
-	"github.com/go-gost/core/registry"
 	"github.com/go-gost/core/service"
 	"github.com/go-gost/x/api"
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/parsing"
+	xlogger "github.com/go-gost/x/logger"
+	"github.com/go-gost/x/registry"
 )
 
 func buildService(cfg *config.Config) (services []service.Service) {
@@ -94,15 +95,15 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 	if cfg == nil {
 		cfg = &config.LogConfig{}
 	}
-	opts := []logger.LoggerOption{
-		logger.FormatLoggerOption(logger.LogFormat(cfg.Format)),
-		logger.LevelLoggerOption(logger.LogLevel(cfg.Level)),
+	opts := []xlogger.LoggerOption{
+		xlogger.FormatLoggerOption(logger.LogFormat(cfg.Format)),
+		xlogger.LevelLoggerOption(logger.LogLevel(cfg.Level)),
 	}
 
 	var out io.Writer = os.Stderr
 	switch cfg.Output {
 	case "none", "null":
-		return logger.Nop()
+		return xlogger.Nop()
 	case "stdout":
 		out = os.Stdout
 	case "stderr", "":
@@ -115,9 +116,9 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 			out = f
 		}
 	}
-	opts = append(opts, logger.OutputLoggerOption(out))
+	opts = append(opts, xlogger.OutputLoggerOption(out))
 
-	return logger.NewLogger(opts...)
+	return xlogger.NewLogger(opts...)
 }
 
 func buildAPIService(cfg *config.APIConfig) (service.Service, error) {

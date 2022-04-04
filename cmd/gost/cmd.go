@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/core/metadata"
-	"github.com/go-gost/core/registry"
 	"github.com/go-gost/x/config"
+	"github.com/go-gost/x/metadata"
+	"github.com/go-gost/x/registry"
 )
 
 var (
@@ -87,11 +87,12 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			nodes = append(nodes, nodeCfg)
 		}
 
-		md := metadata.MapMetadata(nodeConfig.Connector.Metadata)
+		mc := nodeConfig.Connector.Metadata
+		md := metadata.NewMetadata(mc)
 
 		hopConfig := &config.HopConfig{
 			Name:     fmt.Sprintf("hop-%d", i),
-			Selector: parseSelector(md),
+			Selector: parseSelector(mc),
 			Nodes:    nodes,
 		}
 
@@ -111,7 +112,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			hopConfig.Bypass = bypassCfg.Name
 			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
-			md.Del("bypass")
+			delete(mc, "bypass")
 		}
 		if v := metadata.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
@@ -130,7 +131,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			hopConfig.Resolver = resolverCfg.Name
 			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
-			md.Del("resolver")
+			delete(mc, "resolver")
 		}
 		if v := metadata.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
@@ -151,18 +152,18 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			hopConfig.Hosts = hostsCfg.Name
 			cfg.Hosts = append(cfg.Hosts, hostsCfg)
-			md.Del("hosts")
+			delete(mc, "hosts")
 		}
 
 		if v := metadata.GetString(md, "interface"); v != "" {
 			hopConfig.Interface = v
-			md.Del("interface")
+			delete(mc, "interface")
 		}
 		if v := metadata.GetInt(md, "so_mark"); v > 0 {
 			hopConfig.SockOpts = &config.SockOptsConfig{
 				Mark: v,
 			}
-			md.Del("so_mark")
+			delete(mc, "so_mark")
 		}
 
 		chain.Hops = append(chain.Hops, hopConfig)
@@ -188,10 +189,11 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		cfg.Services = append(cfg.Services, service)
 
-		md := metadata.MapMetadata(service.Handler.Metadata)
+		mh := service.Handler.Metadata
+		md := metadata.NewMetadata(mh)
 		if v := metadata.GetInt(md, "retries"); v > 0 {
 			service.Handler.Retries = v
-			md.Del("retries")
+			delete(mh, "retries")
 		}
 		if v := metadata.GetString(md, "admission"); v != "" {
 			admCfg := &config.AdmissionConfig{
@@ -209,7 +211,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			service.Admission = admCfg.Name
 			cfg.Admissions = append(cfg.Admissions, admCfg)
-			md.Del("admission")
+			delete(mh, "admission")
 		}
 		if v := metadata.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
@@ -227,7 +229,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			service.Bypass = bypassCfg.Name
 			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
-			md.Del("bypass")
+			delete(mh, "bypass")
 		}
 		if v := metadata.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
@@ -246,7 +248,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			service.Resolver = resolverCfg.Name
 			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
-			md.Del("resolver")
+			delete(mh, "resolver")
 		}
 		if v := metadata.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
@@ -267,7 +269,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			service.Hosts = hostsCfg.Name
 			cfg.Hosts = append(cfg.Hosts, hostsCfg)
-			md.Del("hosts")
+			delete(mh, "hosts")
 		}
 	}
 
@@ -324,12 +326,13 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		auth.Password, _ = url.User.Password()
 	}
 
-	md := metadata.MapMetadata{}
+	m := map[string]any{}
 	for k, v := range url.Query() {
 		if len(v) > 0 {
-			md[k] = v[0]
+			m[k] = v[0]
 		}
 	}
+	md := metadata.NewMetadata(m)
 
 	if sa := metadata.GetString(md, "auth"); sa != "" {
 		au, err := parseAuthFromCmd(sa)
@@ -338,16 +341,16 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		}
 		auth = au
 	}
-	md.Del("auth")
+	delete(m, "auth")
 
 	tlsConfig := &config.TLSConfig{
 		CertFile: metadata.GetString(md, "certFile"),
 		KeyFile:  metadata.GetString(md, "keyFile"),
 		CAFile:   metadata.GetString(md, "caFile"),
 	}
-	md.Del("certFile")
-	md.Del("keyFile")
-	md.Del("caFile")
+	delete(m, "certFile")
+	delete(m, "keyFile")
+	delete(m, "caFile")
 
 	if tlsConfig.CertFile == "" {
 		tlsConfig = nil
@@ -358,28 +361,28 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	}
 	if v := metadata.GetString(md, "interface"); v != "" {
 		svc.Interface = v
-		md.Del("interface")
+		delete(m, "interface")
 	}
 	if v := metadata.GetInt(md, "so_mark"); v > 0 {
 		svc.SockOpts = &config.SockOptsConfig{
 			Mark: v,
 		}
-		md.Del("so_mark")
+		delete(m, "so_mark")
 	}
 
 	if svc.Forwarder != nil {
-		svc.Forwarder.Selector = parseSelector(md)
+		svc.Forwarder.Selector = parseSelector(m)
 	}
 
 	svc.Handler = &config.HandlerConfig{
 		Type:     handler,
 		Auth:     auth,
-		Metadata: md,
+		Metadata: m,
 	}
 	svc.Listener = &config.ListenerConfig{
 		Type:     listener,
 		TLS:      tlsConfig,
-		Metadata: md,
+		Metadata: m,
 	}
 
 	if svc.Handler.Type == "sshd" {
@@ -426,12 +429,13 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		auth.Password, _ = url.User.Password()
 	}
 
-	md := metadata.MapMetadata{}
+	m := map[string]any{}
 	for k, v := range url.Query() {
 		if len(v) > 0 {
-			md[k] = v[0]
+			m[k] = v[0]
 		}
 	}
+	md := metadata.NewMetadata(m)
 
 	if sauth := metadata.GetString(md, "auth"); sauth != "" && auth == nil {
 		au, err := parseAuthFromCmd(sauth)
@@ -440,7 +444,7 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		}
 		auth = au
 	}
-	md.Del("auth")
+	delete(m, "auth")
 
 	tlsConfig := &config.TLSConfig{
 		CertFile:   metadata.GetString(md, "certFile"),
@@ -452,11 +456,11 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	if tlsConfig.ServerName == "" {
 		tlsConfig.ServerName = url.Hostname()
 	}
-	md.Del("certFile")
-	md.Del("keyFile")
-	md.Del("caFile")
-	md.Del("secure")
-	md.Del("serverName")
+	delete(m, "certFile")
+	delete(m, "keyFile")
+	delete(m, "caFile")
+	delete(m, "secure")
+	delete(m, "serverName")
 
 	if !tlsConfig.Secure && tlsConfig.CertFile == "" && tlsConfig.CAFile == "" {
 		tlsConfig = nil
@@ -465,12 +469,12 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	node.Connector = &config.ConnectorConfig{
 		Type:     connector,
 		Auth:     auth,
-		Metadata: md,
+		Metadata: m,
 	}
 	node.Dialer = &config.DialerConfig{
 		Type:     dialer,
 		TLS:      tlsConfig,
-		Metadata: md,
+		Metadata: m,
 	}
 
 	if node.Connector.Type == "sshd" {
@@ -523,7 +527,8 @@ func parseAuthFromCmd(sa string) (*config.AuthConfig, error) {
 	}, nil
 }
 
-func parseSelector(md metadata.MapMetadata) *config.SelectorConfig {
+func parseSelector(m map[string]any) *config.SelectorConfig {
+	md := metadata.NewMetadata(m)
 	strategy := metadata.GetString(md, "strategy")
 	maxFails := metadata.GetInt(md, "maxFails")
 	failTimeout := metadata.GetDuration(md, "failTimeout")
@@ -540,9 +545,9 @@ func parseSelector(md metadata.MapMetadata) *config.SelectorConfig {
 		failTimeout = time.Second
 	}
 
-	md.Del("strategy")
-	md.Del("maxFails")
-	md.Del("failTimeout")
+	delete(m, "strategy")
+	delete(m, "maxFails")
+	delete(m, "failTimeout")
 
 	return &config.SelectorConfig{
 		Strategy:    strategy,

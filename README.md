@@ -50,11 +50,3 @@ docker pull gogost/gost
 ### Shadowsocks Android插件
 
 [xausky/ShadowsocksGostPlugin](https://github.com/xausky/ShadowsocksGostPlugin)
-
-## 问题建议
-
-提交Issue: [https://github.com/go-gost/gost/issues](https://github.com/go-gost/gost/issues)
-
-Telegram讨论群: [https://t.me/gogost](https://t.me/gogost)
-
-Google讨论组: [https://groups.google.com/d/forum/go-gost](https://groups.google.com/d/forum/go-gost)

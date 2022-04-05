@@ -5,12 +5,12 @@ import (
 	"os"
 
 	"github.com/go-gost/core/logger"
-	metrics "github.com/go-gost/core/metrics/service"
 	"github.com/go-gost/core/service"
 	"github.com/go-gost/x/api"
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/parsing"
 	xlogger "github.com/go-gost/x/logger"
+	metrics "github.com/go-gost/x/metrics/service"
 	"github.com/go-gost/x/registry"
 )
 

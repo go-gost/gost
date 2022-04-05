@@ -13,6 +13,7 @@ import (
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/parsing"
 	xlogger "github.com/go-gost/x/logger"
+	xmetrics "github.com/go-gost/x/metrics"
 )
 
 var (
@@ -118,7 +119,7 @@ func main() {
 	}
 
 	if cfg.Metrics != nil {
-		metrics.SetGlobal(metrics.NewMetrics())
+		metrics.SetGlobal(xmetrics.NewMetrics())
 		if cfg.Metrics.Addr != "" {
 			s, err := buildMetricsService(cfg.Metrics)
 			if err != nil {

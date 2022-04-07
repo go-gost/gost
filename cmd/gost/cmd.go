@@ -385,10 +385,8 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		Metadata: m,
 	}
 
-	if svc.Handler.Type == "sshd" {
+	if svc.Listener.Type == "ssh" || svc.Listener.Type == "sshd" {
 		svc.Handler.Auth = nil
-	}
-	if svc.Listener.Type == "sshd" {
 		svc.Listener.Auth = auth
 	}
 
@@ -477,10 +475,8 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		Metadata: m,
 	}
 
-	if node.Connector.Type == "sshd" {
+	if node.Dialer.Type == "ssh" || node.Dialer.Type == "sshd" {
 		node.Connector.Auth = nil
-	}
-	if node.Dialer.Type == "sshd" {
 		node.Dialer.Auth = auth
 	}
 

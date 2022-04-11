@@ -62,6 +62,13 @@ func buildService(cfg *config.Config) (services []service.Service) {
 			}
 		}
 	}
+	for _, recorderCfg := range cfg.Recorders {
+		if h := parsing.ParseRecorder(recorderCfg); h != nil {
+			if err := registry.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 
 	for _, chainCfg := range cfg.Chains {
 		c, err := parsing.ParseChain(chainCfg)

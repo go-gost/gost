@@ -6,7 +6,7 @@ replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20
 
 require (
 	github.com/go-gost/core v0.0.0-20220411145302-03988fee0b9a
-	github.com/go-gost/x v0.0.0-20220412142521-b0859bcebfa6
+	github.com/go-gost/x v0.0.0-20220413133030-65b44b07907f
 )
 
 require (

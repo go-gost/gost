@@ -2,6 +2,8 @@
 
 ### GO语言实现的安全隧道
 
+[English README](README_en.md)
+
 ## 功能特性
 
 - [x] 多端口监听
@@ -12,7 +14,8 @@
 - [x] DNS解析和代理
 - [x] TUN/TAP设备
 - [x] 负载均衡
-- [x] 路由控制
+- [x] 流量控制
+- [x] 准入控制
 - [x] 动态配置
 - [x] Prometheus监控指标
 - [x] Web API

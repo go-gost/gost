@@ -62,9 +62,18 @@ func buildService(cfg *config.Config) (services []service.Service) {
 			}
 		}
 	}
+
 	for _, recorderCfg := range cfg.Recorders {
 		if h := parsing.ParseRecorder(recorderCfg); h != nil {
 			if err := registry.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, rlimiterCfg := range cfg.Limiters {
+		if h := parsing.ParseRateLimiter(rlimiterCfg); h != nil {
+			if err := registry.RateLimiterRegistry().Register(rlimiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}

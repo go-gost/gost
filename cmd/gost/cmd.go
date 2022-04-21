@@ -273,6 +273,22 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			cfg.Hosts = append(cfg.Hosts, hostsCfg)
 			delete(mh, "hosts")
 		}
+
+		input := metadata.GetString(md, "limiter.input")
+		output := metadata.GetString(md, "limiter.output")
+		if input != "" || output != "" {
+			limiter := &config.LimiterConfig{
+				Name: fmt.Sprintf("limiter-%d", len(cfg.Limiters)),
+				RateLimit: &config.RateLimitConfig{
+					Input:  input,
+					Output: output,
+				},
+			}
+			service.Limiter = limiter.Name
+			cfg.Limiters = append(cfg.Limiters, limiter)
+			delete(mh, "limiter.input")
+			delete(mh, "limiter.output")
+		}
 	}
 
 	return cfg, nil

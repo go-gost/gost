@@ -5,14 +5,14 @@
 ## Features
 
 - [x] Listening on multiple ports
-- [x] Multi-level forward chain.
+- [x] Multi-level forwarding chain.
 - [x] Rich protocol
 - [x] TCP/UDP port forwarding
 - [x] TCP/UDP transparent proxy
 - [x] DNS resolver and proxy
 - [x] TUN/TAP device
 - [x] Load balancing
-- [x] Traffic control
+- [x] Routing control
 - [x] Admission control
 - [x] Dynamic configuration
 - [x] Prometheus metrics

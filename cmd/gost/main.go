@@ -56,6 +56,9 @@ func main() {
 	var err error
 	if len(services) > 0 || apiAddr != "" {
 		cfg, err = buildConfigFromCmd(services, nodes)
+		if err != nil {
+			log.Fatal(err)
+		}
 		if debug && cfg != nil {
 			if cfg.Log == nil {
 				cfg.Log = &config.LogConfig{}
@@ -78,9 +81,9 @@ func main() {
 		} else {
 			err = cfg.Load()
 		}
-	}
-	if err != nil {
-		log.Fatal(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	log = logFromConfig(cfg.Log)

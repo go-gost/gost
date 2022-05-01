@@ -6,7 +6,7 @@ replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20
 
 require (
 	github.com/go-gost/core v0.0.0-20220413143512-acee88323487
-	github.com/go-gost/x v0.0.0-20220421152452-5f3e4177a196
+	github.com/go-gost/x v0.0.0-20220501125445-59db7898d8f9
 )
 
 require (
@@ -18,7 +18,7 @@ require (
 	github.com/coreos/go-iptables v0.5.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/docker/libcontainer v2.2.1+incompatible // indirect
-	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/fsnotify/fsnotify v1.5.2 // indirect
 	github.com/gin-contrib/cors v1.3.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.7.7 // indirect
@@ -41,12 +41,12 @@ require (
 	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/klauspost/reedsolomon v1.9.9 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/lucas-clemente/quic-go v0.25.0 // indirect
+	github.com/lucas-clemente/quic-go v0.27.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/marten-seemann/qpack v0.2.1 // indirect
-	github.com/marten-seemann/qtls-go1-16 v0.1.4 // indirect
-	github.com/marten-seemann/qtls-go1-17 v0.1.0 // indirect
-	github.com/marten-seemann/qtls-go1-18 v0.1.0-beta.1 // indirect
+	github.com/marten-seemann/qtls-go1-16 v0.1.5 // indirect
+	github.com/marten-seemann/qtls-go1-17 v0.1.1 // indirect
+	github.com/marten-seemann/qtls-go1-18 v0.1.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/miekg/dns v1.1.47 // indirect
@@ -82,13 +82,13 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.6.1 // indirect
 	github.com/xtaci/smux v1.5.16 // indirect
 	github.com/xtaci/tcpraw v1.2.25 // indirect
-	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20220315194320-039c03cc5b86 // indirect
+	golang.org/x/net v0.0.0-20220420153159-1850ba15e1be // indirect
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.10 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	google.golang.org/genproto v0.0.0-20220126215142-9970aeb2e350 // indirect
 	google.golang.org/grpc v1.45.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect

@@ -242,7 +242,8 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				resolverCfg.Nameservers = append(
 					resolverCfg.Nameservers,
 					&config.NameserverConfig{
-						Addr: rs,
+						Addr:   rs,
+						Prefer: metadata.GetString(md, "prefer"),
 					},
 				)
 			}

@@ -19,7 +19,7 @@
 - [x] Web API
 - [ ] Web UI
 
-Wiki: [https://latest.gost.run](https://latest.gost.run/en/)
+Wiki: [https://gost.run](https://gost.run/en/)
 
 Telegram: [https://t.me/gogost](https://t.me/gogost)
 

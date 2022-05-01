@@ -21,7 +21,7 @@
 - [x] Web API
 - [ ] Web UI
 
-Wiki站点：[https://latest.gost.run](https://latest.gost.run)
+Wiki站点：[https://gost.run](https://gost.run)
 
 Telegram讨论群：[https://t.me/gogost](https://t.me/gogost)
 

@@ -29,7 +29,7 @@ func (l *stringList) Set(value string) error {
 	return nil
 }
 
-func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
+func buildConfigFromCmd(wid int, services, nodes stringList) (*config.Config, error) {
 	cfg := &config.Config{}
 
 	if v := os.Getenv("GOST_PROFILING"); v != "" {
@@ -58,7 +58,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 	var chain *config.ChainConfig
 	if len(nodes) > 0 {
 		chain = &config.ChainConfig{
-			Name: "chain-0",
+			Name: fmt.Sprintf("go-%d@chain-0", wid),
 		}
 		cfg.Chains = append(cfg.Chains, chain)
 	}
@@ -73,7 +73,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		nodeConfig.Name = "node-0"
+		nodeConfig.Name = fmt.Sprintf("go-%d@node-0", wid)
 
 		var nodes []*config.NodeConfig
 		for _, host := range strings.Split(nodeConfig.Addr, ",") {
@@ -82,7 +82,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			nodeCfg := &config.NodeConfig{}
 			*nodeCfg = *nodeConfig
-			nodeCfg.Name = fmt.Sprintf("node-%d", len(nodes))
+			nodeCfg.Name = fmt.Sprintf("go-%d@node-%d", wid, len(nodes))
 			nodeCfg.Addr = host
 			nodes = append(nodes, nodeCfg)
 		}
@@ -91,14 +91,14 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		md := metadata.NewMetadata(mc)
 
 		hopConfig := &config.HopConfig{
-			Name:     fmt.Sprintf("hop-%d", i),
+			Name:     fmt.Sprintf("go-%d@hop-%d", wid, i),
 			Selector: parseSelector(mc),
 			Nodes:    nodes,
 		}
 
 		if v := metadata.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
-				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
+				Name: fmt.Sprintf("go-%d@bypass-%d", wid, len(cfg.Bypasses)),
 			}
 			if v[0] == '~' {
 				bypassCfg.Reverse = true
@@ -116,7 +116,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := metadata.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
-				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
+				Name: fmt.Sprintf("go-%d@resolver-%d", wid, len(cfg.Resolvers)),
 			}
 			for _, rs := range strings.Split(v, ",") {
 				if rs == "" {
@@ -135,7 +135,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := metadata.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
-				Name: fmt.Sprintf("hosts-%d", len(cfg.Hosts)),
+				Name: fmt.Sprintf("go-%d@hosts-%d", wid, len(cfg.Hosts)),
 			}
 			for _, s := range strings.Split(v, ",") {
 				ss := strings.SplitN(s, ":", 2)
@@ -179,7 +179,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		service.Name = fmt.Sprintf("service-%d", i)
+		service.Name = fmt.Sprintf("go-%d@service-%d", wid, i)
 		if chain != nil {
 			if service.Listener.Type == "rtcp" || service.Listener.Type == "rudp" {
 				service.Listener.Chain = chain.Name
@@ -197,7 +197,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := metadata.GetString(md, "admission"); v != "" {
 			admCfg := &config.AdmissionConfig{
-				Name: fmt.Sprintf("admission-%d", len(cfg.Admissions)),
+				Name: fmt.Sprintf("go-%d@admission-%d", wid, len(cfg.Admissions)),
 			}
 			if v[0] == '~' {
 				admCfg.Reverse = true
@@ -215,7 +215,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := metadata.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
-				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
+				Name: fmt.Sprintf("go-%d@bypass-%d", wid, len(cfg.Bypasses)),
 			}
 			if v[0] == '~' {
 				bypassCfg.Reverse = true
@@ -233,7 +233,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := metadata.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
-				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
+				Name: fmt.Sprintf("go-%d@resolver-%d", wid, len(cfg.Resolvers)),
 			}
 			for _, rs := range strings.Split(v, ",") {
 				if rs == "" {
@@ -253,7 +253,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := metadata.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
-				Name: fmt.Sprintf("hosts-%d", len(cfg.Hosts)),
+				Name: fmt.Sprintf("go-%d@hosts-%d", wid, len(cfg.Hosts)),
 			}
 			for _, s := range strings.Split(v, ",") {
 				ss := strings.SplitN(s, ":", 2)

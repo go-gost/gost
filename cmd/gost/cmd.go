@@ -34,6 +34,7 @@ func (l *stringList) Set(value string) error {
 }
 
 func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
+	namePrefix := ""
 	cfg := &config.Config{}
 
 	if v := os.Getenv("GOST_PROFILING"); v != "" {
@@ -59,10 +60,14 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 	}
 
+	if v := os.Getenv("_GOST_ID"); v != "" {
+		namePrefix = fmt.Sprintf("go-%s@", v)
+	}
+
 	var chain *config.ChainConfig
 	if len(nodes) > 0 {
 		chain = &config.ChainConfig{
-			Name: "chain-0",
+			Name: fmt.Sprintf("%schain-0", namePrefix),
 		}
 		cfg.Chains = append(cfg.Chains, chain)
 	}
@@ -77,7 +82,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		nodeConfig.Name = "node-0"
+		nodeConfig.Name = fmt.Sprintf("%snode-0", namePrefix)
 
 		var nodes []*config.NodeConfig
 		for _, host := range strings.Split(nodeConfig.Addr, ",") {
@@ -86,7 +91,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			nodeCfg := &config.NodeConfig{}
 			*nodeCfg = *nodeConfig
-			nodeCfg.Name = fmt.Sprintf("node-%d", len(nodes))
+			nodeCfg.Name = fmt.Sprintf("%snode-%d", namePrefix, len(nodes))
 			nodeCfg.Addr = host
 			nodes = append(nodes, nodeCfg)
 		}
@@ -95,14 +100,14 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		md := mdx.NewMetadata(mc)
 
 		hopConfig := &config.HopConfig{
-			Name:     fmt.Sprintf("hop-%d", i),
+			Name:     fmt.Sprintf("%shop-%d", namePrefix, i),
 			Selector: parseSelector(mc),
 			Nodes:    nodes,
 		}
 
 		if v := mdutil.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
-				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
+				Name: fmt.Sprintf("%sbypass-%d", namePrefix, len(cfg.Bypasses)),
 			}
 			if v[0] == '~' {
 				bypassCfg.Whitelist = true
@@ -120,7 +125,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := mdutil.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
-				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
+				Name: fmt.Sprintf("%sresolver-%d", namePrefix, len(cfg.Resolvers)),
 			}
 			for _, rs := range strings.Split(v, ",") {
 				if rs == "" {
@@ -139,7 +144,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := mdutil.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
-				Name: fmt.Sprintf("hosts-%d", len(cfg.Hosts)),
+				Name: fmt.Sprintf("%shosts-%d", namePrefix, len(cfg.Hosts)),
 			}
 			for _, s := range strings.Split(v, ",") {
 				ss := strings.SplitN(s, ":", 2)
@@ -183,7 +188,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		service.Name = fmt.Sprintf("service-%d", i)
+		service.Name = fmt.Sprintf("%sservice-%d", namePrefix, i)
 		if chain != nil {
 			if service.Listener.Type == "rtcp" || service.Listener.Type == "rudp" {
 				service.Listener.Chain = chain.Name
@@ -201,7 +206,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := mdutil.GetString(md, "admission"); v != "" {
 			admCfg := &config.AdmissionConfig{
-				Name: fmt.Sprintf("admission-%d", len(cfg.Admissions)),
+				Name: fmt.Sprintf("%sadmission-%d", namePrefix, len(cfg.Admissions)),
 			}
 			if v[0] == '~' {
 				admCfg.Whitelist = true
@@ -219,7 +224,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := mdutil.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
-				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
+				Name: fmt.Sprintf("%sbypass-%d", namePrefix, len(cfg.Bypasses)),
 			}
 			if v[0] == '~' {
 				bypassCfg.Whitelist = true
@@ -237,7 +242,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := mdutil.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
-				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
+				Name: fmt.Sprintf("%sresolver-%d", namePrefix, len(cfg.Resolvers)),
 			}
 			for _, rs := range strings.Split(v, ",") {
 				if rs == "" {
@@ -257,7 +262,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 		if v := mdutil.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
-				Name: fmt.Sprintf("hosts-%d", len(cfg.Hosts)),
+				Name: fmt.Sprintf("%shosts-%d", namePrefix, len(cfg.Hosts)),
 			}
 			for _, s := range strings.Split(v, ",") {
 				ss := strings.SplitN(s, ":", 2)
@@ -283,7 +288,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		cout := mdutil.GetString(md, "limiter.conn.out")
 		if in != "" || cin != "" {
 			limiter := &config.LimiterConfig{
-				Name: fmt.Sprintf("limiter-%d", len(cfg.Limiters)),
+				Name: fmt.Sprintf("%slimiter-%d", namePrefix, len(cfg.Limiters)),
 			}
 			if in != "" {
 				limiter.Limits = append(limiter.Limits,
@@ -303,7 +308,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 
 		if climit := mdutil.GetInt(md, "climiter"); climit > 0 {
 			limiter := &config.LimiterConfig{
-				Name:   fmt.Sprintf("climiter-%d", len(cfg.CLimiters)),
+				Name:   fmt.Sprintf("%sclimiter-%d", namePrefix, len(cfg.CLimiters)),
 				Limits: []string{fmt.Sprintf("%s %d", conn.GlobalLimitKey, climit)},
 			}
 			service.CLimiter = limiter.Name
@@ -313,7 +318,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 
 		if rlimit := mdutil.GetFloat(md, "rlimiter"); rlimit > 0 {
 			limiter := &config.LimiterConfig{
-				Name:   fmt.Sprintf("rlimiter-%d", len(cfg.RLimiters)),
+				Name:   fmt.Sprintf("%srlimiter-%d", namePrefix, len(cfg.RLimiters)),
 				Limits: []string{fmt.Sprintf("%s %s", conn.GlobalLimitKey, strconv.FormatFloat(rlimit, 'f', -1, 64))},
 			}
 			service.RLimiter = limiter.Name
@@ -326,6 +331,11 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 }
 
 func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
+	namePrefix := ""
+	if v := os.Getenv("_GOST_ID"); v != "" {
+		namePrefix = fmt.Sprintf("go-%s@", v)
+	}
+
 	var handler, listener string
 	schemes := strings.Split(url.Scheme, "+")
 	if len(schemes) == 1 {
@@ -359,7 +369,7 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		for i, addr := range strings.Split(remotes, ",") {
 			svc.Forwarder.Nodes = append(svc.Forwarder.Nodes,
 				&config.ForwardNodeConfig{
-					Name: fmt.Sprintf("target-%d", i),
+					Name: fmt.Sprintf("%starget-%d", namePrefix, i),
 					Addr: addr,
 				})
 		}

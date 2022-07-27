@@ -349,9 +349,22 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		KeyFile:  metadata.GetString(md, "keyFile"),
 		CAFile:   metadata.GetString(md, "caFile"),
 	}
+	if tlsConfig.CertFile == "" {
+		tlsConfig.CertFile = metadata.GetString(md, "cert")
+	}
+	if tlsConfig.KeyFile == "" {
+		tlsConfig.KeyFile = metadata.GetString(md, "key")
+	}
+	if tlsConfig.CAFile == "" {
+		tlsConfig.CAFile = metadata.GetString(md, "ca")
+	}
+
 	delete(m, "certFile")
+	delete(m, "cert")
 	delete(m, "keyFile")
+	delete(m, "key")
 	delete(m, "caFile")
+	delete(m, "ca")
 
 	if tlsConfig.CertFile == "" {
 		tlsConfig = nil
@@ -455,9 +468,22 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	if tlsConfig.ServerName == "" {
 		tlsConfig.ServerName = url.Hostname()
 	}
+	if tlsConfig.CertFile == "" {
+		tlsConfig.CertFile = metadata.GetString(md, "cert")
+	}
+	if tlsConfig.KeyFile == "" {
+		tlsConfig.KeyFile = metadata.GetString(md, "key")
+	}
+	if tlsConfig.CAFile == "" {
+		tlsConfig.CAFile = metadata.GetString(md, "ca")
+	}
+
 	delete(m, "certFile")
+	delete(m, "cert")
 	delete(m, "keyFile")
+	delete(m, "key")
 	delete(m, "caFile")
+	delete(m, "ca")
 	delete(m, "secure")
 	delete(m, "serverName")
 
@@ -528,7 +554,13 @@ func parseSelector(m map[string]any) *config.SelectorConfig {
 	md := metadata.NewMetadata(m)
 	strategy := metadata.GetString(md, "strategy")
 	maxFails := metadata.GetInt(md, "maxFails")
+	if maxFails == 0 {
+		maxFails = metadata.GetInt(md, "max_fails")
+	}
 	failTimeout := metadata.GetDuration(md, "failTimeout")
+	if failTimeout == 0 {
+		failTimeout = metadata.GetDuration(md, "fail_timeout")
+	}
 	if strategy == "" && maxFails <= 0 && failTimeout <= 0 {
 		return nil
 	}
@@ -539,12 +571,14 @@ func parseSelector(m map[string]any) *config.SelectorConfig {
 		maxFails = 1
 	}
 	if failTimeout <= 0 {
-		failTimeout = time.Second
+		failTimeout = 30 * time.Second
 	}
 
 	delete(m, "strategy")
 	delete(m, "maxFails")
+	delete(m, "max_fails")
 	delete(m, "failTimeout")
+	delete(m, "fail_timeout")
 
 	return &config.SelectorConfig{
 		Strategy:    strategy,

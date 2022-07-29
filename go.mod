@@ -5,8 +5,8 @@ go 1.18
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20220413143512-acee88323487
-	github.com/go-gost/x v0.0.0-20220727100122-818463260f78
+	github.com/go-gost/core v0.0.0-20220729131801-513eefe03499
+	github.com/go-gost/x v0.0.0-20220729131941-90453838a1f0
 )
 
 require (

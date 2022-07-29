@@ -122,7 +122,7 @@ func main() {
 	}
 
 	if cfg.Metrics != nil {
-		metrics.SetGlobal(xmetrics.NewMetrics())
+		metrics.Init(xmetrics.NewMetrics())
 		if cfg.Metrics.Addr != "" {
 			s, err := buildMetricsService(cfg.Metrics)
 			if err != nil {

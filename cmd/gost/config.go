@@ -118,7 +118,7 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 	default:
 		f, err := os.OpenFile(cfg.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
-			log.Warnf("log", err)
+			log.Warn(err)
 		} else {
 			out = f
 		}

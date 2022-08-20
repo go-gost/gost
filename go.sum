@@ -129,10 +129,6 @@ github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7 h1:itaaJhQJ19kUXEB
 github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 h1:xj8gUZGYO3nb5+6Bjw9+tsFkA9sYynrOvDvvC4uDV2I=
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
-github.com/go-gost/x v0.0.0-20220818065013-4c1da3e4d43d h1:KZHGH8nMibtsdcG/oQ2miGmNCaSx8jU+l/uLchQmygc=
-github.com/go-gost/x v0.0.0-20220818065013-4c1da3e4d43d/go.mod h1:IUjkVLCDRO3wx80j05GEoMp3PaK90sYu0Mfu63xA94s=
-github.com/go-gost/x v0.0.0-20220819142640-8098e9f976e8 h1:EOp59PHkSRDfbKTzR9kutUSMmmDaQkwN4/ngVhGlkRM=
-github.com/go-gost/x v0.0.0-20220819142640-8098e9f976e8/go.mod h1:IUjkVLCDRO3wx80j05GEoMp3PaK90sYu0Mfu63xA94s=
 github.com/go-gost/x v0.0.0-20220820121146-84b18fbd04b6 h1:amoHUkGzI2AE4ncSru+ZHv+ViAhNPzgdC9PPAws6xnE=
 github.com/go-gost/x v0.0.0-20220820121146-84b18fbd04b6/go.mod h1:daz3u2czbriIqxD3OHwvfWQfLIm6v0eqS8nZOekNd4g=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
@@ -748,6 +744,10 @@ golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f h1:uF6paiQQebLeSXkrTqHqz0MXhXXS1KgF41eUdBNvxK0=
+golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224 h1:Ug9qvr1myri/zFN6xL17LSCBGFDnphBBhzmILHsM5TY=
+golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224/go.mod h1:deeaetjYA+DHMHg+sMSMI58GrEteJUUzzw7en6TJQcI=
+golang.zx2c4.com/wireguard v0.0.0-20220703234212-c31a7b1ab478 h1:vDy//hdR+GnROE3OdYbQKt9rdtNdHkDtONvpRwmls/0=
+golang.zx2c4.com/wireguard v0.0.0-20220703234212-c31a7b1ab478/go.mod h1:bVQfyl2sCM/QIIGHpWbFGfHPuDvqnCNkT6MQLTCjO/U=
 google.golang.org/api v0.0.0-20180910000450-7ca32eb868bf/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
 google.golang.org/api v0.0.0-20181030000543-1d582fd0359e/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
 google.golang.org/api v0.1.0/go.mod h1:UGEZY7KEX120AnNLIHFMKIo4obdJhkp2tPbaPlQx13Y=

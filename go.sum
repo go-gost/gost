@@ -133,6 +133,8 @@ github.com/go-gost/x v0.0.0-20220818065013-4c1da3e4d43d h1:KZHGH8nMibtsdcG/oQ2mi
 github.com/go-gost/x v0.0.0-20220818065013-4c1da3e4d43d/go.mod h1:IUjkVLCDRO3wx80j05GEoMp3PaK90sYu0Mfu63xA94s=
 github.com/go-gost/x v0.0.0-20220819142640-8098e9f976e8 h1:EOp59PHkSRDfbKTzR9kutUSMmmDaQkwN4/ngVhGlkRM=
 github.com/go-gost/x v0.0.0-20220819142640-8098e9f976e8/go.mod h1:IUjkVLCDRO3wx80j05GEoMp3PaK90sYu0Mfu63xA94s=
+github.com/go-gost/x v0.0.0-20220820121146-84b18fbd04b6 h1:amoHUkGzI2AE4ncSru+ZHv+ViAhNPzgdC9PPAws6xnE=
+github.com/go-gost/x v0.0.0-20220820121146-84b18fbd04b6/go.mod h1:daz3u2czbriIqxD3OHwvfWQfLIm6v0eqS8nZOekNd4g=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/log v0.1.0/go.mod h1:zbhenjAZHb184qTLMA9ZjW7ThYL0H2mk7Q6pNt4vbaY=

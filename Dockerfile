@@ -18,6 +18,9 @@ RUN cd cmd/gost && go env && go build
 
 FROM alpine:latest
 
+# add iptables for tun/tap
+RUN apk add --no-cache iptables
+
 WORKDIR /bin/
 
 COPY --from=builder /src/cmd/gost/gost .

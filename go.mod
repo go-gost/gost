@@ -6,7 +6,7 @@ replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20
 
 require (
 	github.com/go-gost/core v0.0.0-20220818022848-2cc1d6f52c41
-	github.com/go-gost/x v0.0.0-20220820121146-84b18fbd04b6
+	github.com/go-gost/x v0.0.0-20220821055452-ca414f655dbb
 )
 
 require (
@@ -78,6 +78,8 @@ require (
 	github.com/templexxx/xorsimd v0.4.1 // indirect
 	github.com/tjfoc/gmsm v1.3.2 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
+	github.com/vishvananda/netlink v1.1.0 // indirect
+	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.1 // indirect
 	github.com/xtaci/smux v1.5.16 // indirect
 	github.com/xtaci/tcpraw v1.2.25 // indirect

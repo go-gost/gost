@@ -101,7 +101,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
 			}
 			if v[0] == '~' {
-				bypassCfg.Reverse = true
+				bypassCfg.Whitelist = true
 				v = v[1:]
 			}
 			for _, s := range strings.Split(v, ",") {
@@ -200,7 +200,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				Name: fmt.Sprintf("admission-%d", len(cfg.Admissions)),
 			}
 			if v[0] == '~' {
-				admCfg.Reverse = true
+				admCfg.Whitelist = true
 				v = v[1:]
 			}
 			for _, s := range strings.Split(v, ",") {
@@ -218,7 +218,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
 			}
 			if v[0] == '~' {
-				bypassCfg.Reverse = true
+				bypassCfg.Whitelist = true
 				v = v[1:]
 			}
 			for _, s := range strings.Split(v, ",") {

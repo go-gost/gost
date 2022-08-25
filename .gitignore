@@ -35,3 +35,4 @@ cmd/gost/gost
 snap
 
 *.pem
+*.yaml

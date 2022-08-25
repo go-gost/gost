@@ -5,8 +5,8 @@ go 1.18
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20220823134627-ff51aef51873
-	github.com/go-gost/x v0.0.0-20220823134949-bdd239fb09e4
+	github.com/go-gost/core v0.0.0-20220825133341-04b4a79b80c2
+	github.com/go-gost/x v0.0.0-20220825133537-d043ad94e71b
 )
 
 require (
@@ -49,7 +49,7 @@ require (
 	github.com/marten-seemann/qtls-go1-19 v0.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
-	github.com/miekg/dns v1.1.47 // indirect
+	github.com/miekg/dns v1.1.50 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/mmcloughlin/avo v0.0.0-20200803215136-443f81d77104 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

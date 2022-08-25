@@ -306,12 +306,20 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	// forward mode
 	if remotes := strings.Trim(url.EscapedPath(), "/"); remotes != "" {
 		svc.Forwarder = &config.ForwarderConfig{
-			Targets: strings.Split(remotes, ","),
+			// Targets: strings.Split(remotes, ","),
+		}
+		for i, addr := range strings.Split(remotes, ",") {
+			svc.Forwarder.Nodes = append(svc.Forwarder.Nodes,
+				&config.NodeConfig{
+					Name: fmt.Sprintf("target-%d", i),
+					Addr: addr,
+				})
 		}
 		if handler != "relay" {
 			if listener == "tcp" || listener == "udp" ||
 				listener == "rtcp" || listener == "rudp" ||
-				listener == "tun" || listener == "tap" {
+				listener == "tun" || listener == "tap" ||
+				listener == "dns" {
 				handler = listener
 			} else {
 				handler = "forward"

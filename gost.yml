@@ -32,9 +32,11 @@ services:
       abc: xyz
       def: 456
   forwarder:
-    targets:
-    - 192.168.1.1:1234
-    - 192.168.1.2:2345
+    nodes:
+    - name: target-0
+      addr: 192.168.1.1:1234
+    - name: target-1
+      addr: 192.168.1.2:2345
     selector:
       strategy: rand
       maxFails: 1
@@ -93,14 +95,14 @@ authers:
 
 admissions:
 - name: admission-0
-  reverse: false
+  whitelist: false
   matchers:
   - 127.0.0.1
   - 192.168.0.0/16
 
 bypasses:
 - name: bypass-0
-  reverse: false
+  whitelist: false
   matchers:
   - "*.example.com"
   - .example.org

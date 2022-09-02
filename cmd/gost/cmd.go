@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
+	mdutil "github.com/go-gost/core/metadata/util"
 	"github.com/go-gost/x/config"
-	"github.com/go-gost/x/metadata"
+	mdx "github.com/go-gost/x/metadata"
 	"github.com/go-gost/x/registry"
 )
 
@@ -88,7 +89,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		}
 
 		mc := nodeConfig.Connector.Metadata
-		md := metadata.NewMetadata(mc)
+		md := mdx.NewMetadata(mc)
 
 		hopConfig := &config.HopConfig{
 			Name:     fmt.Sprintf("hop-%d", i),
@@ -96,7 +97,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			Nodes:    nodes,
 		}
 
-		if v := metadata.GetString(md, "bypass"); v != "" {
+		if v := mdutil.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
 				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
 			}
@@ -114,7 +115,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
 			delete(mc, "bypass")
 		}
-		if v := metadata.GetString(md, "resolver"); v != "" {
+		if v := mdutil.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
 				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
 			}
@@ -133,7 +134,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
 			delete(mc, "resolver")
 		}
-		if v := metadata.GetString(md, "hosts"); v != "" {
+		if v := mdutil.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
 				Name: fmt.Sprintf("hosts-%d", len(cfg.Hosts)),
 			}
@@ -155,11 +156,11 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			delete(mc, "hosts")
 		}
 
-		if v := metadata.GetString(md, "interface"); v != "" {
+		if v := mdutil.GetString(md, "interface"); v != "" {
 			hopConfig.Interface = v
 			delete(mc, "interface")
 		}
-		if v := metadata.GetInt(md, "so_mark"); v > 0 {
+		if v := mdutil.GetInt(md, "so_mark"); v > 0 {
 			hopConfig.SockOpts = &config.SockOptsConfig{
 				Mark: v,
 			}
@@ -190,12 +191,12 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		cfg.Services = append(cfg.Services, service)
 
 		mh := service.Handler.Metadata
-		md := metadata.NewMetadata(mh)
-		if v := metadata.GetInt(md, "retries"); v > 0 {
+		md := mdx.NewMetadata(mh)
+		if v := mdutil.GetInt(md, "retries"); v > 0 {
 			service.Handler.Retries = v
 			delete(mh, "retries")
 		}
-		if v := metadata.GetString(md, "admission"); v != "" {
+		if v := mdutil.GetString(md, "admission"); v != "" {
 			admCfg := &config.AdmissionConfig{
 				Name: fmt.Sprintf("admission-%d", len(cfg.Admissions)),
 			}
@@ -213,7 +214,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			cfg.Admissions = append(cfg.Admissions, admCfg)
 			delete(mh, "admission")
 		}
-		if v := metadata.GetString(md, "bypass"); v != "" {
+		if v := mdutil.GetString(md, "bypass"); v != "" {
 			bypassCfg := &config.BypassConfig{
 				Name: fmt.Sprintf("bypass-%d", len(cfg.Bypasses)),
 			}
@@ -231,7 +232,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
 			delete(mh, "bypass")
 		}
-		if v := metadata.GetString(md, "resolver"); v != "" {
+		if v := mdutil.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
 				Name: fmt.Sprintf("resolver-%d", len(cfg.Resolvers)),
 			}
@@ -243,7 +244,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 					resolverCfg.Nameservers,
 					&config.NameserverConfig{
 						Addr:   rs,
-						Prefer: metadata.GetString(md, "prefer"),
+						Prefer: mdutil.GetString(md, "prefer"),
 					},
 				)
 			}
@@ -251,7 +252,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
 			delete(mh, "resolver")
 		}
-		if v := metadata.GetString(md, "hosts"); v != "" {
+		if v := mdutil.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
 				Name: fmt.Sprintf("hosts-%d", len(cfg.Hosts)),
 			}
@@ -341,9 +342,9 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 			m[k] = v[0]
 		}
 	}
-	md := metadata.NewMetadata(m)
+	md := mdx.NewMetadata(m)
 
-	if sa := metadata.GetString(md, "auth"); sa != "" {
+	if sa := mdutil.GetString(md, "auth"); sa != "" {
 		au, err := parseAuthFromCmd(sa)
 		if err != nil {
 			return nil, err
@@ -353,18 +354,18 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	delete(m, "auth")
 
 	tlsConfig := &config.TLSConfig{
-		CertFile: metadata.GetString(md, "certFile"),
-		KeyFile:  metadata.GetString(md, "keyFile"),
-		CAFile:   metadata.GetString(md, "caFile"),
+		CertFile: mdutil.GetString(md, "certFile"),
+		KeyFile:  mdutil.GetString(md, "keyFile"),
+		CAFile:   mdutil.GetString(md, "caFile"),
 	}
 	if tlsConfig.CertFile == "" {
-		tlsConfig.CertFile = metadata.GetString(md, "cert")
+		tlsConfig.CertFile = mdutil.GetString(md, "cert")
 	}
 	if tlsConfig.KeyFile == "" {
-		tlsConfig.KeyFile = metadata.GetString(md, "key")
+		tlsConfig.KeyFile = mdutil.GetString(md, "key")
 	}
 	if tlsConfig.CAFile == "" {
-		tlsConfig.CAFile = metadata.GetString(md, "ca")
+		tlsConfig.CAFile = mdutil.GetString(md, "ca")
 	}
 
 	delete(m, "certFile")
@@ -378,14 +379,14 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		tlsConfig = nil
 	}
 
-	if v := metadata.GetString(md, "dns"); v != "" {
+	if v := mdutil.GetString(md, "dns"); v != "" {
 		md.Set("dns", strings.Split(v, ","))
 	}
-	if v := metadata.GetString(md, "interface"); v != "" {
+	if v := mdutil.GetString(md, "interface"); v != "" {
 		svc.Interface = v
 		delete(m, "interface")
 	}
-	if v := metadata.GetInt(md, "so_mark"); v > 0 {
+	if v := mdutil.GetInt(md, "so_mark"); v > 0 {
 		svc.SockOpts = &config.SockOptsConfig{
 			Mark: v,
 		}
@@ -455,9 +456,9 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 			m[k] = v[0]
 		}
 	}
-	md := metadata.NewMetadata(m)
+	md := mdx.NewMetadata(m)
 
-	if sauth := metadata.GetString(md, "auth"); sauth != "" && auth == nil {
+	if sauth := mdutil.GetString(md, "auth"); sauth != "" && auth == nil {
 		au, err := parseAuthFromCmd(sauth)
 		if err != nil {
 			return nil, err
@@ -467,23 +468,23 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	delete(m, "auth")
 
 	tlsConfig := &config.TLSConfig{
-		CertFile:   metadata.GetString(md, "certFile"),
-		KeyFile:    metadata.GetString(md, "keyFile"),
-		CAFile:     metadata.GetString(md, "caFile"),
-		Secure:     metadata.GetBool(md, "secure"),
-		ServerName: metadata.GetString(md, "serverName"),
+		CertFile:   mdutil.GetString(md, "certFile"),
+		KeyFile:    mdutil.GetString(md, "keyFile"),
+		CAFile:     mdutil.GetString(md, "caFile"),
+		Secure:     mdutil.GetBool(md, "secure"),
+		ServerName: mdutil.GetString(md, "serverName"),
 	}
 	if tlsConfig.ServerName == "" {
 		tlsConfig.ServerName = url.Hostname()
 	}
 	if tlsConfig.CertFile == "" {
-		tlsConfig.CertFile = metadata.GetString(md, "cert")
+		tlsConfig.CertFile = mdutil.GetString(md, "cert")
 	}
 	if tlsConfig.KeyFile == "" {
-		tlsConfig.KeyFile = metadata.GetString(md, "key")
+		tlsConfig.KeyFile = mdutil.GetString(md, "key")
 	}
 	if tlsConfig.CAFile == "" {
-		tlsConfig.CAFile = metadata.GetString(md, "ca")
+		tlsConfig.CAFile = mdutil.GetString(md, "ca")
 	}
 
 	delete(m, "certFile")
@@ -559,15 +560,15 @@ func parseAuthFromCmd(sa string) (*config.AuthConfig, error) {
 }
 
 func parseSelector(m map[string]any) *config.SelectorConfig {
-	md := metadata.NewMetadata(m)
-	strategy := metadata.GetString(md, "strategy")
-	maxFails := metadata.GetInt(md, "maxFails")
+	md := mdx.NewMetadata(m)
+	strategy := mdutil.GetString(md, "strategy")
+	maxFails := mdutil.GetInt(md, "maxFails")
 	if maxFails == 0 {
-		maxFails = metadata.GetInt(md, "max_fails")
+		maxFails = mdutil.GetInt(md, "max_fails")
 	}
-	failTimeout := metadata.GetDuration(md, "failTimeout")
+	failTimeout := mdutil.GetDuration(md, "failTimeout")
 	if failTimeout == 0 {
-		failTimeout = metadata.GetDuration(md, "fail_timeout")
+		failTimeout = mdutil.GetDuration(md, "fail_timeout")
 	}
 	if strategy == "" && maxFails <= 0 && failTimeout <= 0 {
 		return nil

@@ -5,8 +5,8 @@ go 1.18
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20220831020931-e77908a89e63
-	github.com/go-gost/x v0.0.0-20220831121852-470d229c5821
+	github.com/go-gost/core v0.0.0-20220902092328-713671067369
+	github.com/go-gost/x v0.0.0-20220902135350-6546f4a9056a
 )
 
 require (
@@ -83,7 +83,7 @@ require (
 	github.com/xtaci/tcpraw v1.2.25 // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
 	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8 // indirect
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
+	golang.org/x/exp v0.0.0-20220827204233-334a2380cb91 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.0.0-20220812174116-3211cb980234 // indirect
 	golang.org/x/sys v0.0.0-20220817070843-5a390386f1f2 // indirect

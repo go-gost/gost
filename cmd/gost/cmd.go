@@ -11,6 +11,7 @@ import (
 
 	mdutil "github.com/go-gost/core/metadata/util"
 	"github.com/go-gost/x/config"
+	xlimiter "github.com/go-gost/x/limiter"
 	mdx "github.com/go-gost/x/metadata"
 	"github.com/go-gost/x/registry"
 )
@@ -274,20 +275,29 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			delete(mh, "hosts")
 		}
 
-		input := metadata.GetString(md, "limiter.input")
-		output := metadata.GetString(md, "limiter.output")
-		if input != "" || output != "" {
+		in := mdutil.GetString(md, "limiter.rate.in")
+		out := mdutil.GetString(md, "limiter.rate.out")
+		cin := mdutil.GetString(md, "limiter.rate.conn.in")
+		cout := mdutil.GetString(md, "limiter.rate.conn.out")
+		if in != "" || cin != "" {
 			limiter := &config.LimiterConfig{
 				Name: fmt.Sprintf("limiter-%d", len(cfg.Limiters)),
-				RateLimit: &config.RateLimitConfig{
-					Input:  input,
-					Output: output,
-				},
+				Rate: &config.RateLimiterConfig{},
+			}
+			if in != "" {
+				limiter.Rate.Limits = append(limiter.Rate.Limits,
+					fmt.Sprintf("%s %s %s", xlimiter.GlobalLimitKey, in, out))
+			}
+			if cin != "" {
+				limiter.Rate.Limits = append(limiter.Rate.Limits,
+					fmt.Sprintf("%s %s %s", xlimiter.ConnLimitKey, cin, cout))
 			}
 			service.Limiter = limiter.Name
 			cfg.Limiters = append(cfg.Limiters, limiter)
-			delete(mh, "limiter.input")
-			delete(mh, "limiter.output")
+			delete(mh, "limiter.rate.in")
+			delete(mh, "limiter.rate.out")
+			delete(mh, "limiter.rate.conn.in")
+			delete(mh, "limiter.rate.conn.out")
 		}
 	}
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	// Register connectors
+	_ "github.com/go-gost/x/connector/direct"
 	_ "github.com/go-gost/x/connector/forward"
 	_ "github.com/go-gost/x/connector/http"
 	_ "github.com/go-gost/x/connector/http2"
@@ -14,6 +15,7 @@ import (
 	_ "github.com/go-gost/x/connector/sshd"
 
 	// Register dialers
+	_ "github.com/go-gost/x/dialer/direct"
 	_ "github.com/go-gost/x/dialer/ftcp"
 	_ "github.com/go-gost/x/dialer/grpc"
 	_ "github.com/go-gost/x/dialer/http2"

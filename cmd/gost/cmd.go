@@ -408,16 +408,6 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	if v := mdutil.GetString(md, "dns"); v != "" {
 		md.Set("dns", strings.Split(v, ","))
 	}
-	if v := mdutil.GetString(md, "interface"); v != "" {
-		svc.Interface = v
-		delete(m, "interface")
-	}
-	if v := mdutil.GetInt(md, "so_mark"); v > 0 {
-		svc.SockOpts = &config.SockOptsConfig{
-			Mark: v,
-		}
-		delete(m, "so_mark")
-	}
 
 	if svc.Forwarder != nil {
 		svc.Forwarder.Selector = parseSelector(m)
@@ -433,6 +423,8 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		TLS:      tlsConfig,
 		Metadata: m,
 	}
+
+	svc.Metadata = m
 
 	if svc.Listener.Type == "ssh" || svc.Listener.Type == "sshd" {
 		svc.Handler.Auth = nil

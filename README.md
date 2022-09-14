@@ -6,19 +6,20 @@
 
 ## 功能特性
 
-- [x] 多端口监听
-- [x] 多级转发链
+- [x] [多端口监听](https://gost.run/getting-started/quick-start/)
+- [x] [多级转发链](https://gost.run/concepts/chain/)
 - [x] 多协议支持
-- [x] TCP/UDP端口转发
-- [x] TCP/UDP透明代理
-- [x] DNS解析和代理
-- [x] TUN/TAP设备
-- [x] 负载均衡
-- [x] 路由控制
-- [x] 准入控制
-- [x] 动态配置
-- [x] Prometheus监控指标
-- [x] Web API
+- [x] [TCP/UDP端口转发](https://gost.run/tutorials/port-forwarding/)
+- [x] [TCP/UDP透明代理](https://gost.run/tutorials/redirect/)
+- [x] DNS[解析](https://gost.run/concepts/resolver/)和[代理](https://gost.run/tutorials/dns/)
+- [x] [TUN/TAP设备](https://gost.run/tutorials/tuntap/)
+- [x] [负载均衡](https://gost.run/concepts/selector/)
+- [x] [路由控制](https://gost.run/concepts/bypass/)
+- [x] [限速限流](https://gost.run/concepts/limiter/)
+- [x] [准入控制](https://gost.run/concepts/admission/)
+- [x] [动态配置](https://gost.run/tutorials/api/config/)
+- [x] [Prometheus监控指标](https://gost.run/tutorials/metrics/)
+- [x] [Web API](https://gost.run/tutorials/api/overview/)
 - [ ] Web UI
 
 Wiki站点：[https://gost.run](https://gost.run)

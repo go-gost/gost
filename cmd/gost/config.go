@@ -71,9 +71,23 @@ func buildService(cfg *config.Config) (services []service.Service) {
 		}
 	}
 
-	for _, rlimiterCfg := range cfg.Limiters {
-		if h := parsing.ParseRateLimiter(rlimiterCfg); h != nil {
-			if err := registry.RateLimiterRegistry().Register(rlimiterCfg.Name, h); err != nil {
+	for _, limiterCfg := range cfg.Limiters {
+		if h := parsing.ParseTrafficLimiter(limiterCfg); h != nil {
+			if err := registry.TrafficLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	for _, limiterCfg := range cfg.CLimiters {
+		if h := parsing.ParseConnLimiter(limiterCfg); h != nil {
+			if err := registry.ConnLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	for _, limiterCfg := range cfg.RLimiters {
+		if h := parsing.ParseRateLimiter(limiterCfg); h != nil {
+			if err := registry.RateLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}

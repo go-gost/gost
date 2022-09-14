@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	mdutil "github.com/go-gost/core/metadata/util"
 	"github.com/go-gost/x/config"
-	xlimiter "github.com/go-gost/x/limiter"
+	"github.com/go-gost/x/limiter/conn"
+	"github.com/go-gost/x/limiter/traffic"
 	mdx "github.com/go-gost/x/metadata"
 	"github.com/go-gost/x/registry"
 )
@@ -275,29 +277,48 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			delete(mh, "hosts")
 		}
 
-		in := mdutil.GetString(md, "limiter.rate.in")
-		out := mdutil.GetString(md, "limiter.rate.out")
-		cin := mdutil.GetString(md, "limiter.rate.conn.in")
-		cout := mdutil.GetString(md, "limiter.rate.conn.out")
+		in := mdutil.GetString(md, "limiter.in")
+		out := mdutil.GetString(md, "limiter.out")
+		cin := mdutil.GetString(md, "limiter.conn.in")
+		cout := mdutil.GetString(md, "limiter.conn.out")
 		if in != "" || cin != "" {
 			limiter := &config.LimiterConfig{
 				Name: fmt.Sprintf("limiter-%d", len(cfg.Limiters)),
-				Rate: &config.RateLimiterConfig{},
 			}
 			if in != "" {
-				limiter.Rate.Limits = append(limiter.Rate.Limits,
-					fmt.Sprintf("%s %s %s", xlimiter.GlobalLimitKey, in, out))
+				limiter.Limits = append(limiter.Limits,
+					fmt.Sprintf("%s %s %s", traffic.GlobalLimitKey, in, out))
 			}
 			if cin != "" {
-				limiter.Rate.Limits = append(limiter.Rate.Limits,
-					fmt.Sprintf("%s %s %s", xlimiter.ConnLimitKey, cin, cout))
+				limiter.Limits = append(limiter.Limits,
+					fmt.Sprintf("%s %s %s", traffic.ConnLimitKey, cin, cout))
 			}
 			service.Limiter = limiter.Name
 			cfg.Limiters = append(cfg.Limiters, limiter)
-			delete(mh, "limiter.rate.in")
-			delete(mh, "limiter.rate.out")
-			delete(mh, "limiter.rate.conn.in")
-			delete(mh, "limiter.rate.conn.out")
+			delete(mh, "limiter.in")
+			delete(mh, "limiter.out")
+			delete(mh, "limiter.conn.in")
+			delete(mh, "limiter.conn.out")
+		}
+
+		if climit := mdutil.GetInt(md, "climiter"); climit > 0 {
+			limiter := &config.LimiterConfig{
+				Name:   fmt.Sprintf("climiter-%d", len(cfg.CLimiters)),
+				Limits: []string{fmt.Sprintf("%s %d", conn.GlobalLimitKey, climit)},
+			}
+			service.CLimiter = limiter.Name
+			cfg.CLimiters = append(cfg.CLimiters, limiter)
+			delete(mh, "climiter")
+		}
+
+		if rlimit := mdutil.GetFloat(md, "rlimiter"); rlimit > 0 {
+			limiter := &config.LimiterConfig{
+				Name:   fmt.Sprintf("rlimiter-%d", len(cfg.RLimiters)),
+				Limits: []string{fmt.Sprintf("%s %s", conn.GlobalLimitKey, strconv.FormatFloat(rlimit, 'f', -1, 64))},
+			}
+			service.RLimiter = limiter.Name
+			cfg.RLimiters = append(cfg.RLimiters, limiter)
+			delete(mh, "rlimiter")
 		}
 	}
 

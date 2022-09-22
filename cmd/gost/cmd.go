@@ -358,7 +358,7 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 		}
 		for i, addr := range strings.Split(remotes, ",") {
 			svc.Forwarder.Nodes = append(svc.Forwarder.Nodes,
-				&config.NodeConfig{
+				&config.ForwardNodeConfig{
 					Name: fmt.Sprintf("target-%d", i),
 					Addr: addr,
 				})

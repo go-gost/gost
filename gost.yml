@@ -50,6 +50,7 @@ chains:
     failTimeout: 30s
   hops:
   - name: hop-0
+  - name: hop-1
     interface: 192.168.1.2
     selector:
       strategy: rand
@@ -80,6 +81,38 @@ chains:
         metadata:
           bar: baz 
 
+hops:
+- name: hop-0
+  interface: 192.168.1.2
+  selector:
+    strategy: rand
+    maxFails: 3
+    failTimeout: 60s
+  bypass: bypass-0
+  nodes:
+  - name: node-0
+    addr: ":1080"
+    interface: eth1
+    bypass: bypass-0
+    connector:
+      type: socks5
+      auth:
+        username: user
+        password: pass
+      metadata:
+        foo: bar
+    dialer:
+      type: tcp
+      auth:
+        username: user
+        password: pass
+      tls:
+        caFile: "ca.pem"
+        secure: true
+        serverName: "example.com"
+      metadata:
+        bar: baz 
+  
 tls:
   certFile: "cert.pem"
   keyFile: "key.pem"

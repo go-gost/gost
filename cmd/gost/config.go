@@ -92,7 +92,17 @@ func buildService(cfg *config.Config) (services []service.Service) {
 			}
 		}
 	}
-
+	for _, hopCfg := range cfg.Hops {
+		hop, err := parsing.ParseHop(hopCfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if hop != nil {
+			if err := registry.HopRegistry().Register(hopCfg.Name, hop); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 	for _, chainCfg := range cfg.Chains {
 		c, err := parsing.ParseChain(chainCfg)
 		if err != nil {

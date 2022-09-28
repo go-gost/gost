@@ -9,7 +9,6 @@ import (
 	"runtime"
 
 	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/metrics"
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/parsing"
 	xlogger "github.com/go-gost/x/logger"
@@ -122,7 +121,7 @@ func main() {
 	}
 
 	if cfg.Metrics != nil {
-		metrics.Init(xmetrics.NewMetrics())
+		xmetrics.Init(xmetrics.NewMetrics())
 		if cfg.Metrics.Addr != "" {
 			s, err := buildMetricsService(cfg.Metrics)
 			if err != nil {

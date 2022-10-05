@@ -9,6 +9,7 @@ PLATFORM_LIST = \
 	darwin-arm64 \
 	linux-386 \
 	linux-amd64 \
+	linux-amd64v3 \
 	linux-armv5 \
 	linux-armv6 \
 	linux-armv7 \
@@ -27,6 +28,7 @@ PLATFORM_LIST = \
 WINDOWS_ARCH_LIST = \
 	windows-386 \
 	windows-amd64 \
+	windows-amd64v3 \
 	windows-arm64
 
 all: linux-amd64 darwin-amd64 darwin-arm64 windows-amd64 # Most used
@@ -42,6 +44,9 @@ linux-386:
 
 linux-amd64:
 	GOARCH=amd64 GOOS=linux $(GOBUILD) -o $(BINDIR)/$(NAME)-$@ $(GOFILES)
+
+linux-amd64v3:
+	GOARCH=amd64 GOOS=linux GOAMD64=v3 $(GOBUILD) -o $(BINDIR)/$(NAME)-$@ $(GOFILES)
 
 linux-armv5:
 	GOARCH=arm GOOS=linux GOARM=5 $(GOBUILD) -o $(BINDIR)/$(NAME)-$@ $(GOFILES)
@@ -90,6 +95,9 @@ windows-386:
 
 windows-amd64:
 	GOARCH=amd64 GOOS=windows $(GOBUILD) -o $(BINDIR)/$(NAME)-$@.exe $(GOFILES)
+
+windows-amd64v3:
+	GOARCH=amd64 GOOS=windows GOAMD64=v3 $(GOBUILD) -o $(BINDIR)/$(NAME)-$@.exe $(GOFILES)
 
 windows-arm64:
 	GOARCH=arm64 GOOS=windows $(GOBUILD) -o $(BINDIR)/$(NAME)-$@.exe $(GOFILES)

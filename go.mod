@@ -5,8 +5,9 @@ go 1.18
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20220928034632-6e7a8f461903
-	github.com/go-gost/x v0.0.0-20220928035231-bd7da26c4248
+	github.com/go-gost/core v0.0.0-20221020130224-eb9d483127cc
+	github.com/go-gost/x v0.0.0-20221020130826-669e80b78047
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
 require (

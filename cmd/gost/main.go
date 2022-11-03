@@ -6,13 +6,16 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/parsing"
 	xlogger "github.com/go-gost/x/logger"
 	xmetrics "github.com/go-gost/x/metrics"
+	"github.com/go-gost/x/registry"
 )
 
 var (
@@ -142,11 +145,25 @@ func main() {
 		svc := svc
 		go func() {
 			svc.Serve()
-			svc.Close()
+			// svc.Close()
 		}()
 	}
 
 	config.SetGlobal(cfg)
 
-	select {}
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+
+	for sig := range sigs {
+		switch sig {
+		case syscall.SIGHUP:
+			return
+		default:
+			for name, srv := range registry.ServiceRegistry().GetAll() {
+				srv.Close()
+				log.Debugf("service %s shutdown", name)
+			}
+			return
+		}
+	}
 }

@@ -35,7 +35,7 @@ func init() {
 
 	flag.Var(&services, "L", "service list")
 	flag.Var(&nodes, "F", "chain node list")
-	flag.StringVar(&cfgFile, "C", "", "configure file")
+	flag.StringVar(&cfgFile, "C", "", "configuration file")
 	flag.BoolVar(&printVersion, "V", false, "print version")
 	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
 	flag.BoolVar(&debug, "D", false, "debug mode")

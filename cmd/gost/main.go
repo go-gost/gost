@@ -56,7 +56,7 @@ func init() {
 func main() {
 	cfg := &config.Config{}
 	var err error
-	if len(services) > 0 || apiAddr != "" {
+	if apiAddr != "" {
 		cfg, err = buildConfigFromCmd(services, nodes)
 		if err != nil {
 			log.Fatal(err)
@@ -80,11 +80,49 @@ func main() {
 	} else {
 		if cfgFile != "" {
 			err = cfg.ReadFile(cfgFile)
+			if err != nil {
+				log.Fatal(err)
+			}
 		} else {
 			err = cfg.Load()
+			if err != nil {
+				if len(services) > 0 {
+					log.Info("Cannot load config from default path. ", err)
+				} else {
+					log.Fatal(err)
+				}
+			}
 		}
-		if err != nil {
-			log.Fatal(err)
+		if len(services) > 0 || len(nodes) > 0 {
+			var cmdCfg = &config.Config{}
+			cmdCfg, err = buildConfigFromCmd(services, nodes)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if cmdCfg.Chains != nil && len(cmdCfg.Chains) > 0 {
+				if cfg.Chains == nil || len(cfg.Chains) == 0 {
+					cfg.Chains = cmdCfg.Chains
+				} else {
+					for i := 0; i < len(cfg.Chains); i++ {
+						var hops = append([]*config.HopConfig{}, cmdCfg.Chains[0].Hops...)
+						cfg.Chains[i].Hops = append(hops, cfg.Chains[i].Hops...)
+					}
+				}
+			}
+			if cmdCfg.Services != nil && len(cmdCfg.Services) > 0 {
+				if (cfg.Chains != nil && len(cfg.Chains) > 0) {
+					for i := 0; i < len(cmdCfg.Services); i++ {
+						var handler = cmdCfg.Services[i].Handler
+						if (handler != nil && (handler.Chain == "" && handler.ChainGroup == nil)) {
+							handler.Chain = cfg.Chains[0].Name
+						}
+					}
+				}
+				if cfg.Services == nil {
+					cfg.Services = []*config.ServiceConfig{}
+				}
+				cfg.Services = append(append([]*config.ServiceConfig{}, cmdCfg.Services...), cfg.Services...)
+			}
 		}
 	}
 

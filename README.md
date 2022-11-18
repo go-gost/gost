@@ -8,11 +8,12 @@
 
 - [x] [多端口监听](https://gost.run/getting-started/quick-start/)
 - [x] [多级转发链](https://gost.run/concepts/chain/)
-- [x] 多协议支持
+- [x] [多协议支持](https://gost.run/tutorials/protocols/overview/)
 - [x] [TCP/UDP端口转发](https://gost.run/tutorials/port-forwarding/)
 - [x] [TCP/UDP透明代理](https://gost.run/tutorials/redirect/)
 - [x] DNS[解析](https://gost.run/concepts/resolver/)和[代理](https://gost.run/tutorials/dns/)
 - [x] [TUN/TAP设备](https://gost.run/tutorials/tuntap/)
+- [x] [反向代理](https://gost.run/tutorials/reverse-proxy/)
 - [x] [负载均衡](https://gost.run/concepts/selector/)
 - [x] [路由控制](https://gost.run/concepts/bypass/)
 - [x] [限速限流](https://gost.run/concepts/limiter/)

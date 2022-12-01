@@ -5,7 +5,8 @@ go 1.18
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20221111142129-c2a1dd2a89cb
+	github.com/go-gost/core v0.0.0-20221201112214-c9c31fa74c47
+	github.com/go-gost/x v0.0.0-20221201111748-25c393edaf6e
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
@@ -25,7 +26,6 @@ require (
 	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09 // indirect
 	github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7 // indirect
 	github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 // indirect
-	github.com/go-gost/x v0.0.0-20221125101447-bcfff2266907 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.10.1 // indirect
@@ -100,8 +100,8 @@ require (
 	golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20220703234212-c31a7b1ab478 // indirect
 	google.golang.org/genproto v0.0.0-20220126215142-9970aeb2e350 // indirect
-	google.golang.org/grpc v1.49.0 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/grpc v1.51.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

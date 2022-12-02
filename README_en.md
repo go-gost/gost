@@ -11,6 +11,7 @@
 - [x] [TCP/UDP transparent proxy](https://gost.run/en/tutorials/redirect/)
 - [x] DNS [resolver](https://gost.run/en/concepts/resolver/) and [proxy](https://gost.run/en/tutorials/dns/)
 - [x] [TUN/TAP device](https://gost.run/en/tutorials/tuntap/)
+- [x] [Reverse Proxy](https://gost.run/en/tutorials/reverse-proxy/)
 - [x] [Load balancing](https://gost.run/en/concepts/selector/)
 - [x] [Routing control](https://gost.run/en/concepts/bypass/)
 - [x] [Bandwidth/Rate Limiter](https://gost.run/en/concepts/limiter/)

@@ -37,33 +37,6 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 	namePrefix := ""
 	cfg := &config.Config{}
 
-	if v := os.Getenv("GOST_PROFILING"); v != "" {
-		cfg.Profiling = &config.ProfilingConfig{
-			Addr: v,
-		}
-	}
-	if v := os.Getenv("GOST_METRICS"); v != "" {
-		cfg.Metrics = &config.MetricsConfig{
-			Addr: v,
-		}
-	}
-
-	if v := os.Getenv("GOST_LOGGER_LEVEL"); v != "" {
-		cfg.Log = &config.LogConfig{
-			Level: v,
-		}
-	}
-
-	if v := os.Getenv("GOST_API"); v != "" {
-		cfg.API = &config.APIConfig{
-			Addr: v,
-		}
-	}
-
-	if v := os.Getenv("_GOST_ID"); v != "" {
-		namePrefix = fmt.Sprintf("go-%s@", v)
-	}
-
 	var chain *config.ChainConfig
 	if len(nodes) > 0 {
 		chain = &config.ChainConfig{
@@ -286,15 +259,15 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		out := mdutil.GetString(md, "limiter.out")
 		cin := mdutil.GetString(md, "limiter.conn.in")
 		cout := mdutil.GetString(md, "limiter.conn.out")
-		if in != "" || cin != "" {
+		if in != "" || cin != "" || out != "" || cout != "" {
 			limiter := &config.LimiterConfig{
 				Name: fmt.Sprintf("%slimiter-%d", namePrefix, len(cfg.Limiters)),
 			}
-			if in != "" {
+			if in != "" || out != "" {
 				limiter.Limits = append(limiter.Limits,
 					fmt.Sprintf("%s %s %s", traffic.GlobalLimitKey, in, out))
 			}
-			if cin != "" {
+			if cin != "" || cout != "" {
 				limiter.Limits = append(limiter.Limits,
 					fmt.Sprintf("%s %s %s", traffic.ConnLimitKey, cin, cout))
 			}

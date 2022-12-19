@@ -1,17 +1,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"os/signal"
 	"os/exec"
+	"os/signal"
+	"runtime"
 	"strings"
 	"sync"
-	"context"
-	"runtime"
 	"syscall"
 
 	"github.com/go-gost/core/logger"
@@ -39,13 +39,14 @@ func init() {
 
 	if strings.Contains(args, " -- ") {
 		var (
-			wg sync.WaitGroup
+			wg  sync.WaitGroup
 			ret int
 		)
 
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-		for wid, wargs := range strings.Split(" " + args + " ", " -- ") {
+		for wid, wargs := range strings.Split(" "+args+" ", " -- ") {
 			wg.Add(1)
 			go func(wid int, wargs string) {
 				defer wg.Done()
@@ -114,6 +115,29 @@ func main() {
 	if len(cfg.Services) == 0 && apiAddr == "" {
 		if err := cfg.Load(); err != nil {
 			log.Fatal(err)
+		}
+	}
+
+	if v := os.Getenv("GOST_PROFILING"); v != "" {
+		cfg.Profiling = &config.ProfilingConfig{
+			Addr: v,
+		}
+	}
+	if v := os.Getenv("GOST_METRICS"); v != "" {
+		cfg.Metrics = &config.MetricsConfig{
+			Addr: v,
+		}
+	}
+
+	if v := os.Getenv("GOST_LOGGER_LEVEL"); v != "" {
+		cfg.Log = &config.LogConfig{
+			Level: v,
+		}
+	}
+
+	if v := os.Getenv("GOST_API"); v != "" {
+		cfg.API = &config.APIConfig{
+			Addr: v,
 		}
 	}
 

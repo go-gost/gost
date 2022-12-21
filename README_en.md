@@ -47,7 +47,7 @@ go build
 ### Docker
 
 ```
-docker pull gogost/gost
+docker run --rm gogost/gost -V
 ```
 
 ### Shadowsocks Android

@@ -109,8 +109,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg.Chains = append(cfg.Chains, cmdCfg.Chains...)
-	cfg.Services = append(cfg.Services, cmdCfg.Services...)
+	cfg = mergeConfig(cfg, cmdCfg)
 
 	if len(cfg.Services) == 0 && apiAddr == "" {
 		if err := cfg.Load(); err != nil {
@@ -236,4 +235,50 @@ func main() {
 			return
 		}
 	}
+}
+
+func mergeConfig(cfg1, cfg2 *config.Config) *config.Config {
+	if cfg1 == nil {
+		return cfg2
+	}
+	if cfg2 == nil {
+		return cfg1
+	}
+
+	cfg := &config.Config{
+		Services:   append(cfg1.Services, cfg2.Services...),
+		Chains:     append(cfg1.Chains, cfg2.Chains...),
+		Hops:       append(cfg1.Hops, cfg2.Hops...),
+		Authers:    append(cfg1.Authers, cfg2.Authers...),
+		Admissions: append(cfg1.Admissions, cfg2.Admissions...),
+		Bypasses:   append(cfg1.Bypasses, cfg2.Bypasses...),
+		Resolvers:  append(cfg1.Resolvers, cfg2.Resolvers...),
+		Hosts:      append(cfg1.Hosts, cfg2.Hosts...),
+		Recorders:  append(cfg1.Recorders, cfg2.Recorders...),
+		Limiters:   append(cfg1.Limiters, cfg2.Limiters...),
+		CLimiters:  append(cfg1.CLimiters, cfg2.CLimiters...),
+		RLimiters:  append(cfg1.RLimiters, cfg2.RLimiters...),
+		TLS:        cfg1.TLS,
+		Log:        cfg1.Log,
+		API:        cfg1.API,
+		Metrics:    cfg1.Metrics,
+		Profiling:  cfg1.Profiling,
+	}
+	if cfg2.TLS != nil {
+		cfg.TLS = cfg2.TLS
+	}
+	if cfg2.Log != nil {
+		cfg.Log = cfg2.Log
+	}
+	if cfg2.API != nil {
+		cfg.API = cfg2.API
+	}
+	if cfg2.Metrics != nil {
+		cfg.Metrics = cfg2.Metrics
+	}
+	if cfg2.Profiling != nil {
+		cfg.Profiling = cfg2.Profiling
+	}
+
+	return cfg
 }

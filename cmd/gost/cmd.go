@@ -384,18 +384,9 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	delete(m, "auth")
 
 	tlsConfig := &config.TLSConfig{
-		CertFile: mdutil.GetString(md, "certFile"),
-		KeyFile:  mdutil.GetString(md, "keyFile"),
-		CAFile:   mdutil.GetString(md, "caFile"),
-	}
-	if tlsConfig.CertFile == "" {
-		tlsConfig.CertFile = mdutil.GetString(md, "cert")
-	}
-	if tlsConfig.KeyFile == "" {
-		tlsConfig.KeyFile = mdutil.GetString(md, "key")
-	}
-	if tlsConfig.CAFile == "" {
-		tlsConfig.CAFile = mdutil.GetString(md, "ca")
+		CertFile: mdutil.GetString(md, "certFile", "cert"),
+		KeyFile:  mdutil.GetString(md, "keyFile", "key"),
+		CAFile:   mdutil.GetString(md, "caFile", "ca"),
 	}
 
 	delete(m, "certFile")
@@ -490,23 +481,14 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	delete(m, "auth")
 
 	tlsConfig := &config.TLSConfig{
-		CertFile:   mdutil.GetString(md, "certFile"),
-		KeyFile:    mdutil.GetString(md, "keyFile"),
-		CAFile:     mdutil.GetString(md, "caFile"),
+		CertFile:   mdutil.GetString(md, "certFile", "cert"),
+		KeyFile:    mdutil.GetString(md, "keyFile", "key"),
+		CAFile:     mdutil.GetString(md, "caFile", "ca"),
 		Secure:     mdutil.GetBool(md, "secure"),
 		ServerName: mdutil.GetString(md, "serverName"),
 	}
 	if tlsConfig.ServerName == "" {
 		tlsConfig.ServerName = url.Hostname()
-	}
-	if tlsConfig.CertFile == "" {
-		tlsConfig.CertFile = mdutil.GetString(md, "cert")
-	}
-	if tlsConfig.KeyFile == "" {
-		tlsConfig.KeyFile = mdutil.GetString(md, "key")
-	}
-	if tlsConfig.CAFile == "" {
-		tlsConfig.CAFile = mdutil.GetString(md, "ca")
 	}
 
 	delete(m, "certFile")
@@ -584,14 +566,8 @@ func parseAuthFromCmd(sa string) (*config.AuthConfig, error) {
 func parseSelector(m map[string]any) *config.SelectorConfig {
 	md := mdx.NewMetadata(m)
 	strategy := mdutil.GetString(md, "strategy")
-	maxFails := mdutil.GetInt(md, "maxFails")
-	if maxFails == 0 {
-		maxFails = mdutil.GetInt(md, "max_fails")
-	}
-	failTimeout := mdutil.GetDuration(md, "failTimeout")
-	if failTimeout == 0 {
-		failTimeout = mdutil.GetDuration(md, "fail_timeout")
-	}
+	maxFails := mdutil.GetInt(md, "maxFails", "max_fails")
+	failTimeout := mdutil.GetDuration(md, "failTimeout", "fail_timeout")
 	if strategy == "" && maxFails <= 0 && failTimeout <= 0 {
 		return nil
 	}

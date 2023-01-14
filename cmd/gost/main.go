@@ -254,6 +254,7 @@ func mergeConfig(cfg1, cfg2 *config.Config) *config.Config {
 		Bypasses:   append(cfg1.Bypasses, cfg2.Bypasses...),
 		Resolvers:  append(cfg1.Resolvers, cfg2.Resolvers...),
 		Hosts:      append(cfg1.Hosts, cfg2.Hosts...),
+		Ingresses:  append(cfg1.Ingresses, cfg2.Ingresses...),
 		Recorders:  append(cfg1.Recorders, cfg2.Recorders...),
 		Limiters:   append(cfg1.Limiters, cfg2.Limiters...),
 		CLimiters:  append(cfg1.CLimiters, cfg2.CLimiters...),

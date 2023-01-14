@@ -5,8 +5,8 @@ go 1.18
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20221221101823-36ed0eae2dec
-	github.com/go-gost/x v0.0.0-20230111142558-9b128534a080
+	github.com/go-gost/core v0.0.0-20230114050924-1a8c1ccb1dc5
+	github.com/go-gost/x v0.0.0-20230114051515-82cd924c867f
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
@@ -24,7 +24,7 @@ require (
 	github.com/gin-gonic/gin v1.8.2 // indirect
 	github.com/go-gost/gosocks4 v0.0.1 // indirect
 	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09 // indirect
-	github.com/go-gost/relay v0.1.1-0.20211123134818-8ef7fd81ffd7 // indirect
+	github.com/go-gost/relay v0.2.0 // indirect
 	github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -38,6 +38,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/pprof v0.0.0-20221219190121-3cb0bae90811 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

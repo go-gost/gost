@@ -65,6 +65,14 @@ func buildService(cfg *config.Config) (services []service.Service) {
 		}
 	}
 
+	for _, ingressCfg := range cfg.Ingresses {
+		if h := parsing.ParseIngress(ingressCfg); h != nil {
+			if err := registry.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
 	for _, recorderCfg := range cfg.Recorders {
 		if h := parsing.ParseRecorder(recorderCfg); h != nil {
 			if err := registry.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {

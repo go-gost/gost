@@ -218,7 +218,7 @@ func main() {
 		}()
 	}
 
-	config.SetGlobal(cfg)
+	config.Set(cfg)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)

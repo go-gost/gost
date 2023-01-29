@@ -98,12 +98,12 @@ github.com/go-gost/gosocks4 v0.0.1 h1:+k1sec8HlELuQV7rWftIkmy8UijzUt2I6t+iMPlGB2
 github.com/go-gost/gosocks4 v0.0.1/go.mod h1:3B6L47HbU/qugDg4JnoFPHgJXE43Inz8Bah1QaN9qCc=
 github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09 h1:A95M6UWcfZgOuJkQ7QLfG0Hs5peWIUSysCDNz4pfe04=
 github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09/go.mod h1:1G6I7HP7VFVxveGkoK8mnprnJqSqJjdcASKsdUn4Pp4=
-github.com/go-gost/relay v0.2.0 h1:8udTweykgDUdOY1j1U90fApNuG7Sp7pvKoiIp3eV6ME=
-github.com/go-gost/relay v0.2.0/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
+github.com/go-gost/relay v0.3.1 h1:mkKtvMT5n3mTSHbQo//DXXLxTsIUJKRQ4Fn4atma+Ds=
+github.com/go-gost/relay v0.3.1/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 h1:xj8gUZGYO3nb5+6Bjw9+tsFkA9sYynrOvDvvC4uDV2I=
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
-github.com/go-gost/x v0.0.0-20230120022721-93b40f4c86c2 h1:QHuX69y1Cfj5bmZGW3LgSZQk4JGJah7r1ZAgJuUB+lE=
-github.com/go-gost/x v0.0.0-20230120022721-93b40f4c86c2/go.mod h1:mtoc1CuRfHziBkgfvdUWZ0S4bFsuYccVCqPxwXZQQhU=
+github.com/go-gost/x v0.0.0-20230129035526-24037aba7bb5 h1:fRCiFI1UreECfBi5DuiBVYOuU0aGzc2CGc9bvZDgFhs=
+github.com/go-gost/x v0.0.0-20230129035526-24037aba7bb5/go.mod h1:wFjpTNsXZ+V/jY54ybzCyOpE2sE5I+FLpTsqAodl69w=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/log v0.1.0/go.mod h1:zbhenjAZHb184qTLMA9ZjW7ThYL0H2mk7Q6pNt4vbaY=

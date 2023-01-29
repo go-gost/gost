@@ -6,7 +6,7 @@ replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20
 
 require (
 	github.com/go-gost/core v0.0.0-20230114050924-1a8c1ccb1dc5
-	github.com/go-gost/x v0.0.0-20230120022721-93b40f4c86c2
+	github.com/go-gost/x v0.0.0-20230129035526-24037aba7bb5
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
@@ -24,7 +24,7 @@ require (
 	github.com/gin-gonic/gin v1.8.2 // indirect
 	github.com/go-gost/gosocks4 v0.0.1 // indirect
 	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09 // indirect
-	github.com/go-gost/relay v0.2.0 // indirect
+	github.com/go-gost/relay v0.3.1 // indirect
 	github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect

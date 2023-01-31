@@ -1,7 +1,7 @@
 # ref: https://docs.docker.com/ci-cd/github-actions/
 # https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/
 
-name: Docker
+name: docker
 
 on: 
   push:
@@ -57,7 +57,7 @@ jobs:
 
       # https://github.com/actions/checkout
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Docker Buildx (no push)
       run: |

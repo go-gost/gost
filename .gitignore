@@ -37,3 +37,4 @@ snap
 *.pem
 *.yaml
 *.txt
+dist/

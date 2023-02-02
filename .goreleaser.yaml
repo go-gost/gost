@@ -52,6 +52,10 @@ changelog:
       - '^docs:'
       - '^test:'
 
+release:
+  prerelease: auto
+  mode: keep-existing
+
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json

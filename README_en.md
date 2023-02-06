@@ -8,16 +8,16 @@
 - [x] [Multi-level forwarding chain](https://gost.run/en/concepts/chain/)
 - [x] Rich protocol
 - [x] [TCP/UDP port forwarding](https://gost.run/en/tutorials/port-forwarding/)
+- [x] [Reverse Proxy](https://gost.run/en/tutorials/reverse-proxy/) and [Tunnel](https://gost.run/en/tutorials/reverse-proxy-advanced/)
 - [x] [TCP/UDP transparent proxy](https://gost.run/en/tutorials/redirect/)
 - [x] DNS [resolver](https://gost.run/en/concepts/resolver/) and [proxy](https://gost.run/en/tutorials/dns/)
 - [x] [TUN/TAP device](https://gost.run/en/tutorials/tuntap/)
-- [x] [Reverse Proxy](https://gost.run/en/tutorials/reverse-proxy/)
 - [x] [Load balancing](https://gost.run/en/concepts/selector/)
 - [x] [Routing control](https://gost.run/en/concepts/bypass/)
-- [x] [Bandwidth/Rate Limiter](https://gost.run/en/concepts/limiter/)
 - [x] [Admission control](https://gost.run/en/concepts/limiter/)
-- [x] [Dynamic configuration](https://gost.run/en/tutorials/api/config/)
+- [x] [Bandwidth/Rate Limiter](https://gost.run/en/concepts/limiter/)
 - [x] [Prometheus metrics](https://gost.run/en/tutorials/metrics/)
+- [x] [Dynamic configuration](https://gost.run/en/tutorials/api/config/)
 - [x] [Web API](https://gost.run/en/tutorials/api/overview/)
 - [ ] Web UI
 

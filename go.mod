@@ -6,7 +6,7 @@ replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20
 
 require (
 	github.com/go-gost/core v0.0.0-20230131100536-f3482d7cd848
-	github.com/go-gost/x v0.0.0-20230307155127-f32b72ce56a9
+	github.com/go-gost/x v0.0.0-20230320102835-661953e09f24
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 

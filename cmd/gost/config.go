@@ -21,6 +21,8 @@ func buildService(cfg *config.Config) (services []service.Service) {
 		return
 	}
 
+	log := logger.Default()
+
 	for _, autherCfg := range cfg.Authers {
 		if auther := parsing.ParseAuther(autherCfg); auther != nil {
 			if err := registry.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
@@ -172,7 +174,7 @@ func logFromConfig(cfg *config.LogConfig) logger.Logger {
 			os.MkdirAll(filepath.Dir(cfg.Output), 0755)
 			f, err := os.OpenFile(cfg.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 			if err != nil {
-				log.Warn(err)
+				logger.Default().Warn(err)
 			} else {
 				out = f
 			}

@@ -98,9 +98,8 @@ func (p *program) Start() error {
 		if err != nil {
 			return err
 		}
-		defer s.Close()
-
 		go func() {
+			defer s.Close()
 			log.Info("api service on ", s.Addr())
 			log.Fatal(s.Serve())
 		}()

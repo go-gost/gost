@@ -16,6 +16,7 @@
 - [x] [Routing control](https://gost.run/en/concepts/bypass/)
 - [x] [Admission control](https://gost.run/en/concepts/limiter/)
 - [x] [Bandwidth/Rate Limiter](https://gost.run/en/concepts/limiter/)
+- [x] [Plugin System](https://gost.run/en/concepts/plugin/)
 - [x] [Prometheus metrics](https://gost.run/en/tutorials/metrics/)
 - [x] [Dynamic configuration](https://gost.run/en/tutorials/api/config/)
 - [x] [Web API](https://gost.run/en/tutorials/api/overview/)

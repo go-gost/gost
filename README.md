@@ -18,6 +18,7 @@
 - [x] [路由控制](https://gost.run/concepts/bypass/)
 - [x] [准入控制](https://gost.run/concepts/admission/)
 - [x] [限速限流](https://gost.run/concepts/limiter/)
+- [x] [插件系统](https://gost.run/concepts/plugin/)
 - [x] [Prometheus监控指标](https://gost.run/tutorials/metrics/)
 - [x] [动态配置](https://gost.run/tutorials/api/config/)
 - [x] [Web API](https://gost.run/tutorials/api/overview/)

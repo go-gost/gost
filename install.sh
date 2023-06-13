@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Check Root User
+
+# If you want to run as another user, please modify $EUID to be owned by this user
+if [[ "$EUID" -ne '0' ]]; then
+    echo "$(tput setaf 1)Error: You must run this script as root!$(tput sgr0)"
+    exit 1
+fi
+
 # Set the desired GitHub repository
 repo="go-gost/gost"
 base_url="https://api.github.com/repos/$repo/releases"

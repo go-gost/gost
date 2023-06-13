@@ -44,11 +44,11 @@ Google讨论组：[https://groups.google.com/d/forum/go-gost](https://groups.goo
 
 ```bash
 # 安装最新版本 https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases
-sudo bash <(curl -fsSL https://github.com/samsesh/gost/raw/master/install.sh) --install
+bash <(curl -fsSL https://github.com/samsesh/gost/raw/master/install.sh) --install
 ```
 ```bash
 # 选择要安装的版本
-sudo bash <(curl -fsSL https://github.com/samsesh/gost/raw/master/install.sh)
+bash <(curl -fsSL https://github.com/samsesh/gost/raw/master/install.sh)
 ```
 
 

@@ -37,6 +37,17 @@ Legacy version: [v2.gost.run](https://v2.gost.run/en/)
 
 [https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases)
 
+### install script
+
+```bash
+# install latest from https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases
+sudo bash <(curl -fsSL https://github.com/samsesh/gost/raw/master/install.sh) --install
+```
+```bash
+# select version for install 
+sudo bash <(curl -fsSL https://github.com/samsesh/gost/raw/master/install.sh)
+```
+
 ### From source
 
 ```

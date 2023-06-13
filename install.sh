@@ -73,7 +73,7 @@ install_gost() {
     echo "Installing gost..."
     tar -xzf gost.tar.gz
     chmod +x gost
-    sudo mv gost /usr/local/bin/gost
+    mv gost /usr/local/bin/gost
 
     echo "gost installation completed!"
 }

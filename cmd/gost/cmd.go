@@ -523,7 +523,7 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	return node, nil
 }
 
-func cmd/gost/cmd.gonormCmd(s string) (*url.URL, error) {
+func normCmd(s string) (*url.URL, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return nil, ErrInvalidCmd

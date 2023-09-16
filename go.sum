@@ -114,6 +114,8 @@ github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 h1:xj8gUZG
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
 github.com/go-gost/x v0.0.0-20230916134740-92db078642da h1:BalJ9uSBejRAs5fIW8Ve9QSd0IDxp+S0uRtTzdHmIGw=
 github.com/go-gost/x v0.0.0-20230916134740-92db078642da/go.mod h1:F08/FnlpS7MxsHfSHnNpG/qtY5UA1X888HRJGCjQKZU=
+github.com/go-gost/x v0.0.0-20230916151412-f2ff1aa45a4e h1:PTAU2VdSHcOLJK4xxAkdspPSuO8GfUafY74qdbAx3AU=
+github.com/go-gost/x v0.0.0-20230916151412-f2ff1aa45a4e/go.mod h1:F08/FnlpS7MxsHfSHnNpG/qtY5UA1X888HRJGCjQKZU=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/log v0.1.0/go.mod h1:zbhenjAZHb184qTLMA9ZjW7ThYL0H2mk7Q6pNt4vbaY=

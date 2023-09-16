@@ -350,7 +350,8 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 			if listener == "tcp" || listener == "udp" ||
 				listener == "rtcp" || listener == "rudp" ||
 				listener == "tun" || listener == "tap" ||
-				listener == "dns" || listener == "serial" {
+				listener == "dns" || listener == "unix" ||
+				listener == "serial" {
 				handler = listener
 			} else {
 				handler = "forward"

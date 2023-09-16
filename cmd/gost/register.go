@@ -39,6 +39,7 @@ import (
 
 	// Register handlers
 	_ "github.com/go-gost/x/handler/auto"
+	_ "github.com/go-gost/x/handler/serial"
 	_ "github.com/go-gost/x/handler/dns"
 	_ "github.com/go-gost/x/handler/forward/local"
 	_ "github.com/go-gost/x/handler/forward/remote"
@@ -58,6 +59,7 @@ import (
 	_ "github.com/go-gost/x/handler/tun"
 
 	// Register listeners
+	_ "github.com/go-gost/x/listener/serial"
 	_ "github.com/go-gost/x/listener/dns"
 	_ "github.com/go-gost/x/listener/dtls"
 	_ "github.com/go-gost/x/listener/ftcp"

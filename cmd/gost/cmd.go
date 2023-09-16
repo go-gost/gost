@@ -350,7 +350,7 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 			if listener == "tcp" || listener == "udp" ||
 				listener == "rtcp" || listener == "rudp" ||
 				listener == "tun" || listener == "tap" ||
-				listener == "dns" {
+				listener == "dns" || listener == "serial" {
 				handler = listener
 			} else {
 				handler = "forward"
@@ -523,7 +523,7 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	return node, nil
 }
 
-func normCmd(s string) (*url.URL, error) {
+func cmd/gost/cmd.gonormCmd(s string) (*url.URL, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return nil, ErrInvalidCmd

@@ -40,12 +40,12 @@ Legacy version: [v2.gost.run](https://v2.gost.run/en/)
 ### install script
 
 ```bash
-# install latest from https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases
-bash <(curl -fsSL https://github.com/samsesh/gost/raw/master/install.sh) --install
+# install latest from [https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases)
+bash <(curl -fsSL https://github.com/go-gost/gost/raw/master/install.sh) --install
 ```
 ```bash
 # select version for install 
-bash <(curl -fsSL https://github.com/samsesh/gost/raw/master/install.sh)
+bash <(curl -fsSL https://github.com/go-gost/gost/raw/master/install.sh)
 ```
 
 ### From source

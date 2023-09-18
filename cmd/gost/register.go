@@ -7,12 +7,15 @@ import (
 	_ "github.com/go-gost/x/connector/http"
 	_ "github.com/go-gost/x/connector/http2"
 	_ "github.com/go-gost/x/connector/relay"
+	_ "github.com/go-gost/x/connector/serial"
 	_ "github.com/go-gost/x/connector/sni"
 	_ "github.com/go-gost/x/connector/socks/v4"
 	_ "github.com/go-gost/x/connector/socks/v5"
 	_ "github.com/go-gost/x/connector/ss"
 	_ "github.com/go-gost/x/connector/ss/udp"
 	_ "github.com/go-gost/x/connector/sshd"
+	_ "github.com/go-gost/x/connector/tcp"
+	_ "github.com/go-gost/x/connector/unix"
 
 	// Register dialers
 	_ "github.com/go-gost/x/dialer/direct"
@@ -30,11 +33,13 @@ import (
 	_ "github.com/go-gost/x/dialer/obfs/tls"
 	_ "github.com/go-gost/x/dialer/pht"
 	_ "github.com/go-gost/x/dialer/quic"
+	_ "github.com/go-gost/x/dialer/serial"
 	_ "github.com/go-gost/x/dialer/ssh"
 	_ "github.com/go-gost/x/dialer/sshd"
 	_ "github.com/go-gost/x/dialer/tcp"
 	_ "github.com/go-gost/x/dialer/tls"
 	_ "github.com/go-gost/x/dialer/udp"
+	_ "github.com/go-gost/x/dialer/unix"
 	_ "github.com/go-gost/x/dialer/ws"
 
 	// Register handlers

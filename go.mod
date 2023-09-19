@@ -5,8 +5,8 @@ go 1.20
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20230918131208-c258a114c40b
-	github.com/go-gost/x v0.0.0-20230918151455-95da26cf49b0
+	github.com/go-gost/core v0.0.0-20230919141921-a1419ec2f4d1
+	github.com/go-gost/x v0.0.0-20230919143509-afddd2d29e63
 	github.com/judwhite/go-svc v1.2.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
@@ -27,8 +27,8 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-gost/gosocks4 v0.0.1 // indirect
-	github.com/go-gost/gosocks5 v0.3.1-0.20211109033403-d894d75b7f09 // indirect
-	github.com/go-gost/plugin v0.0.0-20230418123101-d221a4ec9a98 // indirect
+	github.com/go-gost/gosocks5 v0.4.0 // indirect
+	github.com/go-gost/plugin v0.0.0-20230919143240-0e42c7c67eaa // indirect
 	github.com/go-gost/relay v0.4.1-0.20230916134211-828f314ddfe7 // indirect
 	github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
@@ -70,7 +70,7 @@ require (
 	github.com/pires/go-proxyproto v0.6.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
-	github.com/prometheus/client_model v0.3.0 // indirect
+	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect

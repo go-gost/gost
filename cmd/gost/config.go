@@ -209,8 +209,13 @@ func buildAPIService(cfg *config.APIConfig) (service.Service, error) {
 }
 
 func buildMetricsService(cfg *config.MetricsConfig) (service.Service, error) {
+	auther := auth_parser.ParseAutherFromAuth(cfg.Auth)
+	if cfg.Auther != "" {
+		auther = registry.AutherRegistry().Get(cfg.Auther)
+	}
 	return metrics.NewService(
 		cfg.Addr,
 		metrics.PathOption(cfg.Path),
+		metrics.AutherOption(auther),
 	)
 }

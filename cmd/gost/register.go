@@ -15,6 +15,7 @@ import (
 	_ "github.com/go-gost/x/connector/ss/udp"
 	_ "github.com/go-gost/x/connector/sshd"
 	_ "github.com/go-gost/x/connector/tcp"
+	_ "github.com/go-gost/x/connector/tunnel"
 	_ "github.com/go-gost/x/connector/unix"
 
 	// Register dialers
@@ -62,6 +63,7 @@ import (
 	_ "github.com/go-gost/x/handler/sshd"
 	_ "github.com/go-gost/x/handler/tap"
 	_ "github.com/go-gost/x/handler/tun"
+	_ "github.com/go-gost/x/handler/tunnel"
 	_ "github.com/go-gost/x/handler/unix"
 
 	// Register listeners

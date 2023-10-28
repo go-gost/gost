@@ -57,7 +57,7 @@ jobs:
 
       # https://github.com/actions/checkout
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Docker Buildx (no push)
       run: |

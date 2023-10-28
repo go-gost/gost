@@ -3,7 +3,7 @@ name: Trigger nightly build
 on:
   schedule:
     # * is a special character in YAML, so you have to quote this string
-    - cron:  '00 20 * * *'
+    - cron:  '00 15 * * *'
   workflow_dispatch:
 
 jobs:

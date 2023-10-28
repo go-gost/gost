@@ -34,6 +34,8 @@ builds:
       - windows_amd64
       - windows_amd64_v3
       - windows_arm64
+    ldflags:
+      - "-s -w -X 'main.version={{ .Tag }}'"
 
 archives:
   - format: tar.gz

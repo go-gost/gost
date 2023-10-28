@@ -1,0 +1,43 @@
+name: Trigger nightly build
+
+on:
+  schedule:
+    # * is a special character in YAML, so you have to quote this string
+    - cron:  '00 20 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-nightly:
+    name: Push tag for nightly build
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      -
+        name: 'Push new tag'
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+          # A previous release was created using a lightweight tag
+          # git describe by default includes only annotated tags
+          # git describe --tags includes lightweight tags as well
+          DESCRIBE=`git tag -l --sort=-v:refname | grep -v nightly | head -n 1`
+          MAJOR_VERSION=`echo $DESCRIBE | awk '{split($0,a,"."); print a[1]}'`
+          MINOR_VERSION=`echo $DESCRIBE | awk '{split($0,a,"."); print a[2]}'`
+          # MINOR_VERSION="$((${MINOR_VERSION} + 1))"
+          TAG="${MAJOR_VERSION}.${MINOR_VERSION}.0-nightly.$(date +'%Y%m%d')"
+          git tag -a $TAG -m "$TAG: nightly build"
+          git push origin $TAG
+      - name: 'Clean up nightly releases'
+        uses: dev-drprasad/delete-older-releases@v0.3.2
+        with:
+          keep_latest: 3
+          delete_tags: true
+          delete_tag_pattern: nightly
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

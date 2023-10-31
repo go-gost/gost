@@ -166,6 +166,7 @@ func (p *program) mergeConfig(cfg1, cfg2 *config.Config) *config.Config {
 		Resolvers:  append(cfg1.Resolvers, cfg2.Resolvers...),
 		Hosts:      append(cfg1.Hosts, cfg2.Hosts...),
 		Ingresses:  append(cfg1.Ingresses, cfg2.Ingresses...),
+		SDs:        append(cfg1.SDs, cfg2.SDs...),
 		Recorders:  append(cfg1.Recorders, cfg2.Recorders...),
 		Limiters:   append(cfg1.Limiters, cfg2.Limiters...),
 		CLimiters:  append(cfg1.CLimiters, cfg2.CLimiters...),

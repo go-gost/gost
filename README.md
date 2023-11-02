@@ -10,7 +10,7 @@
 - [x] [多级转发链](https://gost.run/concepts/chain/)
 - [x] [多协议支持](https://gost.run/tutorials/protocols/overview/)
 - [x] [TCP/UDP端口转发](https://gost.run/tutorials/port-forwarding/)
-- [x] [反向代理](https://gost.run/tutorials/reverse-proxy/)和[隧道](https://gost.run/tutorials/reverse-proxy-advanced/)
+- [x] [反向代理](https://gost.run/tutorials/reverse-proxy/)和[隧道](https://gost.run/tutorials/reverse-proxy-tunnel/)
 - [x] [TCP/UDP透明代理](https://gost.run/tutorials/redirect/)
 - [x] DNS[解析](https://gost.run/concepts/resolver/)和[代理](https://gost.run/tutorials/dns/)
 - [x] [TUN/TAP设备](https://gost.run/tutorials/tuntap/)

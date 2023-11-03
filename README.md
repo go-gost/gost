@@ -14,8 +14,6 @@
 - [x] [TCP/UDP透明代理](https://gost.run/tutorials/redirect/)
 - [x] DNS[解析](https://gost.run/concepts/resolver/)和[代理](https://gost.run/tutorials/dns/)
 - [x] [TUN/TAP设备](https://gost.run/tutorials/tuntap/)
-- [x] [Unix域套接字重定向](https://gost.run/tutorials/unix/)
-- [x] [串口重定向](https://gost.run/tutorials/serial/)
 - [x] [负载均衡](https://gost.run/concepts/selector/)
 - [x] [路由控制](https://gost.run/concepts/bypass/)
 - [x] [准入控制](https://gost.run/concepts/admission/)
@@ -26,23 +24,37 @@
 - [x] [Web API](https://gost.run/tutorials/api/overview/)
 - [ ] Web UI
 
-Wiki站点：[https://gost.run](https://gost.run)
+## 概览
 
-Telegram讨论群：[https://t.me/gogost](https://t.me/gogost)
+![Overview](https://gost.run/images/overview.png)
 
-Google讨论组：[https://groups.google.com/d/forum/go-gost](https://groups.google.com/d/forum/go-gost)
+GOST作为隧道有三种主要使用方式。
 
-旧版入口：[v2.gost.run](https://v2.gost.run)
+### 正向代理
+
+作为代理服务访问网络，可以组合使用多种协议组成转发链进行转发。
+
+![Proxy](https://gost.run/images/proxy.png)
+
+### 端口转发
+
+将一个服务的端口映射到另外一个服务的端口，同样可以组合使用多种协议组成转发链进行转发。
+
+![Forward](https://gost.run/images/forward.png)
+
+### 反向代理
+
+利用隧道和内网穿透将内网服务暴露到公网访问。
+
+![Reverse Proxy](https://gost.run/images/reverse-proxy.png)
 
 ## 下载安装
-
 
 ### 二进制文件
 
 [https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases)
 
 ### 安装脚本
-
 
 ```bash
 # 安装最新版本 [https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases)
@@ -52,7 +64,6 @@ bash <(curl -fsSL https://github.com/go-gost/gost/raw/master/install.sh) --insta
 # 选择要安装的版本
 bash <(curl -fsSL https://github.com/go-gost/gost/raw/master/install.sh)
 ```
-
 
 ### 源码编译
 
@@ -71,3 +82,13 @@ docker run --rm gogost/gost -V
 ### Shadowsocks Android插件
 
 [xausky/ShadowsocksGostPlugin](https://github.com/xausky/ShadowsocksGostPlugin)
+
+## 帮助与支持
+
+Wiki站点：[https://gost.run](https://gost.run)
+
+Telegram讨论群：[https://t.me/gogost](https://t.me/gogost)
+
+Google讨论组：[https://groups.google.com/d/forum/go-gost](https://groups.google.com/d/forum/go-gost)
+
+旧版入口：[v2.gost.run](https://v2.gost.run)

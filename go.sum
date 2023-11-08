@@ -106,6 +106,8 @@ github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 h1:xj8gUZG
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
 github.com/go-gost/x v0.0.0-20231107151044-6980fcfb196a h1:pSqt9CeSf7KBUIZt+Dv3pRBaxmmoArbA1/ejGrwh5NA=
 github.com/go-gost/x v0.0.0-20231107151044-6980fcfb196a/go.mod h1:6R78jmpaybsJX0/QDskvC+Q2ypKW0kH2/q8/dzQIAA4=
+github.com/go-gost/x v0.0.0-20231108125143-a697bf2e3524 h1:GzdtqYlIL6OxiZxkuSdUMWaZvsjMe4+Z7K4GFKTUG1A=
+github.com/go-gost/x v0.0.0-20231108125143-a697bf2e3524/go.mod h1:6R78jmpaybsJX0/QDskvC+Q2ypKW0kH2/q8/dzQIAA4=
 github.com/go-logr/logr v1.2.4 h1:g01GSCwiDw2xSZfjJ2/T9M+S6pFdcNtFYsp+Y43HYDQ=
 github.com/go-logr/logr v1.2.4/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=

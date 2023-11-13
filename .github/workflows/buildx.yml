@@ -30,7 +30,9 @@ jobs:
         # this is the most recent version of the image and also
         # tag it 'latest'.
         if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-          TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+          MAJOR_VERSION=`echo $VERSION | awk '{split($0,a,"."); print a[1]}'`
+          MINOR_VERSION=`echo $VERSION | awk '{split($0,a,"."); print a[2]}'`
+          TAGS="$TAGS,${DOCKER_IMAGE}:${MAJOR_VERSION},${DOCKER_IMAGE}:${MAJOR_VERSION}.${MINOR_VERSION},${DOCKER_IMAGE}:latest"
         fi
 
         # Set output parameters.

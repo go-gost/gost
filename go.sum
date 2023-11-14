@@ -112,6 +112,8 @@ github.com/go-gost/x v0.0.0-20231110132911-696d10fc28b3 h1:TAnvPP93PKU6Kush14Ej/
 github.com/go-gost/x v0.0.0-20231110132911-696d10fc28b3/go.mod h1:w0AiBBOkvUvKK1zM/sEzUXeC8dQaUUeYAA5w6SsBMnA=
 github.com/go-gost/x v0.0.0-20231113124042-ca1f44d93c3a h1:AKiTm3CJRU+S1v5zSwaW/VmRzea2bVGAn4n+zX/7+rQ=
 github.com/go-gost/x v0.0.0-20231113124042-ca1f44d93c3a/go.mod h1:fR9VrbKP93FitqeHGxJxRhPsJi5YOAaMRmkBfxEPHJM=
+github.com/go-gost/x v0.0.0-20231114114157-d7b7ac635706 h1:g5rswM3dt1TdEmE7walx10gcxlMg0Em232Tdpc2R4gg=
+github.com/go-gost/x v0.0.0-20231114114157-d7b7ac635706/go.mod h1:fR9VrbKP93FitqeHGxJxRhPsJi5YOAaMRmkBfxEPHJM=
 github.com/go-logr/logr v1.2.4 h1:g01GSCwiDw2xSZfjJ2/T9M+S6pFdcNtFYsp+Y43HYDQ=
 github.com/go-logr/logr v1.2.4/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=

@@ -28,6 +28,8 @@ var (
 )
 
 func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+
 	args := strings.Join(os.Args[1:], "  ")
 
 	if strings.Contains(args, " -- ") {

@@ -5,8 +5,8 @@ go 1.21
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20231113123850-a916f0401649
-	github.com/go-gost/x v0.0.0-20231116134211-2c82233b4f2f
+	github.com/go-gost/core v0.0.0-20231118102540-486f2cee616a
+	github.com/go-gost/x v0.0.0-20231118102809-88cc6ff4d5ba
 	github.com/judwhite/go-svc v1.2.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
@@ -28,7 +28,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-gost/gosocks4 v0.0.1 // indirect
 	github.com/go-gost/gosocks5 v0.4.0 // indirect
-	github.com/go-gost/plugin v0.0.0-20231109123346-0ae4157b9d25 // indirect
+	github.com/go-gost/plugin v0.0.0-20231118102615-bfe81cbb44b6 // indirect
 	github.com/go-gost/relay v0.4.1-0.20230916134211-828f314ddfe7 // indirect
 	github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

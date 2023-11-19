@@ -19,6 +19,7 @@ import (
 	limiter_parser "github.com/go-gost/x/config/parsing/limiter"
 	recorder_parser "github.com/go-gost/x/config/parsing/recorder"
 	resolver_parser "github.com/go-gost/x/config/parsing/resolver"
+	router_parser "github.com/go-gost/x/config/parsing/router"
 	sd_parser "github.com/go-gost/x/config/parsing/sd"
 	service_parser "github.com/go-gost/x/config/parsing/service"
 	xlogger "github.com/go-gost/x/logger"
@@ -81,6 +82,14 @@ func buildService(cfg *config.Config) (services []service.Service) {
 	for _, ingressCfg := range cfg.Ingresses {
 		if h := ingress_parser.ParseIngress(ingressCfg); h != nil {
 			if err := registry.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, routerCfg := range cfg.Routers {
+		if h := router_parser.ParseRouter(routerCfg); h != nil {
+			if err := registry.RouterRegistry().Register(routerCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}

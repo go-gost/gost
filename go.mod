@@ -6,9 +6,8 @@ replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20
 
 require (
 	github.com/go-gost/core v0.0.0-20231119081403-abc73f2ca2b7
-	github.com/go-gost/x v0.0.0-20231119115548-c87faa20174d
+	github.com/go-gost/x v0.0.0-20231119120014-e8be8d625a55
 	github.com/judwhite/go-svc v1.2.1
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
 require (
@@ -115,6 +114,7 @@ require (
 	google.golang.org/grpc v1.59.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

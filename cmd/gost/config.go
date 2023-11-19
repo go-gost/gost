@@ -1,10 +1,6 @@
 package main
 
 import (
-	"io"
-	"os"
-	"path/filepath"
-
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/core/service"
 	"github.com/go-gost/x/api"
@@ -17,15 +13,14 @@ import (
 	hosts_parser "github.com/go-gost/x/config/parsing/hosts"
 	ingress_parser "github.com/go-gost/x/config/parsing/ingress"
 	limiter_parser "github.com/go-gost/x/config/parsing/limiter"
+	logger_parser "github.com/go-gost/x/config/parsing/logger"
 	recorder_parser "github.com/go-gost/x/config/parsing/recorder"
 	resolver_parser "github.com/go-gost/x/config/parsing/resolver"
 	router_parser "github.com/go-gost/x/config/parsing/router"
 	sd_parser "github.com/go-gost/x/config/parsing/sd"
 	service_parser "github.com/go-gost/x/config/parsing/service"
-	xlogger "github.com/go-gost/x/logger"
 	metrics "github.com/go-gost/x/metrics/service"
 	"github.com/go-gost/x/registry"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func buildService(cfg *config.Config) (services []service.Service) {
@@ -34,6 +29,14 @@ func buildService(cfg *config.Config) (services []service.Service) {
 	}
 
 	log := logger.Default()
+
+	for _, loggerCfg := range cfg.Loggers {
+		if lg := logger_parser.ParseLogger(loggerCfg); lg != nil {
+			if err := registry.LoggerRegistry().Register(loggerCfg.Name, lg); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 
 	for _, autherCfg := range cfg.Authers {
 		if auther := auth_parser.ParseAuther(autherCfg); auther != nil {
@@ -169,48 +172,6 @@ func buildService(cfg *config.Config) (services []service.Service) {
 	}
 
 	return
-}
-
-func logFromConfig(cfg *config.LogConfig) logger.Logger {
-	if cfg == nil {
-		cfg = &config.LogConfig{}
-	}
-	opts := []xlogger.LoggerOption{
-		xlogger.FormatLoggerOption(logger.LogFormat(cfg.Format)),
-		xlogger.LevelLoggerOption(logger.LogLevel(cfg.Level)),
-	}
-
-	var out io.Writer = os.Stderr
-	switch cfg.Output {
-	case "none", "null":
-		return xlogger.Nop()
-	case "stdout":
-		out = os.Stdout
-	case "stderr", "":
-		out = os.Stderr
-	default:
-		if cfg.Rotation != nil {
-			out = &lumberjack.Logger{
-				Filename:   cfg.Output,
-				MaxSize:    cfg.Rotation.MaxSize,
-				MaxAge:     cfg.Rotation.MaxAge,
-				MaxBackups: cfg.Rotation.MaxBackups,
-				LocalTime:  cfg.Rotation.LocalTime,
-				Compress:   cfg.Rotation.Compress,
-			}
-		} else {
-			os.MkdirAll(filepath.Dir(cfg.Output), 0755)
-			f, err := os.OpenFile(cfg.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-			if err != nil {
-				logger.Default().Warn(err)
-			} else {
-				out = f
-			}
-		}
-	}
-	opts = append(opts, xlogger.OutputLoggerOption(out))
-
-	return xlogger.NewLogger(opts...)
 }
 
 func buildAPIService(cfg *config.APIConfig) (service.Service, error) {

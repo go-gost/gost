@@ -7,6 +7,7 @@ import (
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/parsing"
+	logger_parser "github.com/go-gost/x/config/parsing/logger"
 	xmetrics "github.com/go-gost/x/metrics"
 	"github.com/go-gost/x/registry"
 	"github.com/judwhite/go-svc"
@@ -73,7 +74,11 @@ func (p *program) Init(env svc.Environment) error {
 		}
 	}
 
-	logger.SetDefault(logFromConfig(cfg.Log))
+	logCfg := cfg.Log
+	if logCfg == nil {
+		logCfg = &config.LogConfig{}
+	}
+	logger.SetDefault(logger_parser.ParseLogger(&config.LoggerConfig{Log: logCfg}))
 
 	if outputFormat != "" {
 		if err := cfg.Write(os.Stdout, outputFormat); err != nil {
@@ -171,6 +176,7 @@ func (p *program) mergeConfig(cfg1, cfg2 *config.Config) *config.Config {
 		Limiters:   append(cfg1.Limiters, cfg2.Limiters...),
 		CLimiters:  append(cfg1.CLimiters, cfg2.CLimiters...),
 		RLimiters:  append(cfg1.RLimiters, cfg2.RLimiters...),
+		Loggers:    append(cfg1.Loggers, cfg2.Loggers...),
 		TLS:        cfg1.TLS,
 		Log:        cfg1.Log,
 		API:        cfg1.API,

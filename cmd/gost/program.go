@@ -177,6 +177,7 @@ func (p *program) mergeConfig(cfg1, cfg2 *config.Config) *config.Config {
 		CLimiters:  append(cfg1.CLimiters, cfg2.CLimiters...),
 		RLimiters:  append(cfg1.RLimiters, cfg2.RLimiters...),
 		Loggers:    append(cfg1.Loggers, cfg2.Loggers...),
+		Routers:    append(cfg1.Routers, cfg2.Routers...),
 		TLS:        cfg1.TLS,
 		Log:        cfg1.Log,
 		API:        cfg1.API,

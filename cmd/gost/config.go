@@ -136,7 +136,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 		}
 	}
 	for _, hopCfg := range cfg.Hops {
-		hop, err := hop_parser.ParseHop(hopCfg)
+		hop, err := hop_parser.ParseHop(hopCfg, log)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -147,7 +147,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 		}
 	}
 	for _, chainCfg := range cfg.Chains {
-		c, err := chain_parser.ParseChain(chainCfg)
+		c, err := chain_parser.ParseChain(chainCfg, log)
 		if err != nil {
 			log.Fatal(err)
 		}

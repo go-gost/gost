@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 
@@ -19,8 +20,10 @@ type program struct {
 func (p *program) Init(env svc.Environment) error {
 	cfg := &config.Config{}
 	if cfgFile != "" {
-		if err := cfg.ReadFile(cfgFile); err != nil {
-			return err
+		if err := json.Unmarshal([]byte(cfgFile), cfg); err != nil {
+			if err := cfg.ReadFile(cfgFile); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -30,7 +33,7 @@ func (p *program) Init(env svc.Environment) error {
 	}
 	cfg = p.mergeConfig(cfg, cmdCfg)
 
-	if len(cfg.Services) == 0 && apiAddr == "" {
+	if len(cfg.Services) == 0 && apiAddr == "" && cfg.API == nil {
 		if err := cfg.Load(); err != nil {
 			return err
 		}

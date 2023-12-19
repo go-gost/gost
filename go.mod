@@ -5,8 +5,8 @@ go 1.21
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20231119081403-abc73f2ca2b7
-	github.com/go-gost/x v0.0.0-20231216062858-f847fa533e98
+	github.com/go-gost/core v0.0.0-20231219132306-6b5c04b5e446
+	github.com/go-gost/x v0.0.0-20231219132819-4a1b225d2c86
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -99,7 +99,7 @@ require (
 	github.com/yl2chen/cidranger v1.0.2 // indirect
 	go.uber.org/mock v0.3.0 // indirect
 	golang.org/x/arch v0.6.0 // indirect
-	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.19.0 // indirect

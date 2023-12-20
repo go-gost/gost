@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/x/config"
@@ -20,8 +21,14 @@ type program struct {
 func (p *program) Init(env svc.Environment) error {
 	cfg := &config.Config{}
 	if cfgFile != "" {
-		if err := json.Unmarshal([]byte(cfgFile), cfg); err != nil {
+		cfgFile = strings.TrimSpace(cfgFile)
+		if strings.HasPrefix(cfgFile, "{") && strings.HasSuffix(cfgFile, "}") {
+			if err := json.Unmarshal([]byte(cfgFile), cfg); err != nil {
+				return err
+			}
+		} else {
 			if err := cfg.ReadFile(cfgFile); err != nil {
+				logger.Default().Error(err)
 				return err
 			}
 		}

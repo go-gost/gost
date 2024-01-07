@@ -7,9 +7,11 @@ import (
 	"strings"
 
 	"github.com/go-gost/core/logger"
+	mdutil "github.com/go-gost/core/metadata/util"
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/parsing"
 	logger_parser "github.com/go-gost/x/config/parsing/logger"
+	xmd "github.com/go-gost/x/metadata"
 	xmetrics "github.com/go-gost/x/metrics"
 	"github.com/go-gost/x/registry"
 	"github.com/judwhite/go-svc"
@@ -71,6 +73,26 @@ func (p *program) Init(env svc.Environment) error {
 		cfg.API = &config.APIConfig{
 			Addr: apiAddr,
 		}
+		if url, _ := normCmd(apiAddr); url != nil {
+			cfg.API.Addr = url.Host
+			if url.User != nil {
+				username := url.User.Username()
+				password, _ := url.User.Password()
+				cfg.API.Auth = &config.AuthConfig{
+					Username: username,
+					Password: password,
+				}
+			}
+			m := map[string]any{}
+			for k, v := range url.Query() {
+				if len(v) > 0 {
+					m[k] = v[0]
+				}
+			}
+			md := xmd.NewMetadata(m)
+			cfg.API.PathPrefix = mdutil.GetString(md, "pathPrefix")
+			cfg.API.AccessLog = mdutil.GetBool(md, "accesslog")
+		}
 	}
 	if debug {
 		if cfg.Log == nil {
@@ -81,6 +103,25 @@ func (p *program) Init(env svc.Environment) error {
 	if metricsAddr != "" {
 		cfg.Metrics = &config.MetricsConfig{
 			Addr: metricsAddr,
+		}
+		if url, _ := normCmd(metricsAddr); url != nil {
+			cfg.Metrics.Addr = url.Host
+			if url.User != nil {
+				username := url.User.Username()
+				password, _ := url.User.Password()
+				cfg.Metrics.Auth = &config.AuthConfig{
+					Username: username,
+					Password: password,
+				}
+			}
+			m := map[string]any{}
+			for k, v := range url.Query() {
+				if len(v) > 0 {
+					m[k] = v[0]
+				}
+			}
+			md := xmd.NewMetadata(m)
+			cfg.Metrics.Path = mdutil.GetString(md, "path")
 		}
 	}
 

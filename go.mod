@@ -6,7 +6,7 @@ replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20
 
 require (
 	github.com/go-gost/core v0.0.0-20240127130604-04314fa08476
-	github.com/go-gost/x v0.0.0-20240127153123-b5b39de62c5a
+	github.com/go-gost/x v0.0.0-20240128103354-3616a0d8a484
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -29,7 +29,7 @@ require (
 	github.com/go-gost/gosocks4 v0.0.1 // indirect
 	github.com/go-gost/gosocks5 v0.4.0 // indirect
 	github.com/go-gost/plugin v0.0.0-20240103125338-9c84e29cb81a // indirect
-	github.com/go-gost/relay v0.4.1-0.20240127152636-06a246ca1c1a // indirect
+	github.com/go-gost/relay v0.4.1-0.20240128081525-e36d5f4a8322 // indirect
 	github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect

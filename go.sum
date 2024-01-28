@@ -61,8 +61,8 @@ github.com/go-gost/relay v0.4.1-0.20240128081525-e36d5f4a8322 h1:R2a+Lx6XVvWdskG
 github.com/go-gost/relay v0.4.1-0.20240128081525-e36d5f4a8322/go.mod h1:lcX+23LCQ3khIeASBo+tJ/WbwXFO32/N5YN6ucuYTG8=
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 h1:xj8gUZGYO3nb5+6Bjw9+tsFkA9sYynrOvDvvC4uDV2I=
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
-github.com/go-gost/x v0.0.0-20240128103354-3616a0d8a484 h1:6ZMHRk6kt7WFlEmqNWMe1RQenYWwSwUXhbiBg5sCJbc=
-github.com/go-gost/x v0.0.0-20240128103354-3616a0d8a484/go.mod h1:CkxyPhCERlJL1fUJt2gLbJq/nwuVFyNnx+N8vv595z8=
+github.com/go-gost/x v0.0.0-20240128105619-5ee7746aab88 h1:blzozlu+KzgWOMtpBdyHyCSIN9or0ZTGd95diUlDtbk=
+github.com/go-gost/x v0.0.0-20240128105619-5ee7746aab88/go.mod h1:CkxyPhCERlJL1fUJt2gLbJq/nwuVFyNnx+N8vv595z8=
 github.com/go-logr/logr v1.2.4 h1:g01GSCwiDw2xSZfjJ2/T9M+S6pFdcNtFYsp+Y43HYDQ=
 github.com/go-logr/logr v1.2.4/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=

@@ -51,7 +51,7 @@ jobs:
           git tag -a $TAG -m "$TAG: nightly build"
           git push origin $TAG
       - name: 'Clean up nightly releases'
-        uses: dev-drprasad/delete-older-releases@v0.3.2
+        uses: dev-drprasad/delete-older-releases@v0.3.3
         with:
           keep_latest: 2
           delete_tags: true

@@ -45,7 +45,8 @@ jobs:
       id: buildx
       uses: crazy-max/ghaction-docker-buildx@v3
       with:
-        version: latest
+        qemu-version: latest
+        buildx-version: latest
 
     - name: Environment
       run: |

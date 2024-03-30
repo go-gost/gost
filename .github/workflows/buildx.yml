@@ -36,9 +36,9 @@ jobs:
         fi
 
         # Set output parameters.
-        echo ::set-output name=tags::${TAGS}
-        echo ::set-output name=docker_image::${DOCKER_IMAGE}
-        echo ::set-output name=docker_platforms::linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/s390x
+        echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+        echo "docker_image=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
+        echo "docker_platforms=linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/s390x" >> $GITHUB_OUTPUT
 
       # https://github.com/crazy-max/ghaction-docker-buildx
     - name: Set up Docker Buildx

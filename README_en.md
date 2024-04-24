@@ -2,6 +2,8 @@
 
 ### A simple security tunnel written in golang
 
+[![en](https://img.shields.io/badge/English%20README-green)](README_en.md) [![zh](https://img.shields.io/badge/Chinese%20README-gray)](README.md)
+
 ## Features
 
 - [x] [Listening on multiple ports](https://gost.run/en/getting-started/quick-start/)

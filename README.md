@@ -2,7 +2,7 @@
 
 ### GO语言实现的安全隧道
 
-[English README](README_en.md)
+[![zh](https://img.shields.io/badge/Chinese%20README-green)](README.md) [![en](https://img.shields.io/badge/English%20README-gray)](README_en.md)
 
 ## 功能特性
 

@@ -79,6 +79,10 @@ go build
 docker run --rm gogost/gost -V
 ```
 
+### WebUI(非官方)
+
+[cnwhy/gost-ui](https://github.com/cnwhy/gost-ui)
+
 ### Shadowsocks Android插件
 
 [xausky/ShadowsocksGostPlugin](https://github.com/xausky/ShadowsocksGostPlugin)

@@ -55,6 +55,8 @@ github.com/gin-gonic/gin v1.9.1 h1:4idEAncQnU5cB7BeOkPtxjfCSye0AAm1R0RVIqJ+Jmg=
 github.com/gin-gonic/gin v1.9.1/go.mod h1:hPrL7YrpYKXt5YId3A/Tnip5kqbEAP+KLuI3SUcPTeU=
 github.com/go-gost/core v0.0.0-20240424153155-5d6c2115fa15 h1:X7rvyLzslfgA+A7VKlUr//l798na8ZywuFyGcGfDUl8=
 github.com/go-gost/core v0.0.0-20240424153155-5d6c2115fa15/go.mod h1:j08tDHkFzk7dfOeLhl3RWsASdf9YWWRfWBUQqbQvx3A=
+github.com/go-gost/core v0.0.0-20240508132029-8d554ddcf77c h1:1ahtn+3bQB50at5ubWDOrA4yja8vWpWNrGSRaCztNWg=
+github.com/go-gost/core v0.0.0-20240508132029-8d554ddcf77c/go.mod h1:j08tDHkFzk7dfOeLhl3RWsASdf9YWWRfWBUQqbQvx3A=
 github.com/go-gost/gosocks4 v0.0.1 h1:+k1sec8HlELuQV7rWftIkmy8UijzUt2I6t+iMPlGB2s=
 github.com/go-gost/gosocks4 v0.0.1/go.mod h1:3B6L47HbU/qugDg4JnoFPHgJXE43Inz8Bah1QaN9qCc=
 github.com/go-gost/gosocks5 v0.4.0 h1:EIrOEkpJez4gwHrMa33frA+hHXJyevjp47thpMQsJzI=
@@ -67,6 +69,8 @@ github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 h1:xj8gUZG
 github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
 github.com/go-gost/x v0.0.0-20240426125656-332a3a1cd09f h1:L8Bj0PkvP1INong0K/0CLPB01fCspyPaS/1QB28yCZc=
 github.com/go-gost/x v0.0.0-20240426125656-332a3a1cd09f/go.mod h1:4n4ge2x0JVzyJQX0oim2e3T+CNDY6k82XCUIAfFgs4s=
+github.com/go-gost/x v0.0.0-20240508132615-754b2fdeacd4 h1:gTMdNotqegfi46XDrfCJLh0ifIbzYjpnRfojdJHSw68=
+github.com/go-gost/x v0.0.0-20240508132615-754b2fdeacd4/go.mod h1:8A0ew3migxwXqkOZPKypVGd/W/lwy+/PMpC9qktkbKk=
 github.com/go-logr/logr v1.4.1 h1:pKouT5E8xu9zeFC39JXRDukb6JFQPXM5p5I91188VAQ=
 github.com/go-logr/logr v1.4.1/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=

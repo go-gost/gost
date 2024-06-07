@@ -81,7 +81,11 @@ docker run --rm gogost/gost -V
 
 ## Tools
 
-### WebUI (Unofficial)
+### GUI
+
+[go-gost/gostctl](https://github.com/go-gost/gostctl)
+
+### WebUI
 
 [cnwhy/gost-ui](https://github.com/cnwhy/gost-ui)
 

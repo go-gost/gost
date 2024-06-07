@@ -22,7 +22,7 @@
 - [x] [Prometheus监控指标](https://gost.run/tutorials/metrics/)
 - [x] [动态配置](https://gost.run/tutorials/api/config/)
 - [x] [Web API](https://gost.run/tutorials/api/overview/)
-- [ ] Web UI
+- [ ] GUI/WebUI
 
 ## 概览
 
@@ -81,7 +81,11 @@ docker run --rm gogost/gost -V
 
 ## 工具
 
-### WebUI(非官方)
+### GUI
+
+[go-gost/gostctl](https://github.com/go-gost/gostctl)
+
+### WebUI
 
 [cnwhy/gost-ui](https://github.com/cnwhy/gost-ui)
 

@@ -22,7 +22,7 @@
 - [x] [Prometheus metrics](https://gost.run/en/tutorials/metrics/)
 - [x] [Dynamic configuration](https://gost.run/en/tutorials/api/config/)
 - [x] [Web API](https://gost.run/en/tutorials/api/overview/)
-- [ ] Web UI
+- [ ] GUI/WebUI
 
 ## Overview
 
@@ -96,6 +96,8 @@ docker run --rm gogost/gost -V
 ## Support
 
 Wiki: [https://gost.run](https://gost.run/en/)
+
+YouTube: [https://www.youtube.com/@gost-tunnel](https://www.youtube.com/@gost-tunnel)
 
 Telegram: [https://t.me/gogost](https://t.me/gogost)
 

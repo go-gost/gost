@@ -97,7 +97,9 @@ docker run --rm gogost/gost -V
 
 Wiki站点：[https://gost.run](https://gost.run)
 
-Telegram讨论群：[https://t.me/gogost](https://t.me/gogost)
+YouTube: [https://www.youtube.com/@gost-tunnel](https://www.youtube.com/@gost-tunnel)
+
+Telegram：[https://t.me/gogost](https://t.me/gogost)
 
 Google讨论组：[https://groups.google.com/d/forum/go-gost](https://groups.google.com/d/forum/go-gost)
 

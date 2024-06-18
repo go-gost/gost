@@ -22,7 +22,7 @@
 - [x] [Prometheus metrics](https://gost.run/en/tutorials/metrics/)
 - [x] [Dynamic configuration](https://gost.run/en/tutorials/api/config/)
 - [x] [Web API](https://gost.run/en/tutorials/api/overview/)
-- [ ] GUI/WebUI
+- [x] [GUI](https://github.com/go-gost/gostctl)/[WebUI](https://github.com/go-gost/gost-ui)
 
 ## Overview
 
@@ -87,7 +87,7 @@ docker run --rm gogost/gost -V
 
 ### WebUI
 
-[cnwhy/gost-ui](https://github.com/cnwhy/gost-ui)
+[go-gost/gost-ui](https://github.com/go-gost/gost-ui)
 
 ### Shadowsocks Android
 

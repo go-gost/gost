@@ -5,8 +5,8 @@ go 1.22
 toolchain go1.22.2
 
 require (
-	github.com/go-gost/core v0.0.0-20240508132029-8d554ddcf77c
-	github.com/go-gost/x v0.0.0-20240613142450-15f28c667a31
+	github.com/go-gost/core v0.0.0-20240621153412-5aede9a2b32f
+	github.com/go-gost/x v0.0.0-20240621153818-2ae04628222a
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -94,7 +94,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/vishvananda/netlink v1.1.0 // indirect
-	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
+	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.5 // indirect
 	github.com/xtaci/smux v1.5.24 // indirect
 	github.com/xtaci/tcpraw v1.2.25 // indirect

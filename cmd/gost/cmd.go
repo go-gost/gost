@@ -72,10 +72,17 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 		mc := nodeConfig.Connector.Metadata
 		md := mdx.NewMetadata(mc)
 
+		m := map[string]any{}
+		for k, v := range url.Query() {
+			if len(v) > 0 {
+				m[k] = v[0]
+			}
+		}
 		hopConfig := &config.HopConfig{
 			Name:     fmt.Sprintf("%shop-%d", namePrefix, i),
 			Selector: parseSelector(mc),
 			Nodes:    nodes,
+			Metadata: m,
 		}
 
 		if v := mdutil.GetString(md, "bypass"); v != "" {
@@ -442,8 +449,17 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		dialer = schemes[1]
 	}
 
+	m := map[string]any{}
+	for k, v := range url.Query() {
+		if len(v) > 0 {
+			m[k] = v[0]
+		}
+	}
+	md := mdx.NewMetadata(m)
+
 	node := &config.NodeConfig{
-		Addr: url.Host,
+		Addr:     url.Host,
+		Metadata: m,
 	}
 
 	if c := registry.ConnectorRegistry().Get(connector); c == nil {
@@ -463,14 +479,6 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		}
 		auth.Password, _ = url.User.Password()
 	}
-
-	m := map[string]any{}
-	for k, v := range url.Query() {
-		if len(v) > 0 {
-			m[k] = v[0]
-		}
-	}
-	md := mdx.NewMetadata(m)
 
 	if sauth := mdutil.GetString(md, "auth"); sauth != "" && auth == nil {
 		au, err := parseAuthFromCmd(sauth)

@@ -5,8 +5,8 @@ go 1.22
 toolchain go1.22.2
 
 require (
-	github.com/go-gost/core v0.0.0-20240625123708-4e831b95e8cc
-	github.com/go-gost/x v0.0.0-20240625140900-74dc03bd66b8
+	github.com/go-gost/core v0.0.0-20240704150322-30cc92870515
+	github.com/go-gost/x v0.0.0-20240704150535-22537ff0d294
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -29,7 +29,7 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-gost/gosocks4 v0.0.1 // indirect
-	github.com/go-gost/gosocks5 v0.4.0 // indirect
+	github.com/go-gost/gosocks5 v0.4.2 // indirect
 	github.com/go-gost/plugin v0.0.0-20240103125338-9c84e29cb81a // indirect
 	github.com/go-gost/relay v0.5.0 // indirect
 	github.com/go-gost/tls-dissector v0.0.2-0.20220408131628-aac992c27451 // indirect

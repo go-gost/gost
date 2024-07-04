@@ -69,18 +69,17 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			nodes = append(nodes, nodeCfg)
 		}
 
-		mc := nodeConfig.Connector.Metadata
-		md := mdx.NewMetadata(mc)
-
 		m := map[string]any{}
 		for k, v := range url.Query() {
 			if len(v) > 0 {
 				m[k] = v[0]
 			}
 		}
+		md := mdx.NewMetadata(m)
+
 		hopConfig := &config.HopConfig{
 			Name:     fmt.Sprintf("%shop-%d", namePrefix, i),
-			Selector: parseSelector(mc),
+			Selector: parseSelector(m),
 			Nodes:    nodes,
 			Metadata: m,
 		}
@@ -101,7 +100,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			hopConfig.Bypass = bypassCfg.Name
 			cfg.Bypasses = append(cfg.Bypasses, bypassCfg)
-			delete(mc, "bypass")
+			delete(m, "bypass")
 		}
 		if v := mdutil.GetString(md, "resolver"); v != "" {
 			resolverCfg := &config.ResolverConfig{
@@ -120,7 +119,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			hopConfig.Resolver = resolverCfg.Name
 			cfg.Resolvers = append(cfg.Resolvers, resolverCfg)
-			delete(mc, "resolver")
+			delete(m, "resolver")
 		}
 		if v := mdutil.GetString(md, "hosts"); v != "" {
 			hostsCfg := &config.HostsConfig{
@@ -141,18 +140,18 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			hopConfig.Hosts = hostsCfg.Name
 			cfg.Hosts = append(cfg.Hosts, hostsCfg)
-			delete(mc, "hosts")
+			delete(m, "hosts")
 		}
 
 		if v := mdutil.GetString(md, "interface"); v != "" {
 			hopConfig.Interface = v
-			delete(mc, "interface")
+			delete(m, "interface")
 		}
 		if v := mdutil.GetInt(md, "so_mark"); v > 0 {
 			hopConfig.SockOpts = &config.SockOptsConfig{
 				Mark: v,
 			}
-			delete(mc, "so_mark")
+			delete(m, "so_mark")
 		}
 
 		chain.Hops = append(chain.Hops, hopConfig)
@@ -392,15 +391,18 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	delete(m, "auth")
 
 	tlsConfig := &config.TLSConfig{
-		CertFile: mdutil.GetString(md, "certFile", "cert"),
-		KeyFile:  mdutil.GetString(md, "keyFile", "key"),
-		CAFile:   mdutil.GetString(md, "caFile", "ca"),
+		CertFile: mdutil.GetString(md, "tls.certFile", "certFile", "cert"),
+		KeyFile:  mdutil.GetString(md, "tls.keyFile", "keyFile", "key"),
+		CAFile:   mdutil.GetString(md, "tls.caFile", "caFile", "ca"),
 	}
 
+	delete(m, "tls.certFile")
 	delete(m, "certFile")
 	delete(m, "cert")
+	delete(m, "tls.keyFile")
 	delete(m, "keyFile")
 	delete(m, "key")
+	delete(m, "tls.caFile")
 	delete(m, "caFile")
 	delete(m, "ca")
 
@@ -490,23 +492,28 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	delete(m, "auth")
 
 	tlsConfig := &config.TLSConfig{
-		CertFile:   mdutil.GetString(md, "certFile", "cert"),
-		KeyFile:    mdutil.GetString(md, "keyFile", "key"),
-		CAFile:     mdutil.GetString(md, "caFile", "ca"),
-		Secure:     mdutil.GetBool(md, "secure"),
-		ServerName: mdutil.GetString(md, "serverName"),
+		CertFile:   mdutil.GetString(md, "tls.certFile", "certFile", "cert"),
+		KeyFile:    mdutil.GetString(md, "tls.keyFile", "keyFile", "key"),
+		CAFile:     mdutil.GetString(md, "tls.caFile", "caFile", "ca"),
+		Secure:     mdutil.GetBool(md, "tls.secure", "secure"),
+		ServerName: mdutil.GetString(md, "tls.servername", "servername"),
 	}
 	if tlsConfig.ServerName == "" {
 		tlsConfig.ServerName = url.Hostname()
 	}
 
+	delete(m, "tls.certFile")
 	delete(m, "certFile")
 	delete(m, "cert")
+	delete(m, "tls.keyFile")
 	delete(m, "keyFile")
 	delete(m, "key")
+	delete(m, "tls.caFile")
 	delete(m, "caFile")
 	delete(m, "ca")
+	delete(m, "tls.secure")
 	delete(m, "secure")
+	delete(m, "tls.servername")
 	delete(m, "serverName")
 
 	if !tlsConfig.Secure && tlsConfig.CertFile == "" && tlsConfig.CAFile == "" && tlsConfig.ServerName == "" {

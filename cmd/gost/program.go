@@ -9,6 +9,7 @@ import (
 	"github.com/go-gost/core/logger"
 	mdutil "github.com/go-gost/core/metadata/util"
 	"github.com/go-gost/x/config"
+	"github.com/go-gost/x/config/cmd"
 	"github.com/go-gost/x/config/parsing"
 	logger_parser "github.com/go-gost/x/config/parsing/logger"
 	xmd "github.com/go-gost/x/metadata"
@@ -17,8 +18,7 @@ import (
 	"github.com/judwhite/go-svc"
 )
 
-type program struct {
-}
+type program struct{}
 
 func (p *program) Init(env svc.Environment) error {
 	cfg := &config.Config{}
@@ -36,7 +36,7 @@ func (p *program) Init(env svc.Environment) error {
 		}
 	}
 
-	cmdCfg, err := buildConfigFromCmd(services, nodes)
+	cmdCfg, err := cmd.BuildConfigFromCmd(services, nodes)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (p *program) Init(env svc.Environment) error {
 		cfg.API = &config.APIConfig{
 			Addr: apiAddr,
 		}
-		if url, _ := normCmd(apiAddr); url != nil {
+		if url, _ := cmd.Norm(apiAddr); url != nil {
 			cfg.API.Addr = url.Host
 			if url.User != nil {
 				username := url.User.Username()
@@ -104,7 +104,7 @@ func (p *program) Init(env svc.Environment) error {
 		cfg.Metrics = &config.MetricsConfig{
 			Addr: metricsAddr,
 		}
-		if url, _ := normCmd(metricsAddr); url != nil {
+		if url, _ := cmd.Norm(metricsAddr); url != nil {
 			cfg.Metrics.Addr = url.Host
 			if url.User != nil {
 				username := url.User.Username()

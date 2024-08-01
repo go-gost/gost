@@ -6,7 +6,7 @@ toolchain go1.22.2
 
 require (
 	github.com/go-gost/core v0.1.1
-	github.com/go-gost/x v0.1.5
+	github.com/go-gost/x v0.1.6
 	github.com/judwhite/go-svc v1.2.1
 )
 

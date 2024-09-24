@@ -5,8 +5,8 @@ go 1.22
 toolchain go1.22.2
 
 require (
-	github.com/go-gost/core v0.1.4
-	github.com/go-gost/x v0.1.17
+	github.com/go-gost/core v0.1.5
+	github.com/go-gost/x v0.1.18
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -32,7 +32,7 @@ require (
 	github.com/go-gost/gosocks5 v0.4.2 // indirect
 	github.com/go-gost/plugin v0.1.1 // indirect
 	github.com/go-gost/relay v0.5.0 // indirect
-	github.com/go-gost/tls-dissector v0.1.0 // indirect
+	github.com/go-gost/tls-dissector v0.1.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.19.0 // indirect

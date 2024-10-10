@@ -1,10 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.22-alpine as builder
-
-# Convert TARGETPLATFORM to GOARCH format
-# https://github.com/tonistiigi/xx
-COPY --from=tonistiigi/xx:golang / /
-
-ARG TARGETPLATFORM
+FROM --platform=$BUILDPLATFORM golang:1.23-alpine3.20 AS builder
 
 RUN apk add --no-cache musl-dev git gcc
 
@@ -12,11 +6,9 @@ ADD . /src
 
 WORKDIR /src
 
-ENV GO111MODULE=on
-
 RUN cd cmd/gost && go env && go build
 
-FROM alpine:latest
+FROM alpine:3.20
 
 # add iptables for tun/tap
 RUN apk add --no-cache iptables

@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.23-alpine3.20 AS builder
+FROM golang:1.23-alpine3.20 AS builder
 
 RUN apk add --no-cache musl-dev git gcc
 

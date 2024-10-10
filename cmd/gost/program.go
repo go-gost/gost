@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/go-gost/core/logger"
-	mdutil "github.com/go-gost/core/metadata/util"
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/cmd"
 	"github.com/go-gost/x/config/parsing"
 	logger_parser "github.com/go-gost/x/config/parsing/logger"
 	xmd "github.com/go-gost/x/metadata"
+	mdutil "github.com/go-gost/x/metadata/util"
 	xmetrics "github.com/go-gost/x/metrics"
 	"github.com/go-gost/x/registry"
 	"github.com/judwhite/go-svc"

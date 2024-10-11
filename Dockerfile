@@ -1,12 +1,27 @@
-FROM golang:1.23-alpine3.20 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.23-alpine3.20 AS builder
 
-RUN apk add --no-cache musl-dev git gcc
+ARG TARGETOS
+ARG TARGETARCH
 
-ADD . /src
+# RUN apk add --no-cache musl-dev git gcc
 
-WORKDIR /src
+ENV CGO_ENABLED=0
 
-RUN cd cmd/gost && go env && go build
+RUN go env
+
+WORKDIR /app
+
+# Cache the download before continuing
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+COPY . .
+
+WORKDIR /app/cmd/gost
+
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build
 
 FROM alpine:3.20
 
@@ -15,6 +30,6 @@ RUN apk add --no-cache iptables
 
 WORKDIR /bin/
 
-COPY --from=builder /src/cmd/gost/gost .
+COPY --from=builder /app/cmd/gost/gost .
 
 ENTRYPOINT ["/bin/gost"]

@@ -1,27 +1,24 @@
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.5.0 AS xx
+
 FROM --platform=$BUILDPLATFORM golang:1.23-alpine3.20 AS builder
 
-ARG TARGETOS
-ARG TARGETARCH
+COPY --from=xx / /
 
-# RUN apk add --no-cache musl-dev git gcc
+ARG TARGETPLATFORM
+
+RUN xx-info env
 
 ENV CGO_ENABLED=0
 
-RUN go env
+ENV XX_VERIFY_STATIC=1
 
 WORKDIR /app
 
-# Cache the download before continuing
-COPY go.mod go.mod
-COPY go.sum go.sum
-RUN go mod download
-
 COPY . .
 
-WORKDIR /app/cmd/gost
-
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build
+RUN cd cmd/gost && \
+    xx-go build && \
+    xx-verify gost
 
 FROM alpine:3.20
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/go-gost/core/auth"
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/core/service"
 	"github.com/go-gost/x/api"
@@ -151,10 +152,19 @@ func buildService(cfg *config.Config) (services []service.Service) {
 }
 
 func buildAPIService(cfg *config.APIConfig) (service.Service, error) {
-	auther := auth_parser.ParseAutherFromAuth(cfg.Auth)
-	if cfg.Auther != "" {
-		auther = registry.AutherRegistry().Get(cfg.Auther)
+	var authers []auth.Authenticator
+	if auther := auth_parser.ParseAutherFromAuth(cfg.Auth); auther != nil {
+		authers = append(authers, auther)
 	}
+	if cfg.Auther != "" {
+		authers = append(authers, registry.AutherRegistry().Get(cfg.Auther))
+	}
+
+	var auther auth.Authenticator
+	if len(authers) > 0 {
+		auther = auth.AuthenticatorGroup(authers...)
+	}
+
 	return api.NewService(
 		cfg.Addr,
 		api.PathPrefixOption(cfg.PathPrefix),

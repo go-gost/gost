@@ -5,6 +5,7 @@ import (
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/core/service"
 	"github.com/go-gost/x/api"
+	xauth "github.com/go-gost/x/auth"
 	"github.com/go-gost/x/config"
 	admission_parser "github.com/go-gost/x/config/parsing/admission"
 	auth_parser "github.com/go-gost/x/config/parsing/auth"
@@ -162,7 +163,7 @@ func buildAPIService(cfg *config.APIConfig) (service.Service, error) {
 
 	var auther auth.Authenticator
 	if len(authers) > 0 {
-		auther = auth.AuthenticatorGroup(authers...)
+		auther = xauth.AuthenticatorGroup(authers...)
 	}
 
 	return api.NewService(

@@ -5,8 +5,8 @@ go 1.22
 toolchain go1.22.2
 
 require (
-	github.com/go-gost/core v0.1.8
-	github.com/go-gost/x v0.2.15
+	github.com/go-gost/core v0.1.9
+	github.com/go-gost/x v0.2.16
 	github.com/judwhite/go-svc v1.2.1
 )
 

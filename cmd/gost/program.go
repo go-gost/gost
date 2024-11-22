@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-gost/core/logger"
+	"github.com/go-gost/core/service"
 	"github.com/go-gost/x/config"
 	"github.com/go-gost/x/config/cmd"
 	"github.com/go-gost/x/config/parsing"
@@ -18,7 +19,10 @@ import (
 	"github.com/judwhite/go-svc"
 )
 
-type program struct{}
+type program struct {
+	apiSrv    service.Service
+	metricSrv service.Service
+}
 
 func (p *program) Init(env svc.Environment) error {
 	cfg := &config.Config{}
@@ -154,10 +158,11 @@ func (p *program) Start() error {
 		if err != nil {
 			return err
 		}
+		p.apiSrv = s
 		go func() {
 			defer s.Close()
 			log.Info("api service on ", s.Addr())
-			log.Fatal(s.Serve())
+			log.Error(s.Serve())
 		}()
 	}
 	if cfg.Profiling != nil {
@@ -178,10 +183,11 @@ func (p *program) Start() error {
 			if err != nil {
 				log.Fatal(err)
 			}
+			p.metricSrv = s
 			go func() {
 				defer s.Close()
 				log.Info("metrics service on ", s.Addr())
-				log.Fatal(s.Serve())
+				log.Error(s.Serve())
 			}()
 		}
 	}
@@ -200,6 +206,12 @@ func (p *program) Stop() error {
 	for name, srv := range registry.ServiceRegistry().GetAll() {
 		srv.Close()
 		logger.Default().Debugf("service %s shutdown", name)
+	}
+	if p.apiSrv != nil {
+		p.apiSrv.Close()
+	}
+	if p.metricSrv != nil {
+		p.metricSrv.Close()
 	}
 	return nil
 }

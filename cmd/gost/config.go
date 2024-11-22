@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/go-gost/core/auth"
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/core/service"
@@ -166,8 +168,14 @@ func buildAPIService(cfg *config.APIConfig) (service.Service, error) {
 		auther = xauth.AuthenticatorGroup(authers...)
 	}
 
+	network := "tcp"
+	addr := cfg.Addr
+	if strings.HasPrefix(addr, "unix://") {
+		network = "unix"
+		addr = strings.TrimPrefix(addr, "unix://")
+	}
 	return api.NewService(
-		cfg.Addr,
+		network, addr,
 		api.PathPrefixOption(cfg.PathPrefix),
 		api.AccessLogOption(cfg.AccessLog),
 		api.AutherOption(auther),
@@ -179,8 +187,15 @@ func buildMetricsService(cfg *config.MetricsConfig) (service.Service, error) {
 	if cfg.Auther != "" {
 		auther = registry.AutherRegistry().Get(cfg.Auther)
 	}
+
+	network := "tcp"
+	addr := cfg.Addr
+	if strings.HasPrefix(addr, "unix://") {
+		network = "unix"
+		addr = strings.TrimPrefix(addr, "unix://")
+	}
 	return metrics.NewService(
-		cfg.Addr,
+		network, addr,
 		metrics.PathOption(cfg.Path),
 		metrics.AutherOption(auther),
 	)

@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/go-gost/core v0.1.11
-	github.com/go-gost/x v0.2.21
+	github.com/go-gost/x v0.2.22
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -107,7 +107,7 @@ require (
 	go.uber.org/mock v0.5.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.30.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20241210194714-1829a127f884 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.32.0 // indirect

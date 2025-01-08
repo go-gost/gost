@@ -1,139 +1,44 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
 	"net/http"
 	"os"
-	"strings"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-gost/core/logger"
 	"github.com/go-gost/core/service"
 	"github.com/go-gost/x/config"
-	"github.com/go-gost/x/config/cmd"
 	"github.com/go-gost/x/config/parsing"
 	logger_parser "github.com/go-gost/x/config/parsing/logger"
-	xmd "github.com/go-gost/x/metadata"
-	mdutil "github.com/go-gost/x/metadata/util"
 	xmetrics "github.com/go-gost/x/metrics"
 	"github.com/go-gost/x/registry"
 	"github.com/judwhite/go-svc"
 )
 
 type program struct {
-	apiSrv    service.Service
-	metricSrv service.Service
+	srvApi       service.Service
+	srvMetric    service.Service
+	srvProfiling *http.Server
+
+	cancel context.CancelFunc
 }
 
 func (p *program) Init(env svc.Environment) error {
-	cfg := &config.Config{}
-	if cfgFile != "" {
-		cfgFile = strings.TrimSpace(cfgFile)
-		if strings.HasPrefix(cfgFile, "{") && strings.HasSuffix(cfgFile, "}") {
-			if err := json.Unmarshal([]byte(cfgFile), cfg); err != nil {
-				return err
-			}
-		} else {
-			if err := cfg.ReadFile(cfgFile); err != nil {
-				logger.Default().Error(err)
-				return err
-			}
-		}
-	}
-
-	cmdCfg, err := cmd.BuildConfigFromCmd(services, nodes)
+	cfg, err := parseConfig()
 	if err != nil {
 		return err
 	}
-	cfg = p.mergeConfig(cfg, cmdCfg)
 
-	if len(cfg.Services) == 0 && apiAddr == "" && cfg.API == nil {
-		if err := cfg.Load(); err != nil {
-			return err
-		}
-	}
+	config.Set(cfg)
 
-	if v := os.Getenv("GOST_API"); v != "" {
-		cfg.API = &config.APIConfig{
-			Addr: v,
-		}
-	}
-	if v := os.Getenv("GOST_LOGGER_LEVEL"); v != "" {
-		cfg.Log = &config.LogConfig{
-			Level: v,
-		}
-	}
-	if v := os.Getenv("GOST_PROFILING"); v != "" {
-		cfg.Profiling = &config.ProfilingConfig{
-			Addr: v,
-		}
-	}
-	if v := os.Getenv("GOST_METRICS"); v != "" {
-		cfg.Metrics = &config.MetricsConfig{
-			Addr: v,
-		}
-	}
+	return nil
+}
 
-	if apiAddr != "" {
-		cfg.API = &config.APIConfig{
-			Addr: apiAddr,
-		}
-		if url, _ := cmd.Norm(apiAddr); url != nil {
-			cfg.API.Addr = url.Host
-			if url.User != nil {
-				username := url.User.Username()
-				password, _ := url.User.Password()
-				cfg.API.Auth = &config.AuthConfig{
-					Username: username,
-					Password: password,
-				}
-			}
-			m := map[string]any{}
-			for k, v := range url.Query() {
-				if len(v) > 0 {
-					m[k] = v[0]
-				}
-			}
-			md := xmd.NewMetadata(m)
-			cfg.API.PathPrefix = mdutil.GetString(md, "pathPrefix")
-			cfg.API.AccessLog = mdutil.GetBool(md, "accesslog")
-		}
-	}
-	if debug {
-		if cfg.Log == nil {
-			cfg.Log = &config.LogConfig{}
-		}
-		cfg.Log.Level = string(logger.DebugLevel)
-	}
-	if metricsAddr != "" {
-		cfg.Metrics = &config.MetricsConfig{
-			Addr: metricsAddr,
-		}
-		if url, _ := cmd.Norm(metricsAddr); url != nil {
-			cfg.Metrics.Addr = url.Host
-			if url.User != nil {
-				username := url.User.Username()
-				password, _ := url.User.Password()
-				cfg.Metrics.Auth = &config.AuthConfig{
-					Username: username,
-					Password: password,
-				}
-			}
-			m := map[string]any{}
-			for k, v := range url.Query() {
-				if len(v) > 0 {
-					m[k] = v[0]
-				}
-			}
-			md := xmd.NewMetadata(m)
-			cfg.Metrics.Path = mdutil.GetString(md, "path")
-		}
-	}
-
-	logCfg := cfg.Log
-	if logCfg == nil {
-		logCfg = &config.LogConfig{}
-	}
-	logger.SetDefault(logger_parser.ParseLogger(&config.LoggerConfig{Log: logCfg}))
+func (p *program) Start() error {
+	cfg := config.Global()
 
 	if outputFormat != "" {
 		if err := cfg.Write(os.Stdout, outputFormat); err != nil {
@@ -142,127 +47,173 @@ func (p *program) Init(env svc.Environment) error {
 		os.Exit(0)
 	}
 
-	parsing.BuildDefaultTLSConfig(cfg.TLS)
+	if cfg.Metrics != nil {
+		xmetrics.Init(xmetrics.NewMetrics())
+	}
 
-	config.Set(cfg)
+	if err := p.build(cfg); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	p.cancel = cancel
+	go p.reload(ctx)
 
 	return nil
 }
 
-func (p *program) Start() error {
-	log := logger.Default()
-	cfg := config.Global()
-
-	if cfg.API != nil {
-		s, err := buildAPIService(cfg.API)
-		if err != nil {
-			return err
-		}
-		p.apiSrv = s
-		go func() {
-			defer s.Close()
-			log.Info("api service on ", s.Addr())
-			log.Error(s.Serve())
-		}()
-	}
-	if cfg.Profiling != nil {
-		go func() {
-			addr := cfg.Profiling.Addr
-			if addr == "" {
-				addr = ":6060"
-			}
-			log.Info("profiling server on ", addr)
-			log.Fatal(http.ListenAndServe(addr, nil))
-		}()
+func (p *program) Stop() error {
+	if p.cancel != nil {
+		p.cancel()
 	}
 
-	if cfg.Metrics != nil {
-		xmetrics.Init(xmetrics.NewMetrics())
-		if cfg.Metrics.Addr != "" {
-			s, err := buildMetricsService(cfg.Metrics)
-			if err != nil {
-				log.Fatal(err)
+	for name, srv := range registry.ServiceRegistry().GetAll() {
+		srv.Close()
+		logger.Default().Debugf("service %s shutdown", name)
+	}
+	if p.srvApi != nil {
+		p.srvApi.Close()
+	}
+	if p.srvMetric != nil {
+		p.srvMetric.Close()
+	}
+	if p.srvProfiling != nil {
+		p.srvProfiling.Close()
+	}
+	return nil
+}
+
+func (p *program) reload(ctx context.Context) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGHUP)
+
+	for {
+		select {
+		case <-c:
+			if err := p.reloadConfig(); err != nil {
+				logger.Default().Error(err)
+			} else {
+				logger.Default().Info("config reloaded")
 			}
-			p.metricSrv = s
-			go func() {
-				defer s.Close()
-				log.Info("metrics service on ", s.Addr())
-				log.Error(s.Serve())
-			}()
+
+		case <-ctx.Done():
+			return
 		}
 	}
+}
 
-	for _, svc := range buildService(cfg) {
+func (p *program) reloadConfig() error {
+	cfg, err := parseConfig()
+	if err != nil {
+		return err
+	}
+
+	config.Set(cfg)
+
+	if err := p.build(cfg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *program) build(cfg *config.Config) error {
+	logCfg := cfg.Log
+	if logCfg == nil {
+		logCfg = &config.LogConfig{}
+	}
+	logger.SetDefault(logger_parser.ParseLogger(&config.LoggerConfig{Log: logCfg}))
+
+	tlsCfg, err := parsing.BuildDefaultTLSConfig(cfg.TLS)
+	if err != nil {
+		return err
+	}
+	parsing.SetDefaultTLSConfig(tlsCfg)
+
+	if err := register(cfg); err != nil {
+		return err
+	}
+
+	for _, svc := range registry.ServiceRegistry().GetAll() {
 		svc := svc
 		go func() {
 			svc.Serve()
 		}()
 	}
 
+	if cfg.API != nil {
+		if p.srvApi != nil {
+			p.srvApi.Close()
+		}
+
+		s, err := buildAPIService(cfg.API)
+		if err != nil {
+			return err
+		}
+
+		p.srvApi = s
+
+		go func() {
+			defer s.Close()
+
+			log := logger.Default().WithFields(map[string]any{"kind": "service", "service": "@api"})
+
+			log.Info("listening on ", s.Addr())
+			if err := s.Serve(); !errors.Is(err, http.ErrServerClosed) {
+				log.Error(err)
+			}
+		}()
+	}
+
+	if cfg.Metrics != nil && cfg.Metrics.Addr != "" {
+		if p.srvMetric != nil {
+			p.srvMetric.Close()
+		}
+
+		s, err := buildMetricsService(cfg.Metrics)
+		if err != nil {
+			return err
+		}
+
+		p.srvMetric = s
+
+		go func() {
+			defer s.Close()
+
+			log := logger.Default().WithFields(map[string]any{"kind": "service", "service": "@metrics"})
+
+			log.Info("listening on ", s.Addr())
+			if err := s.Serve(); !errors.Is(err, http.ErrServerClosed) {
+				log.Error(err)
+			}
+		}()
+	}
+
+	if cfg.Profiling != nil {
+		if p.srvProfiling != nil {
+			p.srvProfiling.Close()
+		}
+
+		addr := cfg.Profiling.Addr
+		if addr == "" {
+			addr = ":6060"
+		}
+		s := &http.Server{
+			Addr: addr,
+		}
+		p.srvProfiling = s
+
+		go func() {
+			defer s.Close()
+
+			log := logger.Default().WithFields(map[string]any{"kind": "service", "service": "@profiling"})
+
+			log.Info("listening on ", addr)
+			if err := s.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+				log.Error(err)
+			}
+		}()
+	}
+
 	return nil
-}
-
-func (p *program) Stop() error {
-	for name, srv := range registry.ServiceRegistry().GetAll() {
-		srv.Close()
-		logger.Default().Debugf("service %s shutdown", name)
-	}
-	if p.apiSrv != nil {
-		p.apiSrv.Close()
-	}
-	if p.metricSrv != nil {
-		p.metricSrv.Close()
-	}
-	return nil
-}
-
-func (p *program) mergeConfig(cfg1, cfg2 *config.Config) *config.Config {
-	if cfg1 == nil {
-		return cfg2
-	}
-	if cfg2 == nil {
-		return cfg1
-	}
-
-	cfg := &config.Config{
-		Services:   append(cfg1.Services, cfg2.Services...),
-		Chains:     append(cfg1.Chains, cfg2.Chains...),
-		Hops:       append(cfg1.Hops, cfg2.Hops...),
-		Authers:    append(cfg1.Authers, cfg2.Authers...),
-		Admissions: append(cfg1.Admissions, cfg2.Admissions...),
-		Bypasses:   append(cfg1.Bypasses, cfg2.Bypasses...),
-		Resolvers:  append(cfg1.Resolvers, cfg2.Resolvers...),
-		Hosts:      append(cfg1.Hosts, cfg2.Hosts...),
-		Ingresses:  append(cfg1.Ingresses, cfg2.Ingresses...),
-		SDs:        append(cfg1.SDs, cfg2.SDs...),
-		Recorders:  append(cfg1.Recorders, cfg2.Recorders...),
-		Limiters:   append(cfg1.Limiters, cfg2.Limiters...),
-		CLimiters:  append(cfg1.CLimiters, cfg2.CLimiters...),
-		RLimiters:  append(cfg1.RLimiters, cfg2.RLimiters...),
-		Loggers:    append(cfg1.Loggers, cfg2.Loggers...),
-		Routers:    append(cfg1.Routers, cfg2.Routers...),
-		Observers:  append(cfg1.Observers, cfg2.Observers...),
-		TLS:        cfg1.TLS,
-		Log:        cfg1.Log,
-		API:        cfg1.API,
-		Metrics:    cfg1.Metrics,
-		Profiling:  cfg1.Profiling,
-	}
-	if cfg2.TLS != nil {
-		cfg.TLS = cfg2.TLS
-	}
-	if cfg2.Log != nil {
-		cfg.Log = cfg2.Log
-	}
-	if cfg2.API != nil {
-		cfg.API = cfg2.API
-	}
-	if cfg2.Metrics != nil {
-		cfg.Metrics = cfg2.Metrics
-	}
-	if cfg2.Profiling != nil {
-		cfg.Profiling = cfg2.Profiling
-	}
-
-	return cfg
 }

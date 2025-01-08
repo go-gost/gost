@@ -33,6 +33,7 @@ var (
 	services     stringList
 	nodes        stringList
 	debug        bool
+	trace        bool
 	apiAddr      string
 	metricsAddr  string
 )
@@ -90,6 +91,7 @@ func init() {
 	flag.BoolVar(&printVersion, "V", false, "print version")
 	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
 	flag.BoolVar(&debug, "D", false, "debug mode")
+	flag.BoolVar(&trace, "DD", false, "trace mode")
 	flag.StringVar(&apiAddr, "api", "", "api service address")
 	flag.StringVar(&metricsAddr, "metrics", "", "metrics service address")
 	flag.Parse()
@@ -99,13 +101,15 @@ func init() {
 			version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 		os.Exit(0)
 	}
-
-	logger.SetDefault(xlogger.NewLogger())
 }
 
 func main() {
+	log := xlogger.NewLogger()
+	logger.SetDefault(log)
+
 	p := &program{}
+
 	if err := svc.Run(p); err != nil {
-		log.Fatal(err)
+		logger.Default().Fatal(err)
 	}
 }

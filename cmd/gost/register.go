@@ -46,6 +46,7 @@ import (
 	_ "github.com/go-gost/x/dialer/ws"
 
 	// Register handlers
+	_ "github.com/go-gost/x/handler/api"
 	_ "github.com/go-gost/x/handler/auto"
 	_ "github.com/go-gost/x/handler/dns"
 	_ "github.com/go-gost/x/handler/file"

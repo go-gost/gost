@@ -5,8 +5,8 @@ go 1.23.0
 toolchain go1.23.4
 
 require (
-	github.com/go-gost/core v0.3.0
-	github.com/go-gost/x v0.5.0
+	github.com/go-gost/core v0.3.1
+	github.com/go-gost/x v0.5.1
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -31,7 +31,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0 // indirect
 	github.com/go-gost/gosocks4 v0.0.1 // indirect
 	github.com/go-gost/gosocks5 v0.4.2 // indirect
-	github.com/go-gost/plugin v0.1.1 // indirect
+	github.com/go-gost/plugin v0.2.0 // indirect
 	github.com/go-gost/relay v0.5.0 // indirect
 	github.com/go-gost/tls-dissector v0.1.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

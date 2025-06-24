@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/go-gost/core v0.3.1
-	github.com/go-gost/x v0.5.3
+	github.com/go-gost/x v0.5.4
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -110,7 +110,7 @@ require (
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/exp v0.0.0-20241210194714-1829a127f884 // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect

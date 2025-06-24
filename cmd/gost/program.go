@@ -108,7 +108,6 @@ func (p *program) run(cfg *config.Config) error {
 		}()
 	}
 
-	xmetrics.Enable(false)
 	if p.srvMetrics != nil {
 		p.srvMetrics.Close()
 		p.srvMetrics = nil

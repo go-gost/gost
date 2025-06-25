@@ -1,6 +1,6 @@
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.5.0 AS xx
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.6.1 AS xx
 
-FROM --platform=$BUILDPLATFORM golang:1.23-alpine3.20 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine3.22 AS builder
 
 COPY --from=xx / /
 
@@ -20,7 +20,7 @@ RUN cd cmd/gost && \
     xx-go build && \
     xx-verify gost
 
-FROM alpine:3.20
+FROM alpine:3.22
 
 # add iptables for tun/tap
 RUN apk add --no-cache iptables

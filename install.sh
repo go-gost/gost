@@ -57,6 +57,9 @@ install_gost() {
     mipsel*)
         cpu_arch="mipsle"
         ;;
+    riscv64)
+        cpu_arch="riscv64"
+        ;;
     *)
         echo "Unsupported CPU architecture."
         exit 1

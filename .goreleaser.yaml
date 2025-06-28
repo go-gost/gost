@@ -28,6 +28,7 @@ builds:
       - linux_mips64le
       - linux_s390x
       - linux_riscv64
+      - linux_loong64
       - freebsd_386
       - freebsd_amd64
       - windows_386

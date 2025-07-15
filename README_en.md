@@ -91,7 +91,7 @@ docker run --rm gogost/gost -V
 
 ### Shadowsocks Android
 
-[xausky/ShadowsocksGostPlugin](https://github.com/xausky/ShadowsocksGostPlugin)
+[hamid-nazari/ShadowsocksGostPlugin](https://github.com/hamid-nazari/ShadowsocksGostPlugin)
 
 ## Support
 

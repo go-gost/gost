@@ -6,7 +6,7 @@ toolchain go1.24.5
 
 require (
 	github.com/go-gost/core v0.3.2
-	github.com/go-gost/x v0.6.0
+	github.com/go-gost/x v0.6.1
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -43,6 +43,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/gravitational/trace v1.1.16-0.20220114165159-14a9a7dd6aaf // indirect
@@ -101,7 +102,6 @@ require (
 	github.com/xtaci/tcpraw v1.2.25 // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
 	github.com/zalando/go-keyring v0.2.4 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/mock v0.5.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect

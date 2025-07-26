@@ -70,9 +70,9 @@ import (
 	_ "github.com/go-gost/x/handler/sshd"
 	_ "github.com/go-gost/x/handler/tap"
 	_ "github.com/go-gost/x/handler/tun"
+	_ "github.com/go-gost/x/handler/tungo"
 	_ "github.com/go-gost/x/handler/tunnel"
 	_ "github.com/go-gost/x/handler/unix"
-	_ "github.com/go-gost/x/handler/vtun"
 
 	// Register listeners
 	_ "github.com/go-gost/x/listener/dns"
@@ -104,8 +104,8 @@ import (
 	_ "github.com/go-gost/x/listener/tcp"
 	_ "github.com/go-gost/x/listener/tls"
 	_ "github.com/go-gost/x/listener/tun"
+	_ "github.com/go-gost/x/listener/tungo"
 	_ "github.com/go-gost/x/listener/udp"
 	_ "github.com/go-gost/x/listener/unix"
-	_ "github.com/go-gost/x/listener/vtun"
 	_ "github.com/go-gost/x/listener/ws"
 )

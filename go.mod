@@ -1,12 +1,12 @@
 module github.com/go-gost/gost
 
-go 1.23.1
+go 1.24
 
 toolchain go1.24.5
 
 require (
 	github.com/go-gost/core v0.3.2
-	github.com/go-gost/x v0.6.3
+	github.com/go-gost/x v0.6.4
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -66,7 +66,7 @@ require (
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/transport/v2 v2.0.2 // indirect
 	github.com/pion/udp/v2 v2.0.1 // indirect
-	github.com/pires/go-proxyproto v0.7.0 // indirect
+	github.com/pires/go-proxyproto v0.8.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.0 // indirect

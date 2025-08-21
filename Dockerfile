@@ -1,6 +1,6 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.6.1 AS xx
 
-FROM --platform=$BUILDPLATFORM golang:1.24-alpine3.22 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine3.22 AS builder
 
 # add upx for binary compression
 RUN apk add --no-cache upx || echo "upx not found"

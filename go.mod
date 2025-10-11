@@ -6,7 +6,7 @@ toolchain go1.24.5
 
 require (
 	github.com/go-gost/core v0.3.3
-	github.com/go-gost/x v0.7.10
+	github.com/go-gost/x v0.7.11
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -73,7 +73,7 @@ require (
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/quic-go/quic-go v0.53.0 // indirect
+	github.com/quic-go/quic-go v0.54.1 // indirect
 	github.com/quic-go/webtransport-go v0.9.0 // indirect
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
 	github.com/rs/xid v1.3.0 // indirect

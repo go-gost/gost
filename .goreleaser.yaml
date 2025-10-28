@@ -38,6 +38,67 @@ builds:
     ldflags:
       - "-s -w -X 'main.version={{ .Tag }}'"
 
+upx:
+  - # Whether to enable it or not.
+    #
+    # Templates: allowed.
+    enabled: true
+
+    # Filter by build ID.
+    # ids: [build1, build2]
+
+    # Filter by GOOS.
+    goos: [linux]
+
+    # Filter by GOARCH.
+    goarch: [arm, arm64, amd64]
+
+    # Filter by GOARM.
+    # goarm: [8]
+
+    # Filter by GOAMD64.
+    # goamd64: [v1]
+
+    # Compress argument.
+    # Valid options are from '1' (faster) to '9' (better), and 'best'.
+    compress: best
+
+    # Whether to try LZMA (slower).
+    lzma: true
+
+    # Whether to try all methods and filters (slow).
+    brute: true
+
+  - # Whether to enable it or not.
+    #
+    # Templates: allowed.
+    enabled: true
+
+    # Filter by build ID.
+    # ids: [build1, build2]
+
+    # Filter by GOOS.
+    goos: [windows]
+
+    # Filter by GOARCH.
+    goarch: [amd64]
+
+    # Filter by GOARM.
+    # goarm: [8]
+
+    # Filter by GOAMD64.
+    # goamd64: [v1]
+
+    # Compress argument.
+    # Valid options are from '1' (faster) to '9' (better), and 'best'.
+    compress: best
+
+    # Whether to try LZMA (slower).
+    lzma: true
+
+    # Whether to try all methods and filters (slow).
+    brute: true
+
 archives:
   - format: tar.gz
     # use zip for windows archives

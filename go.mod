@@ -41,6 +41,7 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -95,6 +96,7 @@ require (
 	github.com/vishvananda/netlink v1.1.1-0.20211118161826-650dca95af54 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/vulcand/predicate v1.2.0 // indirect
+	github.com/xjasonlyu/tun2socks/v2 v2.6.0 // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.5 // indirect
 	github.com/xtaci/smux v1.5.31 // indirect
 	github.com/xtaci/tcpraw v1.2.25 // indirect
@@ -121,6 +123,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gvisor.dev/gvisor v0.0.0-20250523182742-eede7a881b20 // indirect
 )
 
 replace github.com/go-gost/x => ./x

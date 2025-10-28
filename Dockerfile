@@ -1,6 +1,9 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.6.1 AS xx
 
-FROM --platform=$BUILDPLATFORM golang:1.24-alpine3.22 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine3.22 AS builder
+
+# add upx for binary compression
+RUN apk add --no-cache upx || echo "upx not found"
 
 COPY --from=xx / /
 
@@ -17,8 +20,9 @@ WORKDIR /app
 COPY . .
 
 RUN cd cmd/gost && \
-    xx-go build && \
-    xx-verify gost
+    xx-go build -ldflags "-s -w" && \
+    xx-verify gost && \
+    { upx --best gost || true; }
 
 FROM alpine:3.22
 

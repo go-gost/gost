@@ -42,7 +42,7 @@ install_gost() {
     armv7*)
         cpu_arch="armv7"
         ;;
-    aarch64)
+    aarch64|arm64)
         cpu_arch="arm64"
         ;;
     i686)
@@ -78,11 +78,14 @@ install_gost() {
     chmod +x gost
     mv gost /usr/local/bin/gost
 
+    # Remove binary from macOS quarantine when installing for first time
+    [[ "$os" == "darwin" ]] && { xattr -d com.apple.quarantine /usr/local/bin/gost 2>&-; }
+
     echo "gost installation completed!"
 }
 
 # Retrieve available versions from GitHub API
-versions=$(curl -s "$base_url" | grep -oP 'tag_name": "\K[^"]+')
+versions=$(curl -s "$base_url" | awk -F'"' '/"tag_name":/ {print $4}')
 
 # Check if --install option provided
 if [[ "$1" == "--install" ]]; then

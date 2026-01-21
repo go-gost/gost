@@ -68,18 +68,14 @@ install_gost() {
     get_download_url="$base_url/tags/$version"
     download_url=$(curl -s "$get_download_url" | awk -F'"' -v re=".*${os}.*${cpu_arch}.*" '/"browser_download_url":/ && $4 ~ re { print $4 }')
 
-    # Download the binary
-    echo "Downloading gost version $version..."
-    curl -fsSL -o gost.tar.gz $download_url
-
-    # Extract and install the binary
-    echo "Installing gost..."
-    tar -xzf gost.tar.gz
-    chmod +x gost
-    mv gost /usr/local/bin/gost
+    # Download and install the binary
+    install_path="/usr/local/bin"
+    echo "Downloading and installing gost version $version..."
+    curl -fsSL "$download_url" | tar -xzC "$install_path" gost
+    chmod +x "$install_path/gost"
 
     # Remove binary from macOS quarantine when installing for first time
-    [[ "$os" == "darwin" ]] && { xattr -d com.apple.quarantine /usr/local/bin/gost 2>&-; }
+    [[ "$os" == "darwin" ]] && { xattr -d com.apple.quarantine "$install_path/gost" 2>&-; }
 
     echo "gost installation completed!"
 }

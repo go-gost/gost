@@ -1,16 +1,13 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Installs gost as a Windows service.
+    Builds gost from source and installs it as a Windows service.
 
 .DESCRIPTION
-    Downloads the latest (or specified) gost release from GitHub, installs it to
-    a target directory, and registers it as a Windows service using the native
-    Windows Service Control Manager.  gost is built with go-svc and runs as a
-    proper Windows service without any wrapper.
-
-.PARAMETER Version
-    The release tag to install, e.g. "v3.2.6".  Defaults to the latest release.
+    Runs "go build" against the local source tree, copies the resulting binary
+    to a target directory, and registers it as a Windows service using the
+    native Windows Service Control Manager.  gost is built with go-svc and
+    runs as a proper Windows service without any wrapper.
 
 .PARAMETER InstallDir
     Directory where gost.exe and gost.yml are placed.
@@ -37,12 +34,12 @@
     Start the service immediately after installation.
 
 .EXAMPLE
-    # Install latest release with defaults and start immediately
+    # Build, install with defaults, and start immediately
     .\install-service.ps1 -Start
 
 .EXAMPLE
-    # Install a specific version with a custom config
-    .\install-service.ps1 -Version v3.2.6 -ConfigFile C:\etc\gost.yml -Start
+    # Install with a custom config
+    .\install-service.ps1 -ConfigFile C:\etc\gost.yml -Start
 
 .EXAMPLE
     # Install with inline service definition (no config file)
@@ -51,19 +48,21 @@
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string]$Version      = "",
-    [string]$InstallDir   = "C:\Program Files\gost",
-    [string]$ConfigFile   = "",
-    [string]$ServiceName  = "gost",
-    [string]$DisplayName  = "GOST Tunnel",
-    [string]$ExtraArgs    = "",
+    [string]$InstallDir  = "C:\Program Files\gost",
+    [string]$ConfigFile  = "",
+    [string]$ServiceName = "gost",
+    [string]$DisplayName = "GOST Tunnel",
+    [string]$ExtraArgs   = "",
     [ValidateSet("Automatic","Manual","Disabled")]
-    [string]$StartupType  = "Automatic",
+    [string]$StartupType = "Automatic",
     [switch]$Start
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# Directory containing this script == repo root
+$RepoRoot = $PSScriptRoot
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -73,68 +72,42 @@ function Write-Step([string]$msg) { Write-Host "`n==> $msg" -ForegroundColor Cya
 function Write-Ok([string]$msg)   { Write-Host "    OK  $msg" -ForegroundColor Green }
 function Write-Warn([string]$msg) { Write-Host "    WARN $msg" -ForegroundColor Yellow }
 
-function Get-Architecture {
-    switch ($env:PROCESSOR_ARCHITECTURE) {
-        "AMD64" { return "amd64" }
-        "ARM64" { return "arm64" }
-        "x86"   { return "386"   }
-        default {
-            # Also check PROCESSOR_ARCHITEW6432 for WoW64 processes
-            if ($env:PROCESSOR_ARCHITEW6432 -eq "AMD64") { return "amd64" }
-            throw "Unsupported architecture: $($env:PROCESSOR_ARCHITECTURE)"
-        }
+function Build-Binary([string]$destDir) {
+    if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
+        throw "go not found in PATH. Please install Go from https://go.dev/dl/"
     }
-}
 
-function Get-LatestVersion {
-    Write-Step "Fetching latest gost release from GitHub..."
-    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/go-gost/gost/releases/latest" `
-                                 -Headers @{ "User-Agent" = "gost-install-script" }
-    return $release.tag_name
-}
+    Write-Step "Building gost from source ($RepoRoot)..."
 
-function Get-DownloadUrl([string]$tag, [string]$arch) {
-    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/go-gost/gost/releases/tags/$tag" `
-                                 -Headers @{ "User-Agent" = "gost-install-script" }
-    $pattern = "windows.*$arch"
-    $asset   = $release.assets | Where-Object { $_.name -match $pattern } | Select-Object -First 1
-    if (-not $asset) {
-        throw "No Windows/$arch asset found for release $tag.  Available: $($release.assets.name -join ', ')"
-    }
-    return $asset.browser_download_url
-}
-
-function Install-Binary([string]$url, [string]$destDir) {
-    $zipPath = Join-Path $env:TEMP "gost-install.zip"
-    Write-Step "Downloading $url ..."
-    Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing
-
-    Write-Step "Extracting to $destDir ..."
     if (-not (Test-Path $destDir)) {
         New-Item -ItemType Directory -Path $destDir -Force | Out-Null
     }
 
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
-    try {
-        foreach ($entry in $zip.Entries) {
-            if ($entry.Name -eq "gost.exe") {
-                $dest = Join-Path $destDir "gost.exe"
-                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $dest, $true)
-                Write-Ok "gost.exe extracted to $dest"
-                break
-            }
-        }
-    } finally {
-        $zip.Dispose()
-        Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
-    }
+    $exeDest = Join-Path $destDir "gost.exe"
 
-    $exePath = Join-Path $destDir "gost.exe"
-    if (-not (Test-Path $exePath)) {
-        throw "gost.exe not found in the downloaded archive."
+    # Embed version: prefer git tag, fall back to version.go
+    $ldflags = "-s -w"
+    $version = $null
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        $version = git -C $RepoRoot describe --tags --abbrev=0 2>$null
     }
-    return $exePath
+    if (-not $version) {
+        $verFile = Join-Path $RepoRoot "cmd\gost\version.go"
+        if (Test-Path $verFile) {
+            $match = Select-String -Path $verFile -Pattern 'version\s*=\s*"([^"]+)"'
+            if ($match) { $version = $match.Matches[0].Groups[1].Value }
+        }
+    }
+    if ($version) { $ldflags = "-s -w -X 'main.version=$version'" }
+
+    $goArgs = @("build", "-ldflags", $ldflags, "-o", $exeDest, "./cmd/gost")
+    Write-Host "    go $($goArgs -join ' ')" -ForegroundColor DarkGray
+
+    & go @goArgs 2>&1 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+    if ($LASTEXITCODE -ne 0) { throw "go build failed (exit $LASTEXITCODE)" }
+
+    Write-Ok "Built: $exeDest"
+    return $exeDest
 }
 
 function Ensure-Config([string]$installDir, [string]$userConfig) {
@@ -144,7 +117,9 @@ function Ensure-Config([string]$installDir, [string]$userConfig) {
         if (-not (Test-Path $userConfig)) {
             throw "Config file not found: $userConfig"
         }
-        if ((Resolve-Path $userConfig).Path -ne (Resolve-Path $dest -ErrorAction SilentlyContinue)?.Path) {
+        $resolvedSrc  = (Resolve-Path $userConfig).Path
+        $resolvedDest = if (Test-Path $dest) { (Resolve-Path $dest).Path } else { "" }
+        if ($resolvedSrc -ne $resolvedDest) {
             Copy-Item $userConfig $dest -Force
             Write-Ok "Config copied from $userConfig"
         }
@@ -182,9 +157,7 @@ log:
 
 function Register-GostService([string]$exePath, [string]$cfgPath, [string]$extraArgs) {
     $binPath = "`"$exePath`" -C `"$cfgPath`""
-    if ($extraArgs -ne "") {
-        $binPath += " $extraArgs"
-    }
+    if ($extraArgs -ne "") { $binPath += " $extraArgs" }
 
     $existing = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 
@@ -195,9 +168,13 @@ function Register-GostService([string]$exePath, [string]$cfgPath, [string]$extra
             Stop-Service -Name $ServiceName -Force
             $existing.WaitForStatus("Stopped", [TimeSpan]::FromSeconds(30))
         }
-        # Update the binary path
         sc.exe config $ServiceName binPath= $binPath | Out-Null
-        sc.exe config $ServiceName start= $(if ($StartupType -eq "Automatic") { "auto" } elseif ($StartupType -eq "Manual") { "demand" } else { "disabled" }) | Out-Null
+        $startValue = switch ($StartupType) {
+            "Automatic" { "auto"     }
+            "Manual"    { "demand"   }
+            "Disabled"  { "disabled" }
+        }
+        sc.exe config $ServiceName start= $startValue | Out-Null
         Write-Ok "Service updated."
     } else {
         Write-Step "Registering service '$ServiceName'..."
@@ -211,12 +188,11 @@ function Register-GostService([string]$exePath, [string]$cfgPath, [string]$extra
             DisplayName= $DisplayName `
             start= $startValue | Out-Null
 
-        # Configure failure recovery: restart on first/second failure, reset after 1 day
+        # Restart on failure: 5 s / 10 s / 30 s, reset counter after 1 day
         sc.exe failure $ServiceName reset= 86400 actions= restart/5000/restart/10000/restart/30000 | Out-Null
         Write-Ok "Service registered."
     }
 
-    # Set description
     sc.exe description $ServiceName "GOST (GO Simple Tunnel) - secure tunnel service" | Out-Null
 }
 
@@ -224,21 +200,16 @@ function Register-GostService([string]$exePath, [string]$cfgPath, [string]$extra
 # Main
 # ---------------------------------------------------------------------------
 
-$arch    = Get-Architecture
-$version = if ($Version -ne "") { $Version } else { Get-LatestVersion }
-
 Write-Host ""
-Write-Host "  gost Windows Service Installer" -ForegroundColor White
-Write-Host "  ================================" -ForegroundColor White
-Write-Host "  Version    : $version"
-Write-Host "  Arch       : $version / windows-$arch"
+Write-Host "  gost Windows Service Installer (build from source)" -ForegroundColor White
+Write-Host "  ===================================================" -ForegroundColor White
+Write-Host "  Repo       : $RepoRoot"
 Write-Host "  Install dir: $InstallDir"
 Write-Host "  Service    : $ServiceName ($StartupType)"
 Write-Host ""
 
-# 1. Download & install binary
-$url    = Get-DownloadUrl $version $arch
-$exePath = Install-Binary $url $InstallDir
+# 1. Build binary from source
+$exePath = Build-Binary $InstallDir
 
 # 2. Ensure config exists
 $cfgPath = Ensure-Config $InstallDir $ConfigFile
@@ -259,9 +230,9 @@ Write-Host ""
 Write-Host "  Done!" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Useful commands:" -ForegroundColor White
-Write-Host "    Start   : Start-Service $ServiceName"
-Write-Host "    Stop    : Stop-Service $ServiceName"
-Write-Host "    Status  : Get-Service $ServiceName"
-Write-Host "    Logs    : Get-EventLog -LogName Application -Source $ServiceName -Newest 20"
+Write-Host "    Start    : Start-Service $ServiceName"
+Write-Host "    Stop     : Stop-Service $ServiceName"
+Write-Host "    Status   : Get-Service $ServiceName"
+Write-Host "    Logs     : Get-EventLog -LogName Application -Source $ServiceName -Newest 20"
 Write-Host "    Uninstall: sc.exe delete $ServiceName"
 Write-Host ""

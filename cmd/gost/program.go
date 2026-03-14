@@ -36,7 +36,7 @@ func (p *program) Init(env svc.Environment) error {
 	parser.Init(parser.Args{
 		CfgFile:     cfgFile,
 		Services:    services,
-		Nodes:       nodes,
+		Nodes:       expandSSHNodes(nodes),
 		Debug:       debug,
 		Trace:       trace,
 		ApiAddr:     apiAddr,

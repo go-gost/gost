@@ -1,0 +1,30 @@
+services:
+- name: proxy
+  addr: :8080
+  handler:
+    type: http
+    chain: my-chain
+  listener:
+    type: tcp
+
+- name: dummy-1
+  addr: :18081
+  handler:
+    type: http
+
+chains:
+- name: my-chain
+  hops:
+  - name: hop-1
+    selector:
+      strategy: parallel
+    nodes:
+    - name: node-1
+      addr: 127.0.0.1:18081
+      connector:
+        type: http
+    # non existed node
+    - name: node-2
+      addr: 127.0.0.1:18082
+      connector:
+        type: http

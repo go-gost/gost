@@ -26,6 +26,8 @@ func RunGostContainer(ctx context.Context, networkName, yamlPath string) (testco
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    ".",
 			Dockerfile: "Dockerfile",
+			Repo:       "gost-e2e",
+			Tag:        "latest",
 			KeepImage:  true,
 		},
 		Networks: []string{networkName},

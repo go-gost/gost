@@ -8,13 +8,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/network"
 )
 
 type ParallelSelectorSuite struct {
 	suite.Suite
 	ctx    context.Context
-	net    *testcontainers.DockerNetwork
 	echoC  testcontainers.Container
 	echoIP string
 }
@@ -22,11 +20,7 @@ type ParallelSelectorSuite struct {
 func (s *ParallelSelectorSuite) SetupSuite() {
 	s.ctx = context.Background()
 
-	net, err := network.New(s.ctx)
-	s.Require().NoError(err)
-	s.net = net
-
-	echoC, err := RunEchoContainer(s.ctx, s.net.Name)
+	echoC, err := RunEchoContainer(s.ctx, SharedNetworkName)
 	s.Require().NoError(err)
 	s.echoC = echoC
 
@@ -39,13 +33,10 @@ func (s *ParallelSelectorSuite) TearDownSuite() {
 	if s.echoC != nil {
 		s.echoC.Terminate(s.ctx)
 	}
-	if s.net != nil {
-		s.net.Remove(s.ctx)
-	}
 }
 
 func (s *ParallelSelectorSuite) TestParallelSelector() {
-	gostC, err := RunGostContainer(s.ctx, s.net.Name, "testdata/parallel_selector/server.yaml")
+	gostC, err := RunGostContainer(s.ctx, SharedNetworkName, "testdata/parallel_selector/server.yaml")
 	s.Require().NoError(err)
 	defer gostC.Terminate(s.ctx)
 

@@ -1,6 +1,6 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.6.1 AS xx
 
-FROM --platform=$BUILDPLATFORM golang:1.25-alpine3.22 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine3.23 AS builder
 
 # add upx for binary compression
 RUN apk add --no-cache upx || echo "upx not found"
@@ -24,7 +24,7 @@ RUN cd cmd/gost && \
     xx-verify gost && \
     { upx --best gost || true; }
 
-FROM alpine:3.22
+FROM alpine:3.23
 
 # add iptables for tun/tap
 RUN apk add --no-cache iptables

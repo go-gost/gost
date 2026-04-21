@@ -35,6 +35,6 @@ cmd/gost/gost
 snap
 
 *.pem
-*.yaml
+/*.yaml
 *.txt
 dist/

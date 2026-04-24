@@ -66,7 +66,7 @@ install_gost() {
         ;;
     esac
     get_download_url="$base_url/tags/$version"
-    download_url=$(curl -s "$get_download_url" | awk -F'"' -v re=".*${os}.*${cpu_arch}.*" '/"browser_download_url":/ && $4 ~ re { print $4 }')
+    download_url=$(curl -s "$get_download_url" | awk -F'"' -v re=".*${os}.*${cpu_arch}.*" '/"browser_download_url":/ && $4 ~ re { print $4 }' | head -n 1)
 
     # Download and install the binary
     install_path="/usr/local/bin"

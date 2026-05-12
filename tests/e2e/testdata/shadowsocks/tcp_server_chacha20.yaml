@@ -1,0 +1,10 @@
+services:
+- name: ss-server
+  addr: :8388
+  handler:
+    type: ss
+    auth:
+      username: chacha20-ietf-poly1305
+      password: secret
+  listener:
+    type: tcp

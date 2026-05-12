@@ -1,4 +1,4 @@
 FROM alpine:3.22
 
-# add iptables for tun/tap and curl for testing
-RUN apk add --no-cache iptables curl
+# add tools needed by e2e containers and health checks
+RUN apk add --no-cache iptables curl netcat-openbsd python3

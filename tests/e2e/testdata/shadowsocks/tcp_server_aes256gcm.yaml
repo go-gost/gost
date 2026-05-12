@@ -1,0 +1,10 @@
+services:
+- name: ss-server
+  addr: :8388
+  handler:
+    type: ss
+    auth:
+      username: aes-256-gcm
+      password: secret
+  listener:
+    type: tcp

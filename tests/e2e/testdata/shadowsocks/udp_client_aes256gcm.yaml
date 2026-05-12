@@ -1,0 +1,27 @@
+services:
+- name: udp-proxy
+  addr: :9000
+  handler:
+    type: udp
+    chain: ssu-chain
+  forwarder:
+    nodes:
+    - name: udp-echo
+      addr: udp-echo:5679
+  listener:
+    type: udp
+
+chains:
+- name: ssu-chain
+  hops:
+  - name: ssu-hop
+    nodes:
+    - name: ssu-node
+      addr: {{.ServerAddr}}
+      connector:
+        type: ssu
+        auth:
+          username: aes-256-gcm
+          password: secret
+      dialer:
+        type: udp

@@ -1,0 +1,23 @@
+services:
+- name: http-proxy
+  addr: :8080
+  handler:
+    type: http
+    chain: ss-tcp-chain
+  listener:
+    type: tcp
+
+chains:
+- name: ss-tcp-chain
+  hops:
+  - name: ss-hop
+    nodes:
+    - name: ss-node
+      addr: {{.ServerAddr}}
+      connector:
+        type: ss
+        auth:
+          username: 2022-blake3-aes-256-gcm
+          password: MTIzNDU2Nzg5MDEyMzQ1NjEyMzQ1Njc4OTAxMjM0NTY=
+      dialer:
+        type: tcp

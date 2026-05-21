@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-gost/x/connector/forward"
 	_ "github.com/go-gost/x/connector/http"
 	_ "github.com/go-gost/x/connector/http2"
+	_ "github.com/go-gost/x/connector/masque"
 	_ "github.com/go-gost/x/connector/relay"
 	_ "github.com/go-gost/x/connector/router"
 	_ "github.com/go-gost/x/connector/serial"

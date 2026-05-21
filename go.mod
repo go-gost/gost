@@ -1,10 +1,10 @@
 module github.com/go-gost/gost
 
-go 1.25.0
+go 1.26.3
 
 require (
-	github.com/go-gost/core v0.3.3
-	github.com/go-gost/x v0.9.0
+	github.com/go-gost/core v0.4.0
+	github.com/go-gost/x v0.10.0
 	github.com/judwhite/go-svc v1.2.1
 )
 
@@ -28,11 +28,11 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.10.1 // indirect
 	github.com/go-gost/go-shadowsocks2 v0.1.2 // indirect
-	github.com/go-gost/gosocks4 v0.0.1 // indirect
-	github.com/go-gost/gosocks5 v0.4.2 // indirect
-	github.com/go-gost/plugin v0.2.1 // indirect
-	github.com/go-gost/relay v0.5.0 // indirect
-	github.com/go-gost/tls-dissector v0.1.1 // indirect
+	github.com/go-gost/gosocks4 v0.1.0 // indirect
+	github.com/go-gost/gosocks5 v0.5.0 // indirect
+	github.com/go-gost/plugin v0.3.0 // indirect
+	github.com/go-gost/relay v0.6.0 // indirect
+	github.com/go-gost/tls-dissector v0.2.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.20.0 // indirect

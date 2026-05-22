@@ -32,6 +32,7 @@ _testmain.go
 *.bak
 
 cmd/gost/gost
+gost
 snap
 
 *.pem

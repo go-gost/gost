@@ -1,0 +1,10 @@
+services:
+- name: ssu-server
+  addr: :8389
+  handler:
+    type: ssu
+    auth:
+      username: 2022-blake3-aes-256-gcm
+      password: MTIzNDU2Nzg5MDEyMzQ1NjEyMzQ1Njc4OTAxMjM0NTY=
+  listener:
+    type: udp

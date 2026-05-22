@@ -1,0 +1,10 @@
+services:
+- name: ssu-server
+  addr: :8389
+  handler:
+    type: ssu
+    auth:
+      username: aes-256-gcm
+      password: secret
+  listener:
+    type: udp

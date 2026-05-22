@@ -1,0 +1,13 @@
+services:
+- name: ss-server
+  addr: :8388
+  handler:
+    type: ss
+    auth:
+      username: 2022-blake3-aes-256-gcm
+      password: MTIzNDU2Nzg5MDEyMzQ1NjEyMzQ1Njc4OTAxMjM0NTY=
+    metadata:
+      users:
+        test: YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=
+  listener:
+    type: tcp

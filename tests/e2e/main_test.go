@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,23 +13,31 @@ import (
 
 var SharedNetworkName string
 
+var GostBinPath string
+
+func init() {
+	flag.StringVar(&GostBinPath, "gost-bin", "", "Path to a pre-built gost binary (skips compilation)")
+}
+
 func TestMain(m *testing.M) {
+	flag.Parse()
 	ctx := context.Background()
 
-	// Compile the gost binary
-	cmd := exec.Command("go", "build", "-o", "/tmp/gost-test-bin", "../../cmd/gost")
-	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Failed to compile gost: %v\n", err)
-		os.Exit(1)
-	}
-	defer func() {
-		os.Remove("/tmp/gost-test-bin")
-	}()
+	shouldCleanup := false
 
-	// Create a shared Docker network
+	if GostBinPath == "" {
+		GostBinPath = "/tmp/gost-test-bin"
+		cmd := exec.Command("go", "build", "-o", GostBinPath, "../../cmd/gost")
+		cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("Failed to compile gost: %v\n", err)
+			os.Exit(1)
+		}
+		shouldCleanup = true
+	}
+
 	net, err := network.New(ctx)
 	if err != nil {
 		fmt.Printf("Failed to create network: %v\n", err)
@@ -36,11 +45,12 @@ func TestMain(m *testing.M) {
 	}
 	SharedNetworkName = net.Name
 
-	// Run tests
 	code := m.Run()
 
-	// Cleanup
 	net.Remove(ctx)
+	if shouldCleanup {
+		os.Remove(GostBinPath)
+	}
 
 	os.Exit(code)
 }

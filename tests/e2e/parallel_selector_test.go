@@ -36,7 +36,7 @@ func (s *ParallelSelectorSuite) TearDownSuite() {
 }
 
 func (s *ParallelSelectorSuite) TestParallelSelector() {
-	gostC, err := RunGostContainer(s.ctx, SharedNetworkName, "testdata/parallel_selector/server.yaml")
+	gostC, err := RunGostContainerWithPorts(s.ctx, SharedNetworkName, "testdata/parallel_selector/server.yaml", "8080/tcp")
 	s.Require().NoError(err)
 	defer gostC.Terminate(s.ctx)
 

@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/go-gost/core v0.4.0
-	github.com/go-gost/x v0.10.1
+	github.com/go-gost/x v0.10.3
 	github.com/judwhite/go-svc v1.2.1
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.42.0
@@ -95,10 +95,9 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/pion/dtls/v2 v2.2.6 // indirect
-	github.com/pion/logging v0.2.2 // indirect
-	github.com/pion/transport/v2 v2.0.2 // indirect
-	github.com/pion/udp/v2 v2.0.1 // indirect
+	github.com/pion/dtls/v3 v3.1.1 // indirect
+	github.com/pion/logging v0.2.4 // indirect
+	github.com/pion/transport/v4 v4.0.1 // indirect
 	github.com/pires/go-proxyproto v0.8.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect

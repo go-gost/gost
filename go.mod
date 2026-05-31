@@ -3,7 +3,7 @@ module github.com/go-gost/gost
 go 1.26.3
 
 require (
-	github.com/go-gost/core v0.4.0
+	github.com/go-gost/core v0.4.1
 	github.com/go-gost/x v0.10.4
 	github.com/judwhite/go-svc v1.2.1
 	github.com/stretchr/testify v1.11.1

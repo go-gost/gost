@@ -2,8 +2,10 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.6.1 AS xx
 
 FROM --platform=$BUILDPLATFORM golang:1.26-alpine3.23 AS builder
 
-# add upx for binary compression
-RUN apk add --no-cache upx || echo "upx not found"
+# UPX compression disabled by default (see #863): upx --best adds ~3s startup
+# time on low-spec systems (linux/arm). Builds can opt in by uncommenting the
+# upx install line and adding upx --best to the build command below.
+# RUN apk add --no-cache upx || echo "upx not found"
 
 COPY --from=xx / /
 
@@ -21,8 +23,7 @@ COPY . .
 
 RUN cd cmd/gost && \
     xx-go build -ldflags "-s -w" && \
-    xx-verify gost && \
-    { upx --best gost || true; }
+    xx-verify gost
 
 FROM alpine:3.23
 

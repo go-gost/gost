@@ -26,8 +26,8 @@ RUN cd cmd/gost && \
 
 FROM alpine:3.23
 
-# add iptables for tun/tap
-RUN apk add --no-cache iptables
+# add iptables/nftables for tun/tap
+RUN apk add --no-cache iptables nftables
 
 WORKDIR /bin/
 

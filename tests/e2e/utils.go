@@ -2,14 +2,22 @@ package e2e
 
 import (
 	"context"
+	"flag"
 	"io"
 	"os"
 	"testing"
 	"text/template"
 
+	"github.com/moby/moby/client"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
+
+var GostBinPath string
+
+func init() {
+	flag.StringVar(&GostBinPath, "gost-bin", "", "Path to a pre-built gost binary (skips compilation)")
+}
 
 type ConfigData struct {
 	ServerAddr string
@@ -70,6 +78,9 @@ func echoContainerRequest(_ context.Context, networkName string) testcontainers.
 			Repo:       "gost-e2e",
 			Tag:        "latest",
 			KeepImage:  true,
+			BuildOptionsModifier: func(opts *client.ImageBuildOptions) {
+				opts.NetworkMode = "host"
+			},
 		},
 		Networks: []string{networkName},
 		NetworkAliases: map[string][]string{
@@ -100,6 +111,9 @@ func udpEchoContainerRequest(_ context.Context, networkName string) testcontaine
 			Repo:       "gost-e2e",
 			Tag:        "latest",
 			KeepImage:  true,
+			BuildOptionsModifier: func(opts *client.ImageBuildOptions) {
+				opts.NetworkMode = "host"
+			},
 		},
 		Networks: []string{networkName},
 		NetworkAliases: map[string][]string{
@@ -134,6 +148,9 @@ func runGostContainer(ctx context.Context, networkName, yamlPath string, aliases
 			Repo:       "gost-e2e",
 			Tag:        "latest",
 			KeepImage:  true,
+			BuildOptionsModifier: func(opts *client.ImageBuildOptions) {
+				opts.NetworkMode = "host"
+			},
 		},
 		ExposedPorts: exposedPorts,
 		// interal check for udp ports will be failed

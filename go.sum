@@ -95,8 +95,6 @@ github.com/go-gost/relay v0.6.0 h1:o8r0B3eTw8Rwwent+5x5Cw1g4AyNUl4hNqiyDJXkFvA=
 github.com/go-gost/relay v0.6.0/go.mod h1:Dku0f5sfjOClrZFiDmQUrYYJ4uof7rnkCUBfsl0PSAI=
 github.com/go-gost/tls-dissector v0.2.0 h1:9tE6WOzzpurATTBWn60DU4R8gibpGNY8/qVcc1SicVg=
 github.com/go-gost/tls-dissector v0.2.0/go.mod h1:/9QfdewqmHdaE362Hv5nDaSWLx3pCmtD870d6GaquXs=
-github.com/go-gost/x v0.10.10 h1:6PCaXNqNaYsJ1smkK8mTr7UwmXqkQLc0AtL//a5G3xw=
-github.com/go-gost/x v0.10.10/go.mod h1:rlFAe9jHSKCEmbps70sZxiU+Wdv3zB6+Li/AqjCUQSM=
 github.com/go-gost/x v0.10.11-0.20260605152603-e45d9a8cc81a h1:lYfS2JDdlvLbXkd1ynQ8m7TpoWCxnN58M8eUTXScYyc=
 github.com/go-gost/x v0.10.11-0.20260605152603-e45d9a8cc81a/go.mod h1:BcReQfYxrWetKeZK4Zz25qycpWgSbY4H3k+rD9udJPg=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
@@ -254,8 +252,6 @@ github.com/prometheus/procfs v0.12.0 h1:jluTpSng7V9hY0O2R9DzzJHYb2xULk9VTR1V1R/k
 github.com/prometheus/procfs v0.12.0/go.mod h1:pcuDEFsWDnvcgNzo4EEweacyhjeA9Zk3cnaOZAZEfOo=
 github.com/quic-go/qpack v0.6.0 h1:g7W+BMYynC1LbYLSqRt8PBg5Tgwxn214ZZR34VIOjz8=
 github.com/quic-go/qpack v0.6.0/go.mod h1:lUpLKChi8njB4ty2bFLX2x4gzDqXwUpaO1DP9qMDZII=
-github.com/quic-go/quic-go v0.59.0 h1:OLJkp1Mlm/aS7dpKgTc6cnpynnD2Xg7C1pwL6vy/SAw=
-github.com/quic-go/quic-go v0.59.0/go.mod h1:upnsH4Ju1YkqpLXC305eW3yDZ4NfnNbmQRCMWS58IKU=
 github.com/quic-go/quic-go v0.59.1 h1:0Gmua0HW1Tv7ANR7hUYwRyD0MG5OJfgvYSZasGZzBic=
 github.com/quic-go/quic-go v0.59.1/go.mod h1:upnsH4Ju1YkqpLXC305eW3yDZ4NfnNbmQRCMWS58IKU=
 github.com/quic-go/webtransport-go v0.10.0 h1:LqXXPOXuETY5Xe8ITdGisBzTYmUOy5eSj+9n4hLTjHI=

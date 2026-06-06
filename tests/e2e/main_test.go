@@ -13,12 +13,6 @@ import (
 
 var SharedNetworkName string
 
-var GostBinPath string
-
-func init() {
-	flag.StringVar(&GostBinPath, "gost-bin", "", "Path to a pre-built gost binary (skips compilation)")
-}
-
 func TestMain(m *testing.M) {
 	flag.Parse()
 	ctx := context.Background()

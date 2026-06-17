@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/go-gost/core v0.4.1
-	github.com/go-gost/x v0.10.11-0.20260605152603-e45d9a8cc81a
+	github.com/go-gost/x v0.11.0
 	github.com/judwhite/go-svc v1.2.1
 	github.com/moby/moby/client v0.4.0
 	github.com/stretchr/testify v1.11.1

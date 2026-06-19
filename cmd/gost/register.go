@@ -19,7 +19,6 @@ import (
 	_ "github.com/go-gost/x/connector/tcp"
 	_ "github.com/go-gost/x/connector/tunnel"
 	_ "github.com/go-gost/x/connector/unix"
-	_ "github.com/go-gost/x/connector/masque"
 
 	// Register dialers
 	_ "github.com/go-gost/x/dialer/direct"
@@ -101,6 +100,7 @@ import (
 	_ "github.com/go-gost/x/listener/redirect/udp"
 	_ "github.com/go-gost/x/listener/rtcp"
 	_ "github.com/go-gost/x/listener/rudp"
+	_ "github.com/go-gost/x/listener/runix"
 	_ "github.com/go-gost/x/listener/serial"
 	_ "github.com/go-gost/x/listener/ssh"
 	_ "github.com/go-gost/x/listener/sshd"

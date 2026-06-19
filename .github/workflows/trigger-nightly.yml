@@ -6,6 +6,11 @@ on:
     - cron:  '00 15 * * *'
   workflow_dispatch:
 
+# Only one nightly run at a time; a new run cancels a stale one.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   check_date:
     runs-on: ubuntu-latest
@@ -17,10 +22,12 @@ jobs:
       - name: print latest_commit
         run: echo ${{ github.sha }}
       - id: should_run
-        continue-on-error: true
-        name: check latest commit is less than a day
+        name: Skip if no commit in the last 24 hours
         if: ${{ github.event_name == 'schedule' }}
-        run: test -z $(git rev-list --after="24 hours" ${{ github.sha }}) && echo "should_run=false" >> $GITHUB_OUTPUT
+        run: |
+          if [ "$(git rev-list --count --after='24 hours' ${{ github.sha }})" -eq 0 ]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
 
   trigger-nightly:
     needs: check_date
@@ -52,10 +59,13 @@ jobs:
           git tag -a $TAG -m "$TAG: nightly build"
           git push origin $TAG
       - name: 'Clean up nightly releases'
-        uses: dev-drprasad/delete-older-releases@v0.3.3
-        with:
-          keep_latest: 2
-          delete_tags: true
-          delete_tag_pattern: nightly
         env:
-          GITHUB_TOKEN: ${{ secrets.NIGHTLY_BUILD_GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.NIGHTLY_BUILD_GH_TOKEN }}
+        run: |
+          # Keep the 2 most recent nightly releases; delete the rest and their tags.
+          # Replaces the archived dev-drprasad/delete-older-releases action.
+          gh release list --json tagName,createdAt --limit 100 \
+            --jq '[.[] | select(.tagName | test("nightly"))] | sort_by(.createdAt) | reverse | .[2:] | .[].tagName' \
+            | while read -r tag; do
+                gh release delete "$tag" --yes --cleanup-tag || true
+              done

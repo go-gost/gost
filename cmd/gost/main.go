@@ -28,7 +28,7 @@ func (l *stringList) Set(value string) error {
 }
 
 var (
-	cfgFile      string
+	cfgFiles     stringList
 	outputFormat string
 	services     stringList
 	nodes        stringList
@@ -87,7 +87,7 @@ func init() {
 
 	flag.Var(&services, "L", "service list")
 	flag.Var(&nodes, "F", "chain node list")
-	flag.StringVar(&cfgFile, "C", "", "configuration file")
+	flag.Var(&cfgFiles, "C", "configuration file(s)")
 	flag.BoolVar(&printVersion, "V", false, "print version")
 	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
 	flag.BoolVar(&debug, "D", false, "debug mode")

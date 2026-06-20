@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-gost/core/logger"
 	xlogger "github.com/go-gost/x/logger"
@@ -36,6 +37,7 @@ var (
 	trace        bool
 	apiAddr      string
 	metricsAddr  string
+	reload       time.Duration
 )
 
 func init() {
@@ -87,13 +89,14 @@ func init() {
 
 	flag.Var(&services, "L", "service list")
 	flag.Var(&nodes, "F", "chain node list")
-	flag.Var(&cfgFiles, "C", "configuration file(s)")
+	flag.Var(&cfgFiles, "C", "config file(s), URL(s), or inline JSON")
 	flag.BoolVar(&printVersion, "V", false, "print version")
 	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
 	flag.BoolVar(&debug, "D", false, "debug mode")
 	flag.BoolVar(&trace, "DD", false, "trace mode")
 	flag.StringVar(&apiAddr, "api", "", "api service address")
 	flag.StringVar(&metricsAddr, "metrics", "", "metrics service address")
+	flag.DurationVar(&reload, "R", 0, "auto reload period (e.g. 30s, 1m)")
 	flag.Parse()
 
 	if printVersion {

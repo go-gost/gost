@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/go-gost/core/auth"
 	"github.com/go-gost/core/logger"
@@ -193,6 +194,13 @@ func (p *program) reload(ctx context.Context) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
 
+	var ticker <-chan time.Time
+	if reload > 0 {
+		t := time.NewTicker(reload)
+		defer t.Stop()
+		ticker = t.C
+	}
+
 	for {
 		select {
 		case <-c:
@@ -200,6 +208,13 @@ func (p *program) reload(ctx context.Context) {
 				logger.Default().Error(err)
 			} else {
 				logger.Default().Info("config reloaded")
+			}
+
+		case <-ticker:
+			if err := p.reloadConfig(); err != nil {
+				logger.Default().Errorf("auto reload: %v", err)
+			} else {
+				logger.Default().Debug("config auto reloaded")
 			}
 
 		case <-ctx.Done():

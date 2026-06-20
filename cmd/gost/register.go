@@ -46,6 +46,7 @@ import (
 	_ "github.com/go-gost/x/dialer/tls"
 	_ "github.com/go-gost/x/dialer/udp"
 	_ "github.com/go-gost/x/dialer/unix"
+	_ "github.com/go-gost/x/dialer/utls"
 	_ "github.com/go-gost/x/dialer/ws"
 
 	// Register handlers

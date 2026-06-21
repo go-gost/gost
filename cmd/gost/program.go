@@ -62,6 +62,12 @@ func (p *program) Start() error {
 
 	config.Set(cfg)
 
+	// Enable metrics before loading services so that listener wrappers
+	// can observe the enabled state at Init time.
+	if cfg.Metrics != nil && cfg.Metrics.Addr != "" {
+		xmetrics.Enable(true)
+	}
+
 	if err := loader.Load(cfg); err != nil {
 		return err
 	}
@@ -120,8 +126,6 @@ func (p *program) run(cfg *config.Config) error {
 		}
 
 		p.srvMetrics = s
-
-		xmetrics.Enable(true)
 
 		go func() {
 			defer s.Close()

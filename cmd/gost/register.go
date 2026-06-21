@@ -103,6 +103,7 @@ import (
 	_ "github.com/go-gost/x/listener/rudp"
 	_ "github.com/go-gost/x/listener/runix"
 	_ "github.com/go-gost/x/listener/serial"
+	_ "github.com/go-gost/x/listener/stdio"
 	_ "github.com/go-gost/x/listener/ssh"
 	_ "github.com/go-gost/x/listener/sshd"
 	_ "github.com/go-gost/x/listener/tap"

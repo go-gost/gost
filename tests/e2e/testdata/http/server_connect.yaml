@@ -1,0 +1,12 @@
+services:
+- name: http-connect
+  addr: :8080
+  handler:
+    type: http
+    metadata:
+      # sniffing: enable protocol sniffing on CONNECT tunnels
+      sniffing: true
+      # sniffing.timeout: timeout for initial sniff read (2s)
+      sniffing.timeout: 2s
+  listener:
+    type: tcp

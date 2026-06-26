@@ -1,0 +1,16 @@
+services:
+- name: http-proxy-auth
+  addr: :8080
+  handler:
+    type: http
+    auther: auther-0
+    metadata:
+      # authBasicRealm: custom realm in 407 Proxy-Authenticate header
+      authBasicRealm: gost-e2e-realm
+  listener:
+    type: tcp
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

@@ -1,0 +1,9 @@
+services:
+- name: http-udp
+  addr: :8080
+  handler:
+    type: http
+    metadata:
+      udp: true
+  listener:
+    type: tcp

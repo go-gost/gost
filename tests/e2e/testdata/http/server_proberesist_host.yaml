@@ -1,0 +1,16 @@
+services:
+- name: http-proxy
+  addr: :8080
+  handler:
+    type: http
+    auther: auther-0
+    metadata:
+      probeResist: host:tcp-echo:5678
+  listener:
+    type: tcp
+
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

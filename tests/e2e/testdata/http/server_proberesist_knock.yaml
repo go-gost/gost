@@ -1,0 +1,17 @@
+services:
+- name: http-proxy
+  addr: :8080
+  handler:
+    type: http
+    auther: auther-0
+    metadata:
+      probeResist: code:404
+      knock: secret.example.com
+  listener:
+    type: tcp
+
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

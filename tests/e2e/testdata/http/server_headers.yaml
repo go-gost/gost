@@ -1,0 +1,25 @@
+bypasses:
+- name: bypass-0
+  matchers:
+  - 0.0.0.0/0
+
+services:
+- name: http-headers
+  addr: :8080
+  handler:
+    type: http
+    auther: auther-0
+    metadata:
+      header:
+        X-Proxy-Info: gost-e2e
+        X-Custom: test-value
+      proxyAgent: gost-e2e/1.0
+  listener:
+    type: tcp
+  bypass: bypass-0
+
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

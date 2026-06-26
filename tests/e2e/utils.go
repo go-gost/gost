@@ -129,18 +129,29 @@ func udpEchoContainerRequest(_ context.Context, networkName string) testcontaine
 }
 
 func RunGostContainer(ctx context.Context, networkName, yamlPath string) (testcontainers.Container, error) {
-	return runGostContainer(ctx, networkName, yamlPath, nil, nil)
+	return runGostContainer(ctx, networkName, yamlPath, nil, nil, nil)
 }
 
 func RunGostContainerWithPorts(ctx context.Context, networkName, yamlPath string, exposedPorts ...string) (testcontainers.Container, error) {
-	return runGostContainer(ctx, networkName, yamlPath, nil, exposedPorts)
+	return runGostContainer(ctx, networkName, yamlPath, nil, exposedPorts, nil)
 }
 
 func RunGostContainerWithOptions(ctx context.Context, networkName, yamlPath string, aliases, exposedPorts []string) (testcontainers.Container, error) {
-	return runGostContainer(ctx, networkName, yamlPath, aliases, exposedPorts)
+	return runGostContainer(ctx, networkName, yamlPath, aliases, exposedPorts, nil)
 }
 
-func runGostContainer(ctx context.Context, networkName, yamlPath string, aliases, exposedPorts []string) (testcontainers.Container, error) {
+// RunGostContainerWithFiles starts a gost container with extra files mounted.
+func RunGostContainerWithFiles(ctx context.Context, networkName, yamlPath string, extraFiles []testcontainers.ContainerFile, exposedPorts ...string) (testcontainers.Container, error) {
+	return runGostContainer(ctx, networkName, yamlPath, nil, exposedPorts, extraFiles)
+}
+
+func runGostContainer(ctx context.Context, networkName, yamlPath string, aliases, exposedPorts []string, extraFiles []testcontainers.ContainerFile) (testcontainers.Container, error) {
+	files := []testcontainers.ContainerFile{
+		{HostFilePath: GostBinPath, ContainerFilePath: "/bin/gost", FileMode: 0755},
+		{HostFilePath: yamlPath, ContainerFilePath: "/config.yaml", FileMode: 0644},
+	}
+	files = append(files, extraFiles...)
+
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    ".",
@@ -153,17 +164,14 @@ func runGostContainer(ctx context.Context, networkName, yamlPath string, aliases
 			},
 		},
 		ExposedPorts: exposedPorts,
-		// interal check for udp ports will be failed
+		// internal check for udp ports will be failed
 		WaitingFor: wait.ForExposedPort().SkipInternalCheck(),
 		Networks:   []string{networkName},
 		NetworkAliases: map[string][]string{
 			networkName: aliases,
 		},
-		Files: []testcontainers.ContainerFile{
-			{HostFilePath: GostBinPath, ContainerFilePath: "/bin/gost", FileMode: 0755},
-			{HostFilePath: yamlPath, ContainerFilePath: "/config.yaml", FileMode: 0644},
-		},
-		Cmd: []string{"/bin/gost", "-C", "/config.yaml"},
+		Files: files,
+		Cmd:   []string{"/bin/gost", "-C", "/config.yaml"},
 	}
 
 	return testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

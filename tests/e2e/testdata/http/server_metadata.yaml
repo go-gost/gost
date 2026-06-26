@@ -1,0 +1,20 @@
+services:
+- name: http-proxy-meta
+  addr: :8080
+  handler:
+    type: http
+    auther: auther-0
+    metadata:
+      # probeResist: decoy response on auth failure (code:404 hides the proxy)
+      probeResist: code:404
+      # keepalive: enable HTTP keep-alive on upstream transport (parse test)
+      keepalive: true
+      # compression: enable HTTP compression on upstream transport (parse test)
+      compression: true
+  listener:
+    type: tcp
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

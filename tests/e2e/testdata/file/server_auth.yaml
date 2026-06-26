@@ -1,0 +1,15 @@
+services:
+- name: file-server-auth
+  addr: :8080
+  handler:
+    type: file
+    auther: auther-0
+    metadata:
+      file.dir: /srv/files
+  listener:
+    type: tcp
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

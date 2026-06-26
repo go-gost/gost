@@ -1,0 +1,10 @@
+services:
+- name: file-server-put
+  addr: :8080
+  handler:
+    type: file
+    metadata:
+      file.dir: /srv/files
+      file.put: true
+  listener:
+    type: tcp

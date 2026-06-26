@@ -1,0 +1,9 @@
+services:
+- name: file-server
+  addr: :8080
+  handler:
+    type: file
+    metadata:
+      file.dir: /srv/files
+  listener:
+    type: tcp

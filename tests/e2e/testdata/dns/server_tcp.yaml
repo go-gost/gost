@@ -1,0 +1,12 @@
+services:
+- name: dns
+  addr: :1053
+  handler:
+    type: dns
+    metadata:
+      dns: tcp://dns-server:5353
+      timeout: 5s
+  listener:
+    type: dns
+    metadata:
+      mode: tcp

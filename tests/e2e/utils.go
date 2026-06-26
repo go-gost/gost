@@ -128,6 +128,70 @@ func udpEchoContainerRequest(_ context.Context, networkName string) testcontaine
 	}
 }
 
+// RunDNSResponderContainer starts a UDP-based DNS responder for e2e DNS tests.
+// The container is registered with the network alias "dns-server".
+func RunDNSResponderContainer(ctx context.Context, networkName string) (testcontainers.Container, error) {
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    ".",
+			Dockerfile: "Dockerfile",
+			Repo:       "gost-e2e",
+			Tag:        "latest",
+			KeepImage:  true,
+			BuildOptionsModifier: func(opts *client.ImageBuildOptions) {
+				opts.NetworkMode = "host"
+			},
+		},
+		Networks: []string{networkName},
+		NetworkAliases: map[string][]string{
+			networkName: {"dns-server"},
+		},
+		Files: []testcontainers.ContainerFile{
+			{HostFilePath: "scripts/dns_responder.py", ContainerFilePath: "/scripts/dns_server.py", FileMode: 0644},
+		},
+		ExposedPorts: []string{"5353/udp"},
+		Cmd:          []string{"python3", "/scripts/dns_server.py"},
+		WaitingFor:   wait.ForExposedPort().SkipInternalCheck(),
+	}
+
+	return testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+}
+
+// RunTCPDNSResponderContainer starts a TCP-based DNS responder for e2e DNS tests.
+// The container is registered with the network alias "dns-server".
+func RunTCPDNSResponderContainer(ctx context.Context, networkName string) (testcontainers.Container, error) {
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    ".",
+			Dockerfile: "Dockerfile",
+			Repo:       "gost-e2e",
+			Tag:        "latest",
+			KeepImage:  true,
+			BuildOptionsModifier: func(opts *client.ImageBuildOptions) {
+				opts.NetworkMode = "host"
+			},
+		},
+		Networks: []string{networkName},
+		NetworkAliases: map[string][]string{
+			networkName: {"dns-server"},
+		},
+		Files: []testcontainers.ContainerFile{
+			{HostFilePath: "scripts/dns_responder_tcp.py", ContainerFilePath: "/scripts/dns_server.py", FileMode: 0644},
+		},
+		ExposedPorts: []string{"5353/tcp"},
+		Cmd:          []string{"python3", "/scripts/dns_server.py"},
+		WaitingFor:   wait.ForExposedPort(),
+	}
+
+	return testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+}
+
 func RunGostContainer(ctx context.Context, networkName, yamlPath string) (testcontainers.Container, error) {
 	return runGostContainer(ctx, networkName, yamlPath, nil, nil, nil)
 }

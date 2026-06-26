@@ -1,0 +1,16 @@
+services:
+- name: dns
+  addr: :1053
+  handler:
+    type: dns
+    metadata:
+      dns: udp://dns-server:5353
+      timeout: 5s
+  listener:
+    type: dns
+  bypass: block-example
+
+bypasses:
+- name: block-example
+  matchers:
+  - test.example.com

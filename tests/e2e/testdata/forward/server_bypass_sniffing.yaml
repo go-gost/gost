@@ -1,0 +1,20 @@
+services:
+- name: forward-tcp
+  addr: :8000
+  handler:
+    type: tcp
+    metadata:
+      sniffing: true
+      sniffing.timeout: 2s
+  listener:
+    type: tcp
+  bypass: block-all
+  forwarder:
+    nodes:
+    - name: echo
+      addr: tcp-echo:5678
+
+bypasses:
+- name: block-all
+  matchers:
+  - 0.0.0.0/0

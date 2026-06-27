@@ -1,0 +1,11 @@
+services:
+- name: udp-forward
+  addr: :9000
+  handler:
+    type: udp
+  listener:
+    type: udp
+  forwarder:
+    nodes:
+    - name: echo
+      addr: udp-echo:5679

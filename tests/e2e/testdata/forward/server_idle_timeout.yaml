@@ -1,0 +1,13 @@
+services:
+  - name: forward-tcp
+    addr: :8000
+    handler:
+      type: tcp
+      metadata:
+        idleTimeout: 3s
+    listener:
+      type: tcp
+    forwarder:
+      nodes:
+        - name: echo
+          addr: tcp-echo:5678

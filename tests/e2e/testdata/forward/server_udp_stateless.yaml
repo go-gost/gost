@@ -1,0 +1,15 @@
+services:
+- name: udp-forward
+  addr: :9000
+  handler:
+    type: udp
+    metadata:
+      stateless: true
+  listener:
+    type: udp
+    metadata:
+      stateless: true
+  forwarder:
+    nodes:
+    - name: echo
+      addr: udp-echo:5679

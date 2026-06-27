@@ -1,0 +1,18 @@
+services:
+- name: forward-tcp
+  addr: :8000
+  handler:
+    type: tcp
+    metadata:
+      sniffing: true
+      sniffing.timeout: 2s
+  listener:
+    type: tcp
+  forwarder:
+    nodes:
+    - name: echo-http
+      addr: tcp-echo:5678
+      protocol: http
+    - name: echo-tls
+      addr: tcp-echo:1
+      protocol: tls

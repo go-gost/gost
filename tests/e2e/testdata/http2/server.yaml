@@ -1,0 +1,7 @@
+services:
+- name: h2-proxy
+  addr: :8443
+  handler:
+    type: http2
+  listener:
+    type: http2

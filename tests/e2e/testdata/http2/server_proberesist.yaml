@@ -1,0 +1,20 @@
+services:
+- name: h2-proxy-pr
+  addr: :8443
+  handler:
+    type: http2
+    auther: auther-0
+    metadata:
+      # probeResist: hide the proxy behind a 404 decoy on auth failure
+      probeResist: code:404
+      # header: custom response headers set on proxy responses
+      header:
+        X-Proxy-Info: gost-e2e
+      authBasicRealm: gost-e2e-realm
+  listener:
+    type: http2
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

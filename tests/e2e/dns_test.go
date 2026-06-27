@@ -168,9 +168,12 @@ func (s *DNSSuite) TestDNSBypass() {
 // TestDNSHostMapper verifies DNS resolution via the host mapper before
 // reaching the upstream exchanger.
 //
-// Config: server_hosts.yaml maps mapped.example.com → 10.0.0.100 with no
-// working upstream. The handler checks the host mapper before the exchange
-// path, so mapped names resolve without needing any upstream DNS.
+// Config: server_hosts.yaml maps mapped.example.com → 10.0.0.100 and
+// points the handler at an unreachable upstream (udp://127.0.0.1:1).
+// The handler checks the host mapper before the exchange path, so
+// mapped names resolve without needing any upstream DNS. Unmapped
+// names must fall through to the exchanger, which fails — confirming
+// the host-mapper path was the only reason mapped names worked.
 func (s *DNSSuite) TestDNSHostMapper() {
 	gostC, err := RunGostContainerWithFiles(s.ctx, SharedNetworkName,
 		"testdata/dns/server_hosts.yaml",

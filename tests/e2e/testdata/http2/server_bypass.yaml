@@ -1,0 +1,20 @@
+bypasses:
+- name: bypass-0
+  matchers:
+  - 0.0.0.0/0
+
+services:
+- name: h2-proxy-bypass
+  addr: :8443
+  handler:
+    type: http2
+    auther: auther-0
+  listener:
+    type: http2
+  bypass: bypass-0
+
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

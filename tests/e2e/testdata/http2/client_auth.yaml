@@ -1,0 +1,23 @@
+services:
+- name: http-proxy
+  addr: :8080
+  handler:
+    type: http
+    chain: h2-chain
+  listener:
+    type: tcp
+
+chains:
+- name: h2-chain
+  hops:
+  - name: hop-0
+    nodes:
+    - name: node-0
+      addr: {{.ServerAddr}}
+      connector:
+        type: http2
+        auth:
+          username: user
+          password: pass
+      dialer:
+        type: http2

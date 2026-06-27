@@ -4,7 +4,10 @@ services:
   handler:
     type: dns
     metadata:
-      # No upstream — host mapper resolves before exchanger is ever reached.
+      # Unreachable upstream so the system-DNS fallback is bypassed.
+      # The host mapper resolves mapped names before the exchanger is
+      # reached; unmapped names must hit the exchanger and fail.
+      dns: udp://127.0.0.1:1
       timeout: 2s
   listener:
     type: dns

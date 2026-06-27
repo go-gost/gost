@@ -1,0 +1,18 @@
+services:
+- name: h2-proxy-auth
+  addr: :8443
+  handler:
+    type: http2
+    auther: auther-0
+    metadata:
+      # authBasicRealm: custom realm in 407 Proxy-Authenticate header
+      authBasicRealm: gost-e2e-realm
+      # hash: pin upstream selection by request host (metadata parse coverage)
+      hash: host
+  listener:
+    type: http2
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass

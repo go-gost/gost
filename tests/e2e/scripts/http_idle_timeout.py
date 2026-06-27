@@ -28,11 +28,19 @@ def main():
         print(f"FAIL: expected 200, got {resp.decode(errors='replace')}")
         sys.exit(1)
 
-    # Send request through the CONNECT tunnel
-    s.sendall(b"ping-1\n")
-    data = s.recv(4096)
-    if b"ping-1" not in data:
-        print(f"FAIL: expected ping-1 echo, got {data!r}")
+    # Send an HTTP GET through the CONNECT tunnel. The tunnel target
+    # is an HTTP echo server (BaseHTTPRequestHandler), so we must speak
+    # HTTP or the connection closes.
+    req = b"GET / HTTP/1.0\r\nHost: tcp-echo\r\n\r\n"
+    s.sendall(req)
+    data = b""
+    while b"hello-gost" not in data:
+        chunk = s.recv(4096)
+        if not chunk:
+            break
+        data += chunk
+    if b"hello-gost" not in data:
+        print(f"FAIL: expected hello-gost echo, got {data!r}")
         sys.exit(1)
     print(f"PASS: first request through tunnel succeeded")
 

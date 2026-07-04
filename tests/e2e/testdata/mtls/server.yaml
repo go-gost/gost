@@ -1,0 +1,17 @@
+services:
+- name: https-mtls
+  addr: :8443
+  handler:
+    type: http
+    auther: auther-0
+  listener:
+    type: tls
+    tls:
+      certFile: /certs/server.pem
+      keyFile: /certs/server-key.pem
+      caFile: /certs/ca.pem
+authers:
+- name: auther-0
+  plugin:
+    type: http
+    addr: http://{{.ServerAddr}}:9000/auth

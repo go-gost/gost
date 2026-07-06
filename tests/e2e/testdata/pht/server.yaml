@@ -1,0 +1,7 @@
+services:
+- name: pht-server
+  addr: :8443
+  handler:
+    type: http
+  listener:
+    type: pht

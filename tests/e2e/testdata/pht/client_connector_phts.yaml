@@ -1,0 +1,20 @@
+services:
+- name: phts-proxy
+  addr: :8080
+  handler:
+    type: http
+    chain: phts-chain
+  listener:
+    type: tcp
+
+chains:
+- name: phts-chain
+  hops:
+  - name: phts-hop
+    nodes:
+    - name: phts-node
+      addr: {{.ServerAddr}}
+      connector:
+        type: http
+      dialer:
+        type: phts

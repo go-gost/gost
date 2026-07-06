@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/go-gost/core v0.5.3
-	github.com/go-gost/x v0.13.8
+	github.com/go-gost/x v0.13.9
 	github.com/judwhite/go-svc v1.2.1
 	github.com/moby/moby/client v0.4.0
 	github.com/stretchr/testify v1.11.1
@@ -50,7 +50,7 @@ require (
 	github.com/go-gost/gosocks4 v0.1.0 // indirect
 	github.com/go-gost/gosocks5 v0.5.0 // indirect
 	github.com/go-gost/plugin v0.5.0 // indirect
-	github.com/go-gost/relay v0.6.1 // indirect
+	github.com/go-gost/relay v0.6.2 // indirect
 	github.com/go-gost/tls-dissector v0.2.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

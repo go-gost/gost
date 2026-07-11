@@ -1,0 +1,7 @@
+services:
+- name: https-server
+  addr: :8443
+  handler:
+    type: http
+  listener:
+    type: tls

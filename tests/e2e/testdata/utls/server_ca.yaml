@@ -1,0 +1,10 @@
+services:
+- name: https-server
+  addr: :8443
+  handler:
+    type: http
+  listener:
+    type: tls
+    tls:
+      certFile: /certs/server.pem
+      keyFile: /certs/server-key.pem

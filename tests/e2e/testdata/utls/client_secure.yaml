@@ -1,0 +1,26 @@
+services:
+- name: http-proxy
+  addr: :8080
+  handler:
+    type: http
+    chain: utls-chain
+  listener:
+    type: tcp
+
+chains:
+- name: utls-chain
+  hops:
+  - name: hop-0
+    nodes:
+    - name: node-0
+      addr: {{.ServerAddr}}
+      connector:
+        type: http
+      dialer:
+        type: utls
+        metadata:
+          fingerprint: Chrome
+        tls:
+          secure: true
+          serverName: utls-server
+          caFile: /certs/ca.pem

@@ -1,0 +1,32 @@
+# Forward proxy whose only chain node is dead (127.0.0.1:18082). A whitelist
+# bypass inverts the logic: only destinations matching the rule are forced
+# through the chain. The echo server's address is outside 10.0.0.0/8, so it is
+# bypassed (connected directly); a 10.0.0.0/8 destination is forced through the
+# dead node.
+services:
+  - name: proxy
+    addr: ":8080"
+    handler:
+      type: http
+      chain: my-chain
+    listener:
+      type: tcp
+
+chains:
+  - name: my-chain
+    hops:
+      - name: hop-0
+        nodes:
+          - name: node-0
+            addr: 127.0.0.1:18082
+            bypass: bypass-0
+            connector:
+              type: http
+            dialer:
+              type: tcp
+
+bypasses:
+  - name: bypass-0
+    whitelist: true
+    matchers:
+      - "10.0.0.0/8"

@@ -1,0 +1,9 @@
+# Upstream relay target for the routing matcher test: a plain forward proxy
+# that reaches the echo server directly.
+services:
+  - name: proxy
+    addr: ":8081"
+    handler:
+      type: http
+    listener:
+      type: tcp

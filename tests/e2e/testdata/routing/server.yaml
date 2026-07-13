@@ -1,0 +1,27 @@
+# Forward proxy gated by a node-level routing matcher. The only chain node is a
+# relay to an upstream proxy, but it is only eligible when the request Host
+# matches Host(`tcp-echo`). A request to tcp-echo:5678 matches, is relayed
+# upstream, and reaches the echo server ("hello-gost"); a request to any other
+# host is excluded (no eligible node) and never reaches the echo server.
+services:
+  - name: proxy
+    addr: ":8080"
+    handler:
+      type: http
+      chain: chain-0
+    listener:
+      type: tcp
+
+chains:
+  - name: chain-0
+    hops:
+      - name: hop-0
+        nodes:
+          - name: node-0
+            addr: gost-upstream:8081
+            matcher:
+              rule: 'Host(`tcp-echo`)'
+            connector:
+              type: http
+            dialer:
+              type: tcp

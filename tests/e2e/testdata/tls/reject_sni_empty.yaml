@@ -1,0 +1,9 @@
+services:
+- name: tls-reject
+  addr: :8443
+  handler:
+    type: http
+  listener:
+    type: tls
+    tls:
+      rejectUnknownSNI: true

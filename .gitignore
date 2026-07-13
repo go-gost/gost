@@ -48,3 +48,6 @@ dist/
 
 # Python cache
 __pycache__/
+
+# Claude session config
+.claude/

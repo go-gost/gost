@@ -1,0 +1,23 @@
+# Public-facing gost: a tunnel handler with an ingress table that maps the
+# hostname example.local to a tunnel endpoint, plus an HTTP entrypoint on :8420.
+# External requests to the entrypoint are routed by their Host header through
+# the ingress table to the matching tunnel.
+services:
+  - name: service-0
+    addr: ":8421"
+    handler:
+      type: tunnel
+      metadata:
+        entrypoint: ":8420"
+        ingress: ingress-0
+    listener:
+      type: tcp
+
+ingresses:
+  - name: ingress-0
+    rules:
+      - hostname: example.local
+        endpoint: 6be39003-f4fa-49e4-a6ef-1997684d160e
+
+log:
+  level: debug

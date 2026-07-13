@@ -35,7 +35,7 @@ tests/e2e/
 │   └── udp_echo.py             # UDP echo server (reflects payloads)
 ├── testdata/                   # config files or data files for running cases
 ├── shadowsocks_test.go         # Shadowsocks protocol tests
-└── parallel_selector_test.go   # Parallel node selector tests
+└── selector_test.go            # Node selector tests (round-robin, fifo, backup, parallel)
 ```
 
 ### How it works

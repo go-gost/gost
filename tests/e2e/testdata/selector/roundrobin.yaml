@@ -1,0 +1,34 @@
+services:
+- name: proxy
+  addr: :8080
+  handler:
+    type: http
+    chain: my-chain
+  listener:
+    type: tcp
+
+# Live relay: forwards the request to the echo server (curl target).
+- name: relay
+  addr: 127.0.0.1:18081
+  handler:
+    type: http
+  listener:
+    type: tcp
+
+chains:
+- name: my-chain
+  hops:
+  - name: hop-1
+    selector:
+      strategy: round
+      maxFails: 1
+    nodes:
+    - name: node-1
+      addr: 127.0.0.1:18081
+      connector:
+        type: http
+    # dead node: never listens; must be marked and skipped by the selector.
+    - name: node-2
+      addr: 127.0.0.1:18082
+      connector:
+        type: http

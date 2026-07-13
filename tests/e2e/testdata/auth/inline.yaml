@@ -1,0 +1,13 @@
+# HTTP proxy with inline single-user authentication. Clients must supply the
+# proxy credentials user/pass; wrong or missing credentials get a 407 and never
+# reach the echo server.
+services:
+  - name: proxy
+    addr: ":8080"
+    handler:
+      type: http
+      auth:
+        username: user
+        password: pass
+    listener:
+      type: tcp

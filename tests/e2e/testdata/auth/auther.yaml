@@ -1,0 +1,18 @@
+# HTTP proxy authenticated via a named auther holding multiple users. Any
+# listed user/password pair is accepted; unlisted credentials are rejected.
+services:
+  - name: proxy
+    addr: ":8080"
+    handler:
+      type: http
+      auther: auther-0
+    listener:
+      type: tcp
+
+authers:
+  - name: auther-0
+    auths:
+      - username: alice
+        password: secret
+      - username: bob
+        password: hunter2

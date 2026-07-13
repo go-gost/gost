@@ -1,0 +1,18 @@
+# HTTP proxy gated by a whitelist admission rule: only clients whose source
+# address is 127.0.0.1 are admitted. A loopback client (curl inside the gost
+# container) is admitted and reaches the echo server; an external client (a
+# different container) is denied at accept time.
+services:
+  - name: proxy
+    addr: ":8080"
+    admission: admission-0
+    handler:
+      type: http
+    listener:
+      type: tcp
+
+admissions:
+  - name: admission-0
+    whitelist: true
+    matchers:
+      - 127.0.0.1

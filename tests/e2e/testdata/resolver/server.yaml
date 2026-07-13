@@ -1,0 +1,19 @@
+# HTTP proxy whose outbound dialing uses a custom resolver. The resolver's
+# only nameserver is the test DNS responder, which answers echo.test with the
+# real echo server IP and NXDOMAIN for everything else. A request to
+# echo.test:5678 is therefore resolved by the custom resolver and reaches the
+# echo server; a request to an unmapped host fails to resolve.
+services:
+  - name: proxy
+    addr: ":8080"
+    resolver: resolver-0
+    handler:
+      type: http
+    listener:
+      type: tcp
+
+resolvers:
+  - name: resolver-0
+    nameservers:
+      - addr: dns-responder:5353
+        timeout: 3s

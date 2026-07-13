@@ -192,6 +192,41 @@ func RunTCPDNSResponderContainer(ctx context.Context, networkName string) (testc
 	})
 }
 
+// RunResolverResponderContainer starts a UDP DNS responder that answers A
+// queries for "echo.test" with targetIP (an echo server's address) and returns
+// NXDOMAIN for all other names. It is used to prove the resolver module drives
+// outbound dialing: a gost proxy pointed at this responder resolves echo.test
+// to a reachable address. The container is aliased "dns-responder".
+func RunResolverResponderContainer(ctx context.Context, networkName, targetIP string) (testcontainers.Container, error) {
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    ".",
+			Dockerfile: "Dockerfile",
+			Repo:       "gost-e2e",
+			Tag:        "latest",
+			KeepImage:  true,
+			BuildOptionsModifier: func(opts *client.ImageBuildOptions) {
+				opts.NetworkMode = "host"
+			},
+		},
+		Networks: []string{networkName},
+		NetworkAliases: map[string][]string{
+			networkName: {"dns-responder"},
+		},
+		Files: []testcontainers.ContainerFile{
+			{HostFilePath: "scripts/dns_resolver_responder.py", ContainerFilePath: "/scripts/dns_server.py", FileMode: 0644},
+		},
+		ExposedPorts: []string{"5353/udp"},
+		Cmd:          []string{"python3", "/scripts/dns_server.py", targetIP, "5353"},
+		WaitingFor:   wait.ForExposedPort().SkipInternalCheck(),
+	}
+
+	return testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+}
+
 func RunGostContainer(ctx context.Context, networkName, yamlPath string) (testcontainers.Container, error) {
 	return runGostContainer(ctx, networkName, yamlPath, nil, nil, nil)
 }

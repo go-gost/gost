@@ -1,0 +1,18 @@
+# HTTP proxy with a static hosts mapping. The made-up hostname echo.internal is
+# mapped to the echo server's real IP, overriding DNS. A request to
+# echo.internal resolves via the mapping and reaches the echo server; a request
+# to an unmapped hostname fails to resolve and never connects.
+services:
+  - name: proxy
+    addr: ":8080"
+    hosts: hosts-0
+    handler:
+      type: http
+    listener:
+      type: tcp
+
+hosts:
+  - name: hosts-0
+    mappings:
+      - ip: {{.ServerAddr}}
+        hostname: echo.internal

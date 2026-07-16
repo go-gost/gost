@@ -1,0 +1,44 @@
+services:
+- name: proxy
+  addr: :8080
+  handler:
+    type: http
+    chain: my-chain
+  listener:
+    type: tcp
+
+# Live relay: forwards to the echo server.
+- name: relay
+  addr: 127.0.0.1:18081
+  handler:
+    type: http
+  listener:
+    type: tcp
+
+chains:
+- name: my-chain
+  hops:
+  - name: hop-1
+    selector:
+      strategy: round
+      maxFails: 1
+      failTimeout: 10s
+    nodes:
+    - name: node-live
+      addr: 127.0.0.1:18081
+      connector:
+        type: http
+      probe:
+        type: tcp
+        addr: 127.0.0.1:18081
+        interval: 5s
+    # dead node: probed, marked as failed by the probe goroutine,
+    # then excluded by FailFilter before any real traffic tries it.
+    - name: node-dead
+      addr: 127.0.0.1:18082
+      connector:
+        type: http
+      probe:
+        type: tcp
+        addr: 127.0.0.1:18082
+        interval: 5s

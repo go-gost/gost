@@ -47,6 +47,9 @@ upx:
 
 archives:
   - format: tar.gz
+    builds_info:
+      group: root
+      owner: root
     # use zip for windows archives
     format_overrides:
     - goos: windows

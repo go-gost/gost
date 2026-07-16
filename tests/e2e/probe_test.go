@@ -85,6 +85,21 @@ func (s *ProbeSuite) TestLowestLatencyProbe() {
 	}
 }
 
+// TestCmdProbeFailover verifies that the cmd probe detects a dead node via
+// shell exit code and marks it before real traffic, so FailFilter excludes it.
+func (s *ProbeSuite) TestCmdProbeFailover() {
+	gostC, err := RunGostContainerWithPorts(s.ctx, SharedNetworkName, "testdata/probe/cmd.yaml", "8080/tcp")
+	s.Require().NoError(err)
+	defer gostC.Terminate(s.ctx)
+
+	// The probe fires at startup; the dead node is already marked.
+	for range 10 {
+		code, body := s.proxyRequest(gostC, "8080")
+		s.Require().Equal(0, code, "all requests must succeed; dead cmd node pre-marked")
+		s.Require().Contains(body, "hello-gost")
+	}
+}
+
 func TestProbeSuite(t *testing.T) {
 	suite.Run(t, new(ProbeSuite))
 }

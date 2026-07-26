@@ -1,0 +1,23 @@
+caches:
+- name: http-cache
+  memory:
+    ttl: 10m
+    maxSize: 1000
+
+services:
+- name: cache-proxy
+  addr: :8080
+  cache: http-cache
+  handler:
+    type: tcp
+    metadata:
+      sniffing: true
+      sniffing.timeout: 2s
+      cache.ttl: 3s
+      cache.serveStale: true
+  listener:
+    type: tcp
+  forwarder:
+    nodes:
+    - name: target
+      addr: cache-servestale:5676

@@ -1,0 +1,14 @@
+services:
+- name: cache-proxy
+  addr: :8080
+  handler:
+    type: tcp
+    metadata:
+      sniffing: true
+      sniffing.timeout: 2s
+  listener:
+    type: tcp
+  forwarder:
+    nodes:
+    - name: target
+      addr: cache-backend:5677

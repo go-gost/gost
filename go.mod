@@ -3,8 +3,8 @@ module github.com/go-gost/gost
 go 1.26.3
 
 require (
-	github.com/go-gost/core v0.5.5
-	github.com/go-gost/x v0.13.18
+	github.com/go-gost/core v0.6.0
+	github.com/go-gost/x v0.14.0
 	github.com/judwhite/go-svc v1.2.1
 	github.com/moby/moby/client v0.4.0
 	github.com/stretchr/testify v1.11.1

@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/go-gost/core v0.6.0
-	github.com/go-gost/x v0.14.1
+	github.com/go-gost/x v0.14.2
 	github.com/judwhite/go-svc v1.2.1
 	github.com/moby/moby/client v0.4.0
 	github.com/stretchr/testify v1.11.1
@@ -51,7 +51,7 @@ require (
 	github.com/go-gost/gosocks5 v0.5.0 // indirect
 	github.com/go-gost/plugin v0.5.0 // indirect
 	github.com/go-gost/relay v0.7.0 // indirect
-	github.com/go-gost/tls-dissector v0.3.0 // indirect
+	github.com/go-gost/tls-dissector v0.3.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -110,8 +110,8 @@ require (
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.59.1 // indirect
-	github.com/quic-go/webtransport-go v0.10.0 // indirect
+	github.com/quic-go/quic-go v0.60.0 // indirect
+	github.com/quic-go/webtransport-go v0.11.1 // indirect
 	github.com/refraction-networking/utls v1.8.2 // indirect
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
 	github.com/rs/xid v1.3.0 // indirect

@@ -1,0 +1,27 @@
+services:
+# Reverse proxy with sniffing: raw TCP listener inspects HTTP via the
+# forwarder's sniffer. The hop has FIFO selector (always picks first node).
+# node-429 is first in the list with failCodes=429 — it must be marked on
+# the first 429 response and excluded by FailFilter (maxFails=1).
+- name: reverse-proxy
+  addr: :8080
+  handler:
+    type: tcp
+    metadata:
+      sniffing: true
+      sniffing.timeout: 2s
+  listener:
+    type: tcp
+  forwarder:
+    selector:
+      strategy: fifo
+      maxFails: 1
+    nodes:
+    - name: node-429
+      addr: status-backend:5680
+      protocol: http
+      http:
+        failCodes: "429"
+    - name: node-good
+      addr: tcp-echo:5678
+      protocol: http

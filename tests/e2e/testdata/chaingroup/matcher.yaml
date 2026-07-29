@@ -1,0 +1,48 @@
+services:
+- name: proxy
+  addr: :8080
+  handler:
+    type: http
+    chainGroup:
+      chains:
+        - chain: chain-target
+          matcher:
+            rule: Host(`tcp-echo`)
+        - chain: chain-other
+          matcher:
+            rule: Host(`no-match`)
+      selector:
+        strategy: round
+        maxFails: 1
+        failTimeout: 10s
+  listener:
+    type: tcp
+
+# Live relay: forwards to echo server.
+- name: relay
+  addr: 127.0.0.1:18081
+  handler:
+    type: http
+  listener:
+    type: tcp
+
+chains:
+- name: chain-target
+  hops:
+  - name: hop-target
+    nodes:
+    - name: n-live
+      addr: 127.0.0.1:18081
+      connector:
+        type: http
+
+# This chain has a dead relay — but the matcher Host("no-match") ensures it is
+# never selected for requests targeting tcp-echo.
+- name: chain-other
+  hops:
+  - name: hop-other
+    nodes:
+    - name: n-dead
+      addr: 127.0.0.1:18082
+      connector:
+        type: http

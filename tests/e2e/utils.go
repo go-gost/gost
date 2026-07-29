@@ -227,6 +227,37 @@ func RunResolverResponderContainer(ctx context.Context, networkName, targetIP st
 	})
 }
 
+// RunHTTPSEchoContainer starts an HTTPS echo server (self-signed cert) that
+// responds with "hello-gost" on port 8443. The container is registered with
+// the network alias "https-echo".
+func RunHTTPSEchoContainer(ctx context.Context, networkName string) (testcontainers.Container, error) {
+	return testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			FromDockerfile: testcontainers.FromDockerfile{
+				Context:    ".",
+				Dockerfile: "Dockerfile",
+				Repo:       "gost-e2e",
+				Tag:        "latest",
+				KeepImage:  true,
+				BuildOptionsModifier: func(opts *client.ImageBuildOptions) {
+					opts.NetworkMode = "host"
+				},
+			},
+			Networks: []string{networkName},
+			NetworkAliases: map[string][]string{
+				networkName: {"https-echo"},
+			},
+			Files: []testcontainers.ContainerFile{
+				{HostFilePath: "scripts/https_echo.py", ContainerFilePath: "/scripts/https_echo.py", FileMode: 0644},
+			},
+			ExposedPorts: []string{"8443/tcp"},
+			Cmd:          []string{"python3", "/scripts/https_echo.py"},
+			WaitingFor:   wait.ForExposedPort(),
+		},
+		Started: true,
+	})
+}
+
 func RunGostContainer(ctx context.Context, networkName, yamlPath string) (testcontainers.Container, error) {
 	return runGostContainer(ctx, networkName, yamlPath, nil, nil, nil)
 }

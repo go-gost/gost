@@ -1,0 +1,15 @@
+services:
+  - name: udp-forward-quic
+    addr: :9000
+    handler:
+      type: udp
+      metadata:
+        sniffing: true
+        sniffing.timeout: 5s
+        stateless: true
+    listener:
+      type: udp
+    forwarder:
+      nodes:
+        - name: echo
+          addr: udp-echo:5679

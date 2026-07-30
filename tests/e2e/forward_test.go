@@ -286,6 +286,33 @@ func (s *ForwardSuite) TestTCPForwardMultiNodeProtocol() {
 		"HTTP request should route to the http-protocol node via protocol filtering")
 }
 
+// TestUDPForwardQUICSniffing verifies that the UDP forward handler with
+// sniffing enabled correctly detects QUIC traffic and forwards the
+// datagram. A pre-built QUIC Initial packet is sent through the proxy
+// to the UDP echo server; the test passes when the echoed datagram
+// comes back with the same length.
+func (s *ForwardSuite) TestUDPForwardQUICSniffing() {
+	gostC, err := RunGostContainerWithFiles(s.ctx, SharedNetworkName,
+		"testdata/forward/server_udp_sniffing_quic.yaml",
+		[]testcontainers.ContainerFile{
+			{HostFilePath: "scripts/udp_quic_forward_test.py", ContainerFilePath: "/scripts/udp_quic_forward_test.py", FileMode: 0644},
+		},
+		"9000/udp")
+	s.Require().NoError(err)
+	defer gostC.Terminate(s.ctx)
+
+	code, out, err := gostC.Exec(s.ctx, []string{
+		"python3", "/scripts/udp_quic_forward_test.py",
+		"127.0.0.1", "9000",
+	})
+	output, _ := io.ReadAll(out)
+	s.T().Logf("udp quic forward output:\n%s", string(output))
+	if code != 0 {
+		DumpLogs(s.T(), s.ctx, "udp-quic-forward logs", gostC)
+	}
+	s.Require().Equal(0, code, "udp quic forward test script should exit 0")
+}
+
 func TestForwardSuite(t *testing.T) {
 	suite.Run(t, new(ForwardSuite))
 }

@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/go-gost/core v0.6.0
-	github.com/go-gost/x v0.15.1
+	github.com/go-gost/x v0.15.2
 	github.com/judwhite/go-svc v1.2.1
 	github.com/moby/moby/client v0.4.0
 	github.com/stretchr/testify v1.11.1
@@ -50,6 +50,7 @@ require (
 	github.com/go-gost/gosocks4 v0.1.0 // indirect
 	github.com/go-gost/gosocks5 v0.5.0 // indirect
 	github.com/go-gost/plugin v0.5.0 // indirect
+	github.com/go-gost/quic-dissector v0.1.0 // indirect
 	github.com/go-gost/relay v0.7.0 // indirect
 	github.com/go-gost/tls-dissector v0.3.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
@@ -98,7 +99,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
-	github.com/pion/dtls/v3 v3.1.1 // indirect
+	github.com/pion/dtls/v3 v3.1.4 // indirect
 	github.com/pion/logging v0.2.4 // indirect
 	github.com/pion/transport/v4 v4.0.1 // indirect
 	github.com/pires/go-proxyproto v0.8.1 // indirect

@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/go-gost/core v0.6.0
-	github.com/go-gost/x v0.15.3
+	github.com/go-gost/x v0.15.4
 	github.com/judwhite/go-svc v1.2.1
 	github.com/moby/moby/client v0.4.0
 	github.com/stretchr/testify v1.11.1
@@ -46,7 +46,7 @@ require (
 	github.com/gin-contrib/cors v1.7.2 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/gin-gonic/gin v1.12.0 // indirect
-	github.com/go-gost/go-shadowsocks2 v0.1.3 // indirect
+	github.com/go-gost/go-shadowsocks2 v0.1.4 // indirect
 	github.com/go-gost/gosocks4 v0.1.0 // indirect
 	github.com/go-gost/gosocks5 v0.5.0 // indirect
 	github.com/go-gost/plugin v0.5.0 // indirect

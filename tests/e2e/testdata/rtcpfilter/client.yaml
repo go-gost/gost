@@ -1,0 +1,51 @@
+# Internal client behind NAT: binds a reverse tunnel (tunnel.id matches the
+# server's ingress endpoint) and forwards tunneled connections to per-hostname
+# target services via filter.host node matching. There is deliberately NO
+# fallback node — routing must come from the hostname.
+#
+# node example → tcp-echo:5678 (the real echo HTTP server)
+# node other   → tcp-echo:5679 (nothing listens here; must never be hit by
+#                               example.local traffic)
+services:
+  - name: service-0
+    addr: ":0"
+    handler:
+      type: rtcp
+    listener:
+      type: rtcp
+      chain: chain-0
+    forwarder:
+      nodes:
+        - name: example
+          addr: tcp-echo:5678
+          filter:
+            host: example.local
+        - name: other
+          addr: tcp-echo:5679
+          filter:
+            host: other.local
+
+  # Dummy TCP service on a fixed port: the rtcp reverse-tunnel listener binds
+  # remotely through the chain and opens no local port, so this gives the e2e
+  # harness a stable port to wait on.
+  - name: service-1
+    addr: ":8423"
+    handler:
+      type: http
+    listener:
+      type: tcp
+
+chains:
+  - name: chain-0
+    hops:
+      - nodes:
+        - addr: gost-server:8421
+          connector:
+            type: tunnel
+            metadata:
+              tunnel.id: 6be39003-f4fa-49e4-a6ef-1997684d160e
+          dialer:
+            type: tcp
+
+log:
+  level: debug

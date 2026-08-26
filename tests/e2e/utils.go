@@ -10,6 +10,7 @@ import (
 
 	"github.com/moby/moby/client"
 	"github.com/testcontainers/testcontainers-go"
+	tcexec "github.com/testcontainers/testcontainers-go/exec"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
@@ -21,6 +22,15 @@ func init() {
 
 type ConfigData struct {
 	ServerAddr string
+}
+
+// ExecOutput runs cmd in c and returns the demultiplexed output reader.
+// testcontainers' Exec returns the raw Docker stream, which multiplexes stdout
+// and stderr with 8-byte framing headers (type byte + 6 zero + length) that
+// interleave with the real data. Demultiplexing produces a clean combined
+// stdout+stderr stream that tests can assert against.
+func ExecOutput(ctx context.Context, c testcontainers.Container, cmd []string) (int, io.Reader, error) {
+	return c.Exec(ctx, cmd, tcexec.Multiplexed())
 }
 
 func DumpLogs(t *testing.T, ctx context.Context, label string, c testcontainers.Container) {
@@ -294,14 +304,22 @@ func runGostContainer(ctx context.Context, networkName, yamlPath string, aliases
 			},
 		},
 		ExposedPorts: exposedPorts,
-		// internal check for udp ports will be failed
-		WaitingFor: wait.ForExposedPort().SkipInternalCheck(),
-		Networks:   []string{networkName},
+		Networks:     []string{networkName},
 		NetworkAliases: map[string][]string{
 			networkName: aliases,
 		},
 		Files: files,
 		Cmd:   []string{"/bin/gost", "-C", "/config.yaml"},
+	}
+
+	// Wait for the gost process to be ready. With exposed ports we wait for the
+	// port to accept connections; without them (e.g. a socks5 proxy consumed
+	// from inside the container) we wait for a startup log line instead.
+	if len(exposedPorts) > 0 {
+		// internal check for udp ports will be failed
+		req.WaitingFor = wait.ForExposedPort().SkipInternalCheck()
+	} else {
+		req.WaitingFor = wait.ForLog("listening on")
 	}
 
 	return testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

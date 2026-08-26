@@ -55,19 +55,22 @@ func (s *HTTPCacheSuite) TestHTTPCacheHit() {
 
 	cmd := []string{"curl", "-v", "-s", "http://127.0.0.1:8080/"}
 
-	// First request — cache miss, backend returns "cache-test-1"
-	code, out, err := gostC.Exec(s.ctx, cmd)
+	// First request — cache miss, backend returns "cache-test-N"
+	code, out, err := ExecOutput(s.ctx, gostC, cmd)
 	s.Require().NoError(err)
 	body1, _ := io.ReadAll(out)
 	if code != 0 || !strings.Contains(string(body1), "cache-test-") {
 		DumpLogs(s.T(), s.ctx, "cache-proxy logs (first req)", gostC)
 	}
 	s.Require().Equal(0, code, "first request should succeed")
-	s.Require().Contains(string(body1), "cache-test-1",
-		"first request should get backend response #1")
+	// The backend counter is shared across subtests (a fresh counter backend is
+	// not started per test), so the first request here is not necessarily #1.
+	// Caching is proven by body2==body1 and body3==body1 below.
+	s.Require().Contains(string(body1), "cache-test-",
+		"first request should get a backend response")
 
 	// Second request — cache hit, same response
-	code, out, err = gostC.Exec(s.ctx, cmd)
+	code, out, err = ExecOutput(s.ctx, gostC, cmd)
 	s.Require().NoError(err)
 	body2, _ := io.ReadAll(out)
 	if code != 0 {
@@ -78,7 +81,7 @@ func (s *HTTPCacheSuite) TestHTTPCacheHit() {
 		"cached response should equal first response")
 
 	// Third request — cache hit, same
-	code, out, err = gostC.Exec(s.ctx, cmd)
+	code, out, err = ExecOutput(s.ctx, gostC, cmd)
 	s.Require().NoError(err)
 	body3, _ := io.ReadAll(out)
 	if code != 0 {
@@ -102,7 +105,7 @@ func (s *HTTPCacheSuite) TestHTTPCacheDisabled() {
 
 	cmd := []string{"curl", "-v", "-s", "http://127.0.0.1:8080/"}
 
-	code, out, err := gostC.Exec(s.ctx, cmd)
+	code, out, err := ExecOutput(s.ctx, gostC, cmd)
 	s.Require().NoError(err)
 	body1, _ := io.ReadAll(out)
 	if code != 0 || !strings.Contains(string(body1), "cache-test-") {
@@ -110,7 +113,7 @@ func (s *HTTPCacheSuite) TestHTTPCacheDisabled() {
 	}
 	s.Require().Equal(0, code)
 
-	code, out, err = gostC.Exec(s.ctx, cmd)
+	code, out, err = ExecOutput(s.ctx, gostC, cmd)
 	s.Require().NoError(err)
 	body2, _ := io.ReadAll(out)
 	if code != 0 {
@@ -149,7 +152,7 @@ func (s *HTTPCacheSuite) TestHTTPCacheServeStale() {
 	cmd := []string{"curl", "-v", "-s", "http://127.0.0.1:8080/"}
 
 	// First request — cache miss, backend returns "cache-test-1"
-	code, out, err := gostC.Exec(s.ctx, cmd)
+	code, out, err := ExecOutput(s.ctx, gostC, cmd)
 	s.Require().NoError(err)
 	body1, _ := io.ReadAll(out)
 	if code != 0 || !strings.Contains(string(body1), "cache-test-") {
@@ -165,7 +168,7 @@ func (s *HTTPCacheSuite) TestHTTPCacheServeStale() {
 
 	// Second request — stale cache hit, upstream connects but yields no
 	// response → serve-stale returns the expired cached response.
-	code, out, err = gostC.Exec(s.ctx, cmd)
+	code, out, err = ExecOutput(s.ctx, gostC, cmd)
 	s.Require().NoError(err)
 	body2, _ := io.ReadAll(out)
 	if code != 0 || !strings.Contains(string(body2), "cache-test-") {

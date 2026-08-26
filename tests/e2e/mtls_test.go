@@ -140,14 +140,16 @@ func (s *MTLSSuite) TestMTLSProxy() {
 	s.Require().NoError(err)
 	defer gostC.Terminate(s.ctx)
 
-	// Verify proxy works with valid client cert
+	// Verify proxy works with valid client cert. curl in HTTPS-proxy mode
+	// requires --proxy-* TLS options: --cacert/--cert verify the origin (not
+	// the proxy) and are ignored for the proxy TLS connection.
 	cmd := []string{"curl", "-v", "-s", "--connect-timeout", "5",
-		"--cacert", "/certs/ca.pem",
-		"--cert", "/certs/client.pem",
-		"--key", "/certs/client-key.pem",
+		"--proxy-cacert", "/certs/ca.pem",
+		"--proxy-cert", "/certs/client.pem",
+		"--proxy-key", "/certs/client-key.pem",
 		"-x", "https://127.0.0.1:8443",
 		fmt.Sprintf("http://%s:5678", s.echoIP)}
-	code, out, err := gostC.Exec(s.ctx, cmd)
+	code, out, err := ExecOutput(s.ctx, gostC, cmd)
 	body, err2 := io.ReadAll(out)
 	if err != nil || err2 != nil || code != 0 || !strings.Contains(string(body), "hello-gost") {
 		DumpLogs(s.T(), s.ctx, "mtls gost logs", gostC)
@@ -179,12 +181,13 @@ func (s *MTLSSuite) TestMTLSWithoutClientCert() {
 	s.Require().NoError(err)
 	defer gostC.Terminate(s.ctx)
 
-	// curl without client cert should fail TLS handshake
+	// curl without client cert should fail TLS handshake. Verify the proxy
+	// cert against the CA, but present no client cert so the server rejects.
 	cmd := []string{"curl", "-v", "-s", "--connect-timeout", "5",
-		"--cacert", "/certs/ca.pem",
+		"--proxy-cacert", "/certs/ca.pem",
 		"-x", "https://127.0.0.1:8443",
 		fmt.Sprintf("http://%s:5678", s.echoIP)}
-	code, _, err := gostC.Exec(s.ctx, cmd)
+	code, _, err := ExecOutput(s.ctx, gostC, cmd)
 	if err == nil && code == 0 {
 		DumpLogs(s.T(), s.ctx, "mtls gost logs", gostC)
 	}
@@ -215,12 +218,12 @@ func (s *MTLSSuite) TestMTLSAuthPluginLogs() {
 
 	// Send a request with valid client cert through the mTLS proxy.
 	cmd := []string{"curl", "-v", "-s", "--connect-timeout", "5",
-		"--cacert", "/certs/ca.pem",
-		"--cert", "/certs/client.pem",
-		"--key", "/certs/client-key.pem",
+		"--proxy-cacert", "/certs/ca.pem",
+		"--proxy-cert", "/certs/client.pem",
+		"--proxy-key", "/certs/client-key.pem",
 		"-x", "https://127.0.0.1:8443",
 		fmt.Sprintf("http://%s:5678", s.echoIP)}
-	code, out, err := gostC.Exec(s.ctx, cmd)
+	code, out, err := ExecOutput(s.ctx, gostC, cmd)
 	body, _ := io.ReadAll(out)
 	s.Require().NoError(err)
 	s.Require().Equal(0, code)

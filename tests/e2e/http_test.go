@@ -600,6 +600,28 @@ func (s *HTTPSuite) TestHTTPUDPRelay() {
 	s.Require().Equal(0, code, "udp relay test script should exit 0")
 }
 
+// TestHTTPProxyOriginForm verifies the nginx proxy_pass scenario
+// (go-gost/gost#679): an upstream client sends an origin-form request
+// ("GET / HTTP/1.1" with only a Host header) instead of the proxy-form
+// absolute URL. The proxy must resolve the target from the Host header.
+func (s *HTTPSuite) TestHTTPProxyOriginForm() {
+	gostC, err := RunGostContainerWithPorts(s.ctx, SharedNetworkName,
+		"testdata/http/server.yaml", "8080/tcp")
+	s.Require().NoError(err)
+	defer gostC.Terminate(s.ctx)
+
+	// Origin-form request exactly as nginx proxy_pass emits it, with the
+	// Host header pointing at the echo server via its network alias
+	// ("tcp-echo", registered on SharedNetworkName).
+	req := "GET / HTTP/1.1\r\nHost: tcp-echo:5678\r\nConnection: close\r\n\r\n"
+	out := s.sendRaw(gostC, "127.0.0.1", "8080", req)
+	if !strings.Contains(out, "200") {
+		DumpLogs(s.T(), s.ctx, "http-proxy-origin-form logs", gostC)
+	}
+	s.Assert().Contains(out, "200 OK", "origin-form request should be proxied by Host header")
+	s.Assert().Contains(out, "hello-gost", "echo server response body should come through")
+}
+
 func TestHTTPSuite(t *testing.T) {
 	suite.Run(t, new(HTTPSuite))
 }

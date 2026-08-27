@@ -1,0 +1,18 @@
+# Service-level destination bypass (blacklist) on an HTTP forward proxy.
+# Blocks the echo server's address ({{.ServerAddr}}). Used by
+# TestHTTPProxyGostTargetPolicyBypass to verify that a Gost-Target header
+# cannot separate the authority evaluated by the policy from the authority the
+# transport dials.
+bypasses:
+  - name: bypass-0
+    matchers:
+      - "{{.ServerAddr}}"
+
+services:
+  - name: http-policy
+    addr: ":8080"
+    handler:
+      type: http
+    listener:
+      type: tcp
+    bypass: bypass-0

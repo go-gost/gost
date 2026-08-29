@@ -1,0 +1,18 @@
+# go-gost/gost#677 — send-proxy (PROXY protocol v2) for the rtcp forward handler.
+# Same as v1.yaml but emits the binary v2 header (metadata.proxyProtocol: 2).
+services:
+  - name: service-0
+    addr: ":8080"
+    handler:
+      type: rtcp
+      metadata:
+        proxyProtocol: 2
+    listener:
+      type: rtcp
+    forwarder:
+      nodes:
+        - name: target-0
+          addr: proxy-capture:5678
+
+log:
+  level: debug

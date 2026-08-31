@@ -1,0 +1,27 @@
+# gost#899: whitelist bypass + sniffing on a transparent (red) proxy.
+# The whitelist contains only a domain ("https-echo", the docker network alias
+# of the HTTPS echo container). A bare destination IP is never in it, so on a
+# broken build the pre-sniffing IP bypass check rejects every connection
+# before SNI sniffing can match the host. The fix skips that check in
+# whitelist mode and lets the sniffer drive the decision from the SNI.
+log:
+  level: debug
+services:
+  - name: transparent-egress
+    addr: ":12345"
+    bypass: allowlist
+    metadata:
+      so_mark: 114514
+    handler:
+      type: red
+      metadata:
+        sniffing: true
+        sniffing.timeout: 5s
+        sniffing.fallback: true
+    listener:
+      type: red
+bypasses:
+  - name: allowlist
+    whitelist: true
+    matchers:
+      - https-echo

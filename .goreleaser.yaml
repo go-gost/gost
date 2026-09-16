@@ -1,3 +1,5 @@
+version: 2
+
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
 before:
@@ -7,7 +9,8 @@ before:
     # you may remove this if you don't need go generate
     # - go generate ./...
 builds:
-  - env:
+  - id: gost
+    env:
       - CGO_ENABLED=0
     main: ./cmd/gost
     targets:
@@ -38,6 +41,16 @@ builds:
       - android_arm64
     ldflags:
       - "-s -w -X 'main.version={{ .Tag }}'"
+  - id: gost-packages
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/gost
+    targets:
+      - linux_amd64
+      - linux_amd64_v3
+      - linux_arm64
+    ldflags:
+      - "-s -w -X 'main.version={{ .Tag }}'"
 
 upx:
   - # UPX compression. Disabled by default (see #863): upx --best/--lzma/--brute
@@ -46,18 +59,51 @@ upx:
     enabled: false
 
 archives:
-  - format: tar.gz
+  - ids:
+      - gost
+    formats:
+      - tar.gz
     builds_info:
       group: root
       owner: root
     # use zip for windows archives
     format_overrides:
     - goos: windows
-      format: zip
+      formats:
+        - zip
+
+nfpms:
+  - id: packages
+    package_name: gost
+    ids:
+      - gost-packages
+    vendor: go-gost
+    homepage: https://gost.run/
+    maintainer: go-gost contributors
+    description: GO Simple Tunnel
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    contents:
+      - src: gost.service
+        dst: /usr/lib/systemd/system/gost.service
+      - src: README.md
+        dst: /usr/share/doc/gost/README.md
+      - src: README_en.md
+        dst: /usr/share/doc/gost/README_en.md
+      - src: LICENSE
+        dst: /usr/share/doc/gost/LICENSE
+      - src: gost.yml
+        dst: /usr/share/doc/gost/examples/gost.yml
+    scripts:
+      postinstall: scripts/postinstall.sh
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:

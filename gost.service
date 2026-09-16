@@ -6,7 +6,7 @@ After=network-online.target nss-lookup.target
 [Service]
 Type=exec
 WorkingDirectory=/run/gost
-ExecStart=/usr/local/bin/gost -C /etc/gost/gost.yml
+ExecStart=/usr/bin/gost -C /etc/gost/gost.yml
 ExecReload=/bin/kill -SIGHUP $MAINPID
 
 User=nobody

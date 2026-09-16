@@ -14,7 +14,6 @@ Group=nogroup
 RuntimeDirectory=gost
 LogsDirectory=gost
 TimeoutStopSec=5s
-Environment=GOMEMLIMIT=768MiB
 Restart=on-failure
 RestartSec=1s
 

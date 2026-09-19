@@ -97,8 +97,6 @@ nfpms:
         dst: /usr/share/doc/gost/LICENSE
       - src: gost.yml
         dst: /usr/share/doc/gost/examples/gost.yml
-    scripts:
-      postinstall: scripts/postinstall.sh
 
 checksum:
   name_template: 'checksums.txt'

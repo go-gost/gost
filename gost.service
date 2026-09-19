@@ -2,26 +2,25 @@
 Description=GO Simple Tunnel
 Documentation=https://gost.run/
 After=network-online.target nss-lookup.target
+ConditionPathExists=/etc/gost/gost.yml
 
 [Service]
-Type=exec
+Type=simple
 WorkingDirectory=/run/gost
 ExecStart=/usr/bin/gost -C /etc/gost/gost.yml
 ExecReload=/bin/kill -SIGHUP $MAINPID
 
 User=nobody
-Group=nogroup
 RuntimeDirectory=gost
 LogsDirectory=gost
 TimeoutStopSec=5s
 Restart=on-failure
 RestartSec=1s
 
-AmbientCapabilities=CAP_NET_BIND_SERVICE
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 
 PrivateTmp=yes
-PrivateDevices=yes
+PrivateDevices=no
 ProtectSystem=full
 ProtectHostname=yes
 ProtectHome=yes
@@ -33,7 +32,7 @@ ProtectClock=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 
-SystemCallFilter=~@privileged @mount @debug @cpu-emulation @obsolete
+SystemCallFilter=~@mount @debug @cpu-emulation @obsolete
 SystemCallErrorNumber=EPERM
 SystemCallArchitectures=native
 RestrictNamespaces=yes

@@ -10,7 +10,7 @@ WorkingDirectory=/run/gost
 ExecStart=/usr/bin/gost -C /etc/gost/gost.yml
 ExecReload=/bin/kill -SIGHUP $MAINPID
 
-User=nobody
+DynamicUser=yes
 RuntimeDirectory=gost
 LogsDirectory=gost
 TimeoutStopSec=5s

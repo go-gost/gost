@@ -54,6 +54,22 @@ GOST作为隧道有三种主要使用方式。
 
 [https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases)
 
+### 系统包（DEB/RPM）
+
+从 [Releases](https://github.com/go-gost/gost/releases) 下载对应架构的安装包（`amd64`、`amd64v3`、`arm64`）：
+
+```bash
+# Debian/Ubuntu
+sudo apt install ./gost_<version>_linux_amd64.deb
+
+# RHEL/Fedora
+sudo dnf install ./gost_<version>_linux_amd64.rpm
+```
+
+`amd64v3` 包需要支持 AVX2 的 CPU（x86-64-v3），否则请使用 `amd64`。
+
+安装包附带 systemd 服务，但不会自动启用：先创建 `/etc/gost/gost.yml`（示例见 `/usr/share/doc/gost/examples/gost.yml`），再执行 `sudo systemctl enable --now gost`。未提供配置文件时该服务会被跳过，而不是报错。
+
 ### 安装脚本
 
 ```bash

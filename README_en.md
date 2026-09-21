@@ -54,6 +54,22 @@ Use tunnel and intranet penetration to expose local services behind NAT or firew
 
 [https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases)
 
+### Packages (DEB/RPM)
+
+Download the package for your architecture from the [releases page](https://github.com/go-gost/gost/releases) (`amd64`, `amd64v3`, `arm64`):
+
+```bash
+# Debian/Ubuntu
+sudo apt install ./gost_<version>_linux_amd64.deb
+
+# RHEL/Fedora
+sudo dnf install ./gost_<version>_linux_amd64.rpm
+```
+
+The `amd64v3` package requires an AVX2-capable CPU (x86-64-v3); use `amd64` otherwise.
+
+The packages ship a systemd service, but it is not enabled automatically: create `/etc/gost/gost.yml` first (see `/usr/share/doc/gost/examples/gost.yml`), then run `sudo systemctl enable --now gost`. Without a config file the service is skipped rather than failing.
+
 ### install script
 
 ```bash

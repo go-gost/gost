@@ -97,6 +97,10 @@ nfpms:
         dst: /usr/share/doc/gost/LICENSE
       - src: gost.yml
         dst: /usr/share/doc/gost/examples/gost.yml
+      - dst: /etc/gost
+        type: dir
+        file_info:
+          mode: 0755
 
 checksum:
   name_template: 'checksums.txt'

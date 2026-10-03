@@ -1,0 +1,44 @@
+# Internal host behind NAT for gost#911: binds a reverse UDP tunnel (rudp)
+# through the relay server and forwards it to the local UDP echo server.
+#
+# The rudp listener opens no local port — it binds the UDP port remotely through
+# the chain. service-1 is a dummy TCP listener purely so the e2e harness has a
+# stable port to wait on for container readiness.
+services:
+  - name: service-0
+    addr: "0.0.0.0:8432"
+    handler:
+      type: rudp
+    listener:
+      type: rudp
+      chain: chain-0
+      metadata:
+        ttl: 5m
+    forwarder:
+      nodes:
+        - name: echo
+          addr: udp-echo:5679
+
+  # Dummy TCP service on a fixed port: the rudp reverse-tunnel listener binds
+  # remotely through the chain and opens no local port, so this gives the e2e
+  # harness a stable port to wait on. Nothing ever targets it — the harness
+  # only opens and immediately closes the connection.
+  - name: service-1
+    addr: ":8431"
+    handler:
+      type: tcp
+    listener:
+      type: tcp
+
+chains:
+  - name: chain-0
+    hops:
+      - nodes:
+        - addr: gost-server:8430
+          connector:
+            type: relay
+          dialer:
+            type: tcp
+
+log:
+  level: debug

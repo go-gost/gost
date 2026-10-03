@@ -1,0 +1,34 @@
+# Internal client behind NAT for gost#911: a UDP forward service that sends all
+# traffic to the port the host bound through the reverse tunnel.
+#
+# The forwarder target is gost-server:8432 — that is where the reverse tunnel is
+# actually bound (the host's rudp listener asked the relay server to bind it, so
+# the port lives on the relay server, not on the host). Datagrams go there and
+# are carried back to the internal host over the one shared tunnel stream.
+services:
+  - name: service-0
+    addr: ":8432"
+    handler:
+      type: udp
+    listener:
+      type: udp
+      metadata:
+        keepalive: true
+        ttl: 5m
+    forwarder:
+      nodes:
+        - name: tunnel
+          addr: gost-server:8432
+
+chains:
+  - name: chain-0
+    hops:
+      - nodes:
+        - addr: gost-server:8430
+          connector:
+            type: relay
+          dialer:
+            type: tcp
+
+log:
+  level: debug

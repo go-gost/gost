@@ -1,0 +1,16 @@
+# Public-facing relay server for gost#911: allows UDP BIND so an internal host
+# can bind a reverse UDP tunnel through it. The host asks the server to bind
+# the tunnel's UDP port, so that port lives here — on the relay server, not on
+# the host behind NAT.
+services:
+  - name: service-0
+    addr: ":8430"
+    handler:
+      type: relay
+      metadata:
+        bind: true
+    listener:
+      type: tcp
+
+log:
+  level: debug

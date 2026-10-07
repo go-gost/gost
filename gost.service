@@ -11,6 +11,7 @@ ExecStart=/usr/bin/gost -C /etc/gost/gost.yml
 ExecReload=/bin/kill -SIGHUP $MAINPID
 
 DynamicUser=yes
+ConfigurationDirectory=gost
 RuntimeDirectory=gost
 LogsDirectory=gost
 TimeoutStopSec=5s

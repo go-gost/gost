@@ -39,6 +39,9 @@ jobs:
         name: 'Checkout'
         uses: actions/checkout@v4
         with:
+          # Fine-grained PAT: "Contents: Read and write" on go-gost/gost.
+          # Classic PAT equivalent: "repo" scope only (admin:org NOT required).
+          # Stored as repository secret NIGHTLY_BUILD_GH_TOKEN.
           token: ${{ secrets.NIGHTLY_BUILD_GH_TOKEN }}
           fetch-depth: 0
       -
@@ -60,6 +63,7 @@ jobs:
           git push origin $TAG
       - name: 'Clean up nightly releases'
         env:
+          # Same fine-grained PAT as above (Contents: Read and write).
           GH_TOKEN: ${{ secrets.NIGHTLY_BUILD_GH_TOKEN }}
         run: |
           # Keep the 2 most recent nightly releases; delete the rest and their tags.

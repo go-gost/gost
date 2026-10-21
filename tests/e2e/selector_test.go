@@ -109,6 +109,28 @@ func (s *SelectorSuite) TestParallelSelector() {
 	s.Require().Contains(body, "hello-gost")
 }
 
+// TestParallelSelectorLimit exercises the parallel strategy with a node
+// limit: only one node takes part in each race, so the dead node is no
+// longer masked by the live one. With the round-robin mode the requests
+// alternate between the live node (succeeds) and the dead node (fails).
+func (s *SelectorSuite) TestParallelSelectorLimit() {
+	gostC, err := RunGostContainerWithPorts(s.ctx, SharedNetworkName, "testdata/selector/parallel_limit.yaml", "8080/tcp")
+	s.Require().NoError(err)
+	defer gostC.Terminate(s.ctx)
+
+	code, body := s.proxyRequest(gostC, "8080")
+	s.Require().Equal(0, code)
+	s.Require().Contains(body, "hello-gost", "first race should pick the live node")
+
+	code, body = s.proxyRequest(gostC, "8080")
+	s.Require().Equal(0, code)
+	s.Require().NotContains(body, "hello-gost", "second race should pick the dead node")
+
+	code, body = s.proxyRequest(gostC, "8080")
+	s.Require().Equal(0, code)
+	s.Require().Contains(body, "hello-gost", "third race should pick the live node again")
+}
+
 func TestSelectorSuite(t *testing.T) {
 	suite.Run(t, new(SelectorSuite))
 }

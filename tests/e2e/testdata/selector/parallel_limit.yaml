@@ -1,0 +1,34 @@
+services:
+- name: proxy
+  addr: :8080
+  handler:
+    type: http
+    chain: my-chain
+  listener:
+    type: tcp
+
+- name: dummy-1
+  addr: :18081
+  handler:
+    type: http
+
+chains:
+- name: my-chain
+  hops:
+  - name: hop-1
+    selector:
+      strategy: parallel
+      # Only one node takes part in each race.
+      maxParallel: 1
+      parallelMode: round
+    nodes:
+    - name: node-1
+      addr: 127.0.0.1:18081
+      connector:
+        type: http
+    # dead node: never listens; it is no longer masked by the live node
+    # because the two of them no longer race concurrently.
+    - name: node-2
+      addr: 127.0.0.1:18082
+      connector:
+        type: http

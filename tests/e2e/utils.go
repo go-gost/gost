@@ -113,6 +113,39 @@ func RunUDPEchoContainer(ctx context.Context, networkName string) (testcontainer
 	})
 }
 
+// RunBigBodyContainer starts an HTTP server that streams a large body. It is
+// registered with the network alias "big-body". The body is much larger than
+// a QUIC flow control window, so a client that stops reading fills the
+// window of the connection that carries it.
+func RunBigBodyContainer(ctx context.Context, networkName string) (testcontainers.Container, error) {
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    ".",
+			Dockerfile: "Dockerfile",
+			Repo:       "gost-e2e",
+			Tag:        "latest",
+			KeepImage:  true,
+			BuildOptionsModifier: func(opts *client.ImageBuildOptions) {
+				opts.NetworkMode = "host"
+			},
+		},
+		Networks: []string{networkName},
+		NetworkAliases: map[string][]string{
+			networkName: {"big-body"},
+		},
+		Files: []testcontainers.ContainerFile{
+			{HostFilePath: "scripts/http_big_body.py", ContainerFilePath: "/scripts/http_big_body.py", FileMode: 0644},
+		},
+		ExposedPorts: []string{"5679/tcp"},
+		Cmd:          []string{"python3", "/scripts/http_big_body.py"},
+		WaitingFor:   wait.ForExposedPort(),
+	}
+	return testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+}
+
 func udpEchoContainerRequest(_ context.Context, networkName string) testcontainers.ContainerRequest {
 	return testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{

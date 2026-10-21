@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
@@ -21,6 +22,7 @@ type QUICSuite struct {
 	ctx    context.Context
 	echoC  testcontainers.Container
 	echoIP string
+	bigC   testcontainers.Container
 }
 
 func (s *QUICSuite) SetupSuite() {
@@ -34,11 +36,19 @@ func (s *QUICSuite) SetupSuite() {
 	echoIP, err := echoC.ContainerIP(s.ctx)
 	s.Require().NoError(err)
 	s.echoIP = echoIP
+
+	s.T().Logf("start big body container...")
+	bigC, err := RunBigBodyContainer(s.ctx, SharedNetworkName)
+	s.Require().NoError(err)
+	s.bigC = bigC
 }
 
 func (s *QUICSuite) TearDownSuite() {
 	if s.echoC != nil {
 		s.echoC.Terminate(s.ctx)
+	}
+	if s.bigC != nil {
+		s.bigC.Terminate(s.ctx)
 	}
 }
 
@@ -122,6 +132,78 @@ func (s *QUICSuite) TestQUICForwardCipherKeySurvivesInvalidDatagram() {
 		"QUIC forward should still work after an invalid datagram (issue #125)")
 	s.Require().Contains(body, "hello-gost",
 		"listener must not close on an invalid datagram (issue #125)")
+}
+
+// abortDownload starts a download of the big body through the client's http
+// proxy and aborts it while the transfer is still running. The client reads
+// very slowly, so the data piles up in the connection that carries it.
+//
+// The abort makes the copy towards the client fail, and the client closes the
+// quic conn. The data the server already sent stays unread in the stream and
+// keeps occupying the connection level receive window, unless the read side
+// is cancelled.
+func (s *QUICSuite) abortDownload(clientC testcontainers.Container) {
+	s.T().Helper()
+
+	cmd := []string{"curl", "-s", "--max-time", "2", "--limit-rate", "1k",
+		"-x", "http://127.0.0.1:8080", "http://big-body:5679/big"}
+	code, out, _ := clientC.Exec(s.ctx, cmd)
+	body, _ := io.ReadAll(out)
+	s.T().Logf("aborted download: exit=%d, %d bytes read", code, len(body))
+	// The download is expected to be cut short.
+	s.Require().NotEqual(0, code, "the download should have been aborted")
+}
+
+// TestQUICForwardSurvivesAbortedDownloads verifies that an aborted transfer
+// does not exhaust the quic connection's flow control window.
+//
+// Data the peer already sent stays unread in the stream and keeps occupying
+// the connection level receive window. When the local app aborts a download,
+// that data is never consumed, so the credit is only returned when the read
+// side is cancelled.
+//
+// Without the cancellation the window drains. Once it is exhausted the peer
+// cannot send data on any stream of the session: new requests still reach
+// the server, the server still acknowledges, there is no idle timeout and no
+// error in the log, and the client waits forever for a response. Only a new
+// session clears it.
+//
+// Sequence: abort several downloads -> a normal request must still work.
+func (s *QUICSuite) TestQUICForwardSurvivesAbortedDownloads() {
+	serverC, clientC := s.startChain()
+	defer serverC.Terminate(s.ctx)
+	defer clientC.Terminate(s.ctx)
+
+	// Baseline: the chain must work before anything is aborted.
+	code, body := s.curlEcho(clientC)
+	if code != 0 || !strings.Contains(body, "hello-gost") {
+		s.dump("quic-baseline logs", clientC, serverC)
+	}
+	s.Require().Equal(0, code, "baseline QUIC forward should work")
+	s.Require().Contains(body, "hello-gost")
+
+	// Abort enough downloads to drain the connection window. The initial
+	// stream window is 512 KB and the initial connection window is 768 KB,
+	// so every aborted download has to leave a large part of a stream
+	// window unread.
+	for i := 0; i < 3; i++ {
+		s.abortDownload(clientC)
+	}
+
+	// Give the peer the chance to notice the cancellation and to return
+	// the credit.
+	time.Sleep(time.Second)
+
+	// The tunnel must still forward. Without the credit being returned the
+	// connection window is exhausted and this request never gets an answer.
+	code, body = s.curlEcho(clientC)
+	if code != 0 || !strings.Contains(body, "hello-gost") {
+		s.dump("quic-after-aborts logs", clientC, serverC)
+	}
+	s.Require().Equal(0, code,
+		"QUIC forward should still work after aborted downloads")
+	s.Require().Contains(body, "hello-gost",
+		"the tunnel must not stall after aborted downloads")
 }
 
 func (s *QUICSuite) dump(label string, cs ...testcontainers.Container) {

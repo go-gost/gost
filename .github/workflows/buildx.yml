@@ -26,6 +26,18 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # Version shown by `gost -V` inside the image: the tag without its "v"
+    # prefix for tagged builds, the commit for branch builds (checkout is
+    # shallow, so git describe has no tags to describe).
+    - name: Resolve version
+      id: version
+      run: |
+        if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+          echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        else
+          echo "value=dev+$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        fi
+
     # Auto-generates image tags, replacing the former hand-rolled shell:
     #   - master push                         -> :latest
     #   - clean release tag vX.Y.Z             -> :X.Y.Z :X :X.Y :latest
@@ -58,6 +70,7 @@ jobs:
       with:
         platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/s390x,linux/riscv64
         push: true
+        build-args: VERSION=${{ steps.version.outputs.value }}
         tags: ${{ steps.meta.outputs.tags }}
         # Reuse build layers across runs via the GitHub Actions cache.
         cache-from: type=gha

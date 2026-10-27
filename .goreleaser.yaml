@@ -40,7 +40,7 @@ builds:
       - windows_arm64
       - android_arm64
     ldflags:
-      - "-s -w -X 'main.version={{ .Tag }}'"
+      - "-s -w -X 'main.version={{ .Version }}'"
   - id: gost-packages
     env:
       - CGO_ENABLED=0
@@ -50,7 +50,7 @@ builds:
       - linux_amd64_v3
       - linux_arm64
     ldflags:
-      - "-s -w -X 'main.version={{ .Tag }}'"
+      - "-s -w -X 'main.version={{ .Version }}'"
 
 upx:
   - # UPX compression. Disabled by default (see #863): upx --best/--lzma/--brute

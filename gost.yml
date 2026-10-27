@@ -81,6 +81,14 @@ chains:
         metadata:
           bar: baz 
 
+nodes:
+- name: node-shared
+  addr: ":1080"
+  connector:
+    type: socks5
+  dialer:
+    type: tcp
+
 hops:
 - name: hop-0
   interface: 192.168.1.2
@@ -90,6 +98,8 @@ hops:
     failTimeout: 60s
   bypass: bypass-0
   nodes:
+  # reference a reusable node from the top-level nodes section (name only)
+  - name: node-shared
   - name: node-0
     addr: ":1080"
     interface: eth1

@@ -1,6 +1,6 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.6.1 AS xx
 
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine3.23 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine3.23 AS builder
 
 # UPX compression disabled by default (see #863): upx --best adds ~3s startup
 # time on low-spec systems (linux/arm). Builds can opt in by uncommenting the
@@ -21,8 +21,10 @@ WORKDIR /app
 
 COPY . .
 
+ARG VERSION=dev
+
 RUN cd cmd/gost && \
-    xx-go build -ldflags "-s -w" && \
+    xx-go build -ldflags "-s -w -X main.version=${VERSION}" && \
     xx-verify gost
 
 FROM alpine:3.23

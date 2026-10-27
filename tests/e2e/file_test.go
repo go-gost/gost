@@ -10,6 +10,10 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 )
 
+// helloContent is served as hello.txt. It is generated in memory rather
+// than read from testdata so the fixture cannot be lost to a gitignore rule.
+const helloContent = "hello-gost-file\n"
+
 type FileSuite struct {
 	suite.Suite
 	ctx context.Context
@@ -28,7 +32,7 @@ func (s *FileSuite) TestFileGetExisting() {
 	gostC, err := RunGostContainerWithFiles(s.ctx, SharedNetworkName,
 		"testdata/file/server.yaml",
 		[]testcontainers.ContainerFile{
-			{HostFilePath: "testdata/file/hello.txt", ContainerFilePath: "/srv/files/hello.txt", FileMode: 0644},
+			{Reader: strings.NewReader(helloContent), ContainerFilePath: "/srv/files/hello.txt", FileMode: 0644},
 		},
 		"8080/tcp")
 	s.Require().NoError(err)
@@ -54,7 +58,7 @@ func (s *FileSuite) TestFileGetNotFound() {
 	gostC, err := RunGostContainerWithFiles(s.ctx, SharedNetworkName,
 		"testdata/file/server.yaml",
 		[]testcontainers.ContainerFile{
-			{HostFilePath: "testdata/file/hello.txt", ContainerFilePath: "/srv/files/hello.txt", FileMode: 0644},
+			{Reader: strings.NewReader(helloContent), ContainerFilePath: "/srv/files/hello.txt", FileMode: 0644},
 		},
 		"8080/tcp")
 	s.Require().NoError(err)
@@ -159,7 +163,7 @@ func (s *FileSuite) TestFileAuth() {
 	gostC, err := RunGostContainerWithFiles(s.ctx, SharedNetworkName,
 		"testdata/file/server_auth.yaml",
 		[]testcontainers.ContainerFile{
-			{HostFilePath: "testdata/file/hello.txt", ContainerFilePath: "/srv/files/hello.txt", FileMode: 0644},
+			{Reader: strings.NewReader(helloContent), ContainerFilePath: "/srv/files/hello.txt", FileMode: 0644},
 		},
 		"8080/tcp")
 	s.Require().NoError(err)

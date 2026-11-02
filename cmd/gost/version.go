@@ -13,7 +13,7 @@ var version string
 // buildVersionFallback is the baseline version shown by builds that carry no
 // version information (plain `go build` outside a git checkout). The Makefile
 // reads it to name archives, so keep the declaration on one line.
-const buildVersionFallback = "3.3.2"
+const buildVersionFallback = "3.3.3"
 
 // getVersion returns the version of this build.
 func getVersion() string {

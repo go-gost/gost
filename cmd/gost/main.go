@@ -130,6 +130,16 @@ func init() {
 }
 
 func main() {
+	// Disable Multipath TCP by default to mitigate CVE-2026-98432.
+	// Listeners opt in explicitly via their "mptcp" metadata.
+	if v := os.Getenv("GODEBUG"); !strings.Contains(v, "multipathtcp") {
+		if v == "" {
+			os.Setenv("GODEBUG", "multipathtcp=0")
+		} else {
+			os.Setenv("GODEBUG", v+",multipathtcp=0")
+		}
+	}
+
 	log := xlogger.NewLogger()
 	logger.SetDefault(log)
 

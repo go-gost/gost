@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 
+# $0 is /dev/fd/63 when the script runs as `bash <(curl ...)`, the form the
+# README documents, so messages must not interpolate $0 directly.
+prog=${0##*/}
+case $prog in
+'' | bash | sh | -bash | bash.exe | [0-9]*) prog=install.sh ;;
+esac
+
 if [ -n "${ZSH_VERSION-}" ]; then
-    printf 'error: this is a bash script; run it as: bash %s\n' "$0" >&2
+    printf 'error: this is a bash script; run it as: bash %s\n' "$prog" >&2
     exit 1
 fi
 
@@ -24,7 +31,7 @@ Options:
   --install             install the latest release (non-interactive)
   --version <version>   install a specific release, e.g. v3.3.3
   --list                list available release tags and exit
-  --print-asset         print the resolved release asset name and exit
+  --print-asset         print the asset name for --version and exit
   --prefix <dir>        install into <dir>/bin
   --skip-verify         skip checksum verification (not recommended)
   --dry-run             resolve and print the plan, then exit
@@ -101,11 +108,19 @@ while [ $# -gt 0 ]; do
             usage >&2
             exit 2
         }
+        [ -n "$2" ] || {
+            printf 'error: --prefix requires a non-empty directory\n' >&2
+            exit 2
+        }
         prefix_arg=$2
         shift 2
         ;;
     --prefix=*)
         prefix_arg=${1#*=}
+        [ -n "$prefix_arg" ] || {
+            printf 'error: --prefix requires a non-empty directory\n' >&2
+            exit 2
+        }
         shift
         ;;
     --skip-verify)
@@ -239,6 +254,10 @@ asset_name() {
 }
 
 if [ "$print_asset" = 1 ]; then
+    [ -n "$version_arg" ] || {
+        printf 'error: --print-asset requires --version <version>\n' >&2
+        exit 2
+    }
     detect_os || {
         printf 'error: unsupported OS: %s\n' "$(uname)" >&2
         exit 1
@@ -247,11 +266,7 @@ if [ "$print_asset" = 1 ]; then
         printf 'error: unsupported architecture: %s\n' "$(uname -m)" >&2
         exit 1
     }
-    if [ -n "$version_arg" ]; then
-        printf '%s\n' "$(asset_name "$version_arg")"
-    else
-        printf '%s_%s.%s\n' "$os" "$cpu_arch" "$ext"
-    fi
+    printf '%s\n' "$(asset_name "$version_arg")"
     exit 0
 fi
 
@@ -265,6 +280,11 @@ require() {
 require curl
 require tar
 require awk
+require sed
+require grep
+require install
+require mktemp
+require id
 require uname
 
 # Set the desired GitHub repository
@@ -290,6 +310,8 @@ checksum_for() {
     url="$download_base/v$1/checksums.txt"
     body=$(curl -fsSL --retry 3 "$url") || {
         printf 'error: cannot fetch checksums: %s\n' "$url" >&2
+        printf '  releases before v3.0.0-rc5 publish no checksums.txt\n' >&2
+        printf '  rerun with --skip-verify to install without verification (not recommended)\n' >&2
         return 1
     }
     hash=$(printf '%s\n' "$body" | awk -v f="$2" '{ n=$2; sub(/^\*/, "", n); if (n == f) { print $1; exit } }')
@@ -313,6 +335,24 @@ verify_asset() {
         return 1
     fi
     printf 'Checksum OK: %s\n' "$2"
+}
+
+require_asset_published() {
+    # $1=asset url $2=version(without v) $3=asset name
+    # Fail fast instead of letting a 404 surface as "download failed": not every
+    # os/arch is built, and releases before v3.0.0-rc5 use the old asset naming.
+    code=$(curl -sSL -o /dev/null --head --max-time 30 -w '%{http_code}' "$1" 2>/dev/null) || code=
+    case $code in
+    404 | 410)
+        printf 'error: release v%s does not publish %s\n' "$2" "$3" >&2
+        printf '  this script expects gost_<version>_<os>_<arch>.<tar.gz|zip>\n' >&2
+        printf '  not every os/arch is built, and releases before v3.0.0-rc5 ship\n' >&2
+        printf '  gost-<os>-<arch>-<version>.gz instead\n' >&2
+        printf '  browse the assets: https://github.com/%s/releases/tag/v%s\n' "$repo" "$2" >&2
+        return 1
+        ;;
+    esac
+    return 0
 }
 
 print_plan() {
@@ -387,8 +427,8 @@ install_windows() {
         explorer_bin=$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/explorer.exe
     fi
     if [ ! -x "$explorer_bin" ]; then
-        printf 'error: explorer.exe not found; the file is here: %s\n' "$winzip" >&2
-        exit 1
+        printf 'warning: explorer.exe not found; the file is here: %s\n' "$winzip" >&2
+        return 0
     fi
     "$explorer_bin" "/select,$winzip" >/dev/null 2>&1 || true
 }
@@ -418,6 +458,8 @@ install_gost() {
     asset=$(asset_name "$ver")
     download_url="$download_base/v$ver/$asset"
 
+    require_asset_published "$download_url" "$ver" "$asset" || exit 1
+
     if [ "$os" = windows ]; then
         install_windows "$version" "$download_url"
         return 0
@@ -433,7 +475,10 @@ install_gost() {
         prefix=${HOME:?HOME is not set}/.local
     fi
 
-    install_path="$prefix/bin"
+    # Normalise so `--prefix /usr/local/` does not turn into /usr/local//bin and
+    # break the PATH check; a prefix of "/" installs into /bin.
+    prefix=${prefix%/}
+    install_path="${prefix}/bin"
 
     if [ "$dry_run" = 1 ]; then
         print_plan "$version" "$asset" "$download_url" posix
@@ -442,8 +487,8 @@ install_gost() {
 
     if ! mkdir -p "$install_path" 2>/dev/null; then
         printf 'error: cannot create %s\n' "$install_path" >&2
-        printf '  pick a writable prefix: PREFIX=/some/dir %s\n' "$0" >&2
-        printf '  system-wide installs need root: sudo PREFIX=/usr/local %s\n' "$0" >&2
+        printf '  pick a writable prefix: PREFIX=/some/dir bash %s\n' "$prog" >&2
+        printf '  system-wide installs need root: sudo PREFIX=/usr/local bash %s\n' "$prog" >&2
         exit 1
     fi
 
@@ -537,7 +582,19 @@ fetch_versions() {
 
     case $code in
     200)
-        printf '%s\n' "$body" | awk -F'"' '/"tag_name":/ { print $4 }'
+        # Releases before v3.0.0-rc5 (v3.0.0-alpha.1 … v3.0.0-rc.4) use the old
+        # gost-<os>-<arch>-<version>.gz layout, which this script cannot install;
+        # keep them out of the menu, but --version still reports the real reason.
+        printf '%s\n' "$body" | awk -F'"' '
+            /"tag_name":/ {
+                tag = $4
+                if (tag ~ /-(alpha|beta|rc)[.][0-9]+$/) { hidden++; next }
+                print tag
+            }
+            END {
+                if (hidden) printf "note: %d release(s) hidden (legacy asset layout; use --version to see why)\n", hidden > "/dev/stderr"
+            }
+        '
         ;;
     403 | 429)
         printf 'error: GitHub API rate limit or rejection (HTTP %s)\n' "$code" >&2
@@ -579,13 +636,19 @@ latest)
     ;;
 interactive)
     echo "Available gost versions:"
+    selected=
     # shellcheck disable=SC2086  # intentional: one menu item per tag
     select version in $versions; do
         if [ -n "$version" ]; then
-            install_gost "$version"
+            selected=$version
             break
         fi
         echo "Invalid choice! Please select a valid option."
-    done
+    done || true
+    [ -n "$selected" ] || {
+        printf 'error: no version selected\n' >&2
+        exit 1
+    }
+    install_gost "$selected"
     ;;
 esac

@@ -37,6 +37,7 @@ type program struct {
 func (p *program) Init(env svc.Environment) error {
 	parser.Init(parser.Args{
 		CfgFiles:    cfgFiles,
+		ExpandEnv:   expandEnv,
 		Services:    services,
 		Nodes:       nodes,
 		Debug:       debug,

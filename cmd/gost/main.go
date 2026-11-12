@@ -39,6 +39,7 @@ var (
 	apiAddr      string
 	metricsAddr  string
 	reload       time.Duration
+	expandEnv    bool
 )
 
 func init() {
@@ -95,6 +96,7 @@ func init() {
 	flag.Var(&services, "L", "service list")
 	flag.Var(&nodes, "F", "chain node list")
 	flag.Var(&cfgFiles, "C", "config file(s), URL(s), or inline JSON")
+	flag.BoolVar(&expandEnv, "E", false, "expand environment variables in config files")
 	flag.BoolVar(&printVersion, "V", false, "print version")
 	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
 	flag.BoolVar(&debug, "D", false, "debug mode")
